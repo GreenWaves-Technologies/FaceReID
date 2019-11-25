@@ -26,5 +26,24 @@ Documentation Pages
 - [Hardware configuration and schematics](./documentation/hardware.md)
 - [Build and test instructions](./documentation/build_test.md)
 - [Pipeline overview](./documentation/pipeline.md)
+- [ReID train instruction](./documentation/train_instruction.md)
+- [ReID network quantization for GAP](./documentation/quantization_instruction.md)
 - [ReID network architecture and inference details](./documentation/network_inference.md)
 - [Bluetooth LE protocol for users management](./documentation/ble_protocol.md)
+- [Train instruction](./documentation/train_instruction.md)
+- [Quantization instruction](./documentation/quantization_instruction.md)
+
+Papers
+======
+
+- 512KiB RAM Is Enough! Live Camera Face Recognition DNN on MCU [link](http://openaccess.thecvf.com/content_ICCVW_2019/html/LPCV/Zemlyanikin_512KiB_RAM_Is_Enough_Live_Camera_Face_Recognition_DNN_on_ICCVW_2019_paper.html)
+
+```
+@InProceedings{Zemlyanikin_2019_ICCV,
+author = {Zemlyanikin, Maxim and Smorkalov, Alexander and Khanova, Tatiana and Petrovicheva, Anna and Serebryakov, Grigory},
+title = {512KiB RAM Is Enough! Live Camera Face Recognition DNN on MCU},
+booktitle = {The IEEE International Conference on Computer Vision (ICCV) Workshops},
+month = {Oct},
+year = {2019}
+}
+```

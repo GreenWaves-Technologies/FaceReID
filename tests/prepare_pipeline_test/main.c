@@ -1,0 +1,202 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <limits.h>
+
+#include "pmsis.h"
+
+#if defined(__FREERTOS__)
+# include "pmsis_l2_malloc.h"
+# include "pmsis_driver_core_api.h"
+# include "pmsis_task.h"
+# include "pmsis_os.h"
+# include "drivers/hyperbus.h"
+# include "hyperbus_cl_internal.h"
+# include "pmsis_tiling.h"
+#else
+# include "Gap.h"
+#endif
+
+#include "setup.h"
+#include "cascade.h"
+
+#include "network_process_manual.h"
+#include "dnn_utils.h"
+
+#include "ExtraKernels.h"
+#include "reid_pipeline.h"
+#include "ImgIO.h"
+
+char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT;
+// Largest possible face after Cascade
+char* tmp_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194;
+char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194-128*128;
+
+#if defined(_FOR_GAPOC_)
+char *inputBlob = "../../../input_320x240.pgm";
+L2_MEM cascade_reponse_t test_response_l0 =
+{
+    .x = 124,
+    .y = 80,
+    .w = 120,
+    .h = 120,
+    .score = 1,
+    .layer_idx = 0,
+};
+
+L2_MEM cascade_reponse_t test_response_l1 =
+{
+    .x = 120,
+    .y = 48,
+    .w = 152,
+    .h = 152,
+    .score = 1,
+    .layer_idx = 1,
+};
+
+L2_MEM cascade_reponse_t test_response_l2 =
+{
+    .x = 98,
+    .y = 18,
+    .w = 194,
+    .h = 194,
+    .score = 1,
+    .layer_idx = 2,
+};
+
+#else
+char *inputBlob = "../../../input_324x244.pgm";
+L2_MEM cascade_reponse_t test_response_l0 =
+{
+    .x = 126,
+    .y = 82,
+    .w = 120,
+    .h = 120,
+    .score = 1,
+    .layer_idx = 0,
+};
+
+L2_MEM cascade_reponse_t test_response_l1 =
+{
+    .x = 122,
+    .y = 50,
+    .w = 152,
+    .h = 152,
+    .score = 1,
+    .layer_idx = 1,
+};
+
+L2_MEM cascade_reponse_t test_response_l2 =
+{
+    .x = 100,
+    .y = 20,
+    .w = 194,
+    .h = 194,
+    .score = 1,
+    .layer_idx = 2,
+};
+
+#endif
+char *outputBlob = "../../../output.pgm";
+
+// #if !defined(TEST_RESPONSE)
+// # define TEST_RESPONSE test_response_l0
+// #endif
+
+static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
+{
+    for(int i = 0; i < Hout; i++)
+    {
+        for(int j = 0; j < Hout; j++)
+        {
+            out[i*Wout + j] = (unsigned char)in[i*Wout + j];
+        }
+    }
+}
+
+void body(void* parameters)
+{
+    (void) parameters;
+    struct pi_hyper_conf hyper_conf;
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
+    cluster_task.stack_size = CLUSTER_STACK_SIZE;
+
+    PRINTF("Start Prepare Pipeline test\n");
+
+    pi_hyperram_conf_init(&hyper_conf);
+    pi_open_from_conf(&HyperRam, &hyper_conf);
+
+    if (pi_ram_open(&HyperRam))
+    {
+        PRINTF("Error: cannot open Hyperram!\n");
+        pmsis_exit(-2);
+    }
+
+    PRINTF("HyperRAM config done\n");
+
+    PRINTF("Reading image from host...\n");
+    rt_bridge_connect(1, NULL);
+    PRINTF("rt_bridge_connect\n");
+
+    int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
+    unsigned int Wi = CAMERA_WIDTH;
+    unsigned int Hi = CAMERA_HEIGHT;
+    PRINTF("Before ReadImageFromFile\n");
+    unsigned char* read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, input_size);
+    PRINTF("After ReadImageFromFile with status: 0x%p\n", read);
+    if(read != tmp_frame_buffer)
+    {
+        PRINTF("Image read failed\n");
+        pmsis_exit(-3);
+    }
+    PRINTF("Reading image from host...done\n");
+
+    PRINTF("Init cluster...\n");
+    pi_cluster_conf_init(&cluster_conf);
+    cluster_conf.id = 0;
+    cluster_conf.device_type = 0;
+    pi_open_from_conf(&cluster_dev, &cluster_conf);
+    pi_cluster_open(&cluster_dev);
+    PRINTF("Init cluster...done\n");
+
+    ArgClusterDnn_T ClusterDnnCall;
+    ClusterDnnCall.roi         = &TEST_RESPONSE;
+    ClusterDnnCall.frame       = tmp_frame_buffer;
+    ClusterDnnCall.face        = tmp_face_buffer;
+    ClusterDnnCall.scaled_face = network_init();
+    if(!ClusterDnnCall.scaled_face)
+    {
+        PRINTF("Failed to initialize ReID network!\n");
+        pmsis_exit(-5);
+    }
+
+    ExtaKernels_L1_Memory = L1_Memory;
+
+    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall));
+    pi_cluster_close(&cluster_dev);
+
+//     int File = rt_bridge_open("../../../output.values", O_RDWR | O_CREAT, S_IRWXU, NULL);
+//     rt_bridge_write(File, ClusterDnnCall.scaled_face, 128*128*sizeof(short), NULL);
+//     rt_bridge_close(File, NULL);
+
+    my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
+
+    PRINTF("Writing output to file\n");
+    WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
+    WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
+    PRINTF("Writing output to file..done\n");
+
+    rt_bridge_disconnect(NULL);
+
+    pmsis_exit(0);
+}
+
+int main()
+{
+    PRINTF("Start Prepare Pipeline Test\n");
+    pmsis_kickoff(body);
+    return 0;
+}
