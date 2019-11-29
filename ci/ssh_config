@@ -1,6 +1,0 @@
-Host gitlab.greenwaves-tech.com
-   Hostname alt-gitlab.greenwaves-tech.com
-   User git
-   Port 443
-   PreferredAuthentications publickey
-   IdentityFile ~/.ssh/id_rsa

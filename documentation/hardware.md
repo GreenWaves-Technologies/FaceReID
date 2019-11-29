@@ -2,46 +2,6 @@
 
 The document covers Gapoc A and Gapuino board and peripherals setup. Other GAP8 based boards are not supported yet.
 
-# Gapuino
-
-## Build of Materials
-
-- HIGHMAX camera module
-- Adafruit 2.8 TFT display with SPI interface
-- PS/2 Keyboard
-
-## Display Connection
-
-Display shield is connected to the board directly without extra wires and adapters.
-
-## PS/2 Keyboard Connection
-
-Original Arduino project: <https://github.com/PaulStoffregen/PS2Keyboard>
-Pinout:
-
-| PS/2 pins | Gapuio | Semantic |
-|-----------|--------|----------|
-| 1         | 3      | Data     |
-| 3         | GND    | GND      |
-| 4         | 5V     | VCC      |
-| 5         | 2      | CLK      |
-
-**NOTE**: Pins 2 and 3 can be replaced with any other digital input pins. PS/2 pin 5 should be connected to GAPuino pin with interrupts support. In case of pin change, please change parameters for `kb_begin` function.
-
-## Display and Keyboard Tests
-
-1. `tests/keyboard_test` - low level keyboard test, just prints scan codes to console. To execute the test just the following commands and check scan codes of pressed buttons in host console:
-```
-    $ cd tests/keyboard_test
-    $ make run
-```
-
-2. `tests/keyboard_gui_test` - simple UI input box implementation with keyboard input, display module is required. To execute the test just the following commands and check new letters on device screen. Only US char map is supported for now:
-```
-    $ cd tests/keyboard_gui_test
-    $ make run
-```
-
 # Gapoc A
 
 ## Bill of Materials
@@ -87,3 +47,14 @@ Gapoc pins:
 |   1v8 pad   | 1.8v PWR |
 
 **NOTE**: `Conn3` pin 8 has id 25 for `pi_pad_init` call and id 19 for other `pi_gpio_` calls. The hardware setup cold be changed and the pin can ge replaced by any spare GPIO input pin. The ids should be updated accordingly in `setup.h`
+
+# Gapuino
+
+## Build of Materials
+
+- HIGHMAX camera module
+- Adafruit 2.8 TFT display with SPI interface
+
+## Display Connection
+
+Display shield is connected to the board directly without extra wires and adapters.

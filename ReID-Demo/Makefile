@@ -33,7 +33,7 @@ ifeq ($(BOARD_NAME),gapoc_a)
 endif
 
 GenDetectionTile: $(DETECTION_MODEL_SRC)
-	gcc -no-pie -o GenDetectionTile -D_FOR_GAPOC_=1 -I"$(TILER_INC)" $(DETECTION_MODEL_SRC) $(TILER_LIB)
+	gcc -no-pie -o GenDetectionTile $(TILER_PLATFORM_FLAGS) -I"$(TILER_INC)" $(DETECTION_MODEL_SRC) $(TILER_LIB)
 
 $(DETECTION_MODEL_GEN_C): GenDetectionTile
 	./GenDetectionTile
@@ -73,28 +73,31 @@ APP_SRCS = main.c cascade.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKerne
 
 ifeq ($(BOARD_NAME),gapoc_a)
   APP_CFLAGS += -D_FOR_GAPOC_=1
+else
+  STATIC_FACE_DB=1
 endif
 
 DATA_FILES = ./quantized_model/*.bin
 APP_CFLAGS += -Os -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 
 ifeq ($(STATIC_FACE_DB),1)
+  FACE_DB_SIZE=$(shell wc -l < ./known_faces/index.txt)
+  ifeq ($(FACE_DB_SIZE),)
+    $(error known_faces/index.txt file doesn't exist! Please add people names there)
+  endif
   ifeq ($(BLE_NOTIFIER),1)
     APP_SRCS += StaticUserManagerBleNotifier.c
     APP_CFLAGS += -DBLE_NOTIFIER=1
   else
     APP_SRCS += StaticUserManager.c
   endif
-  FACE_DB_SIZE=$(shell wc -l < ./known_faces/index.txt)
+
   DATA_FILES += ./known_faces/index.txt ./known_faces/*.bin
   APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 else
   ifeq ($(BOARD_NAME),gapoc_a)
     APP_SRCS += BleUserManager.c strangers_db.c
     APP_CFLAGS += -DUSE_BLE_USER_MANAGEMENT=1
-  else
-    APP_SRCS += KeyboardUserManager.c ui_input_box.c PS2Keyboard.c
-    APP_CFLAGS += -DUSE_PS2_KEYBOARD=1
   endif
 endif
 

@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.0.0-experimental
-
 FROM ubuntu:18.04
 
 USER root
@@ -50,15 +48,10 @@ RUN mkdir -p /tmp/toolchain && cd /tmp/toolchain && \
 ENV TARGET_CHIP="GAP8"
 ENV TARGET_NAME="gap"
 ENV PULP_CURRENT_CONFIG=gap_rev1@config_file=chips/gap/gap.json
-COPY ssh_config /root/.ssh/config
-
-#       ssh -vvv -o StrictHostKeyChecking=no git@gitlab.greenwaves-tech.com && \
-#       ssh -vvv -p 443 -o StrictHostKeyChecking=no git@alt-gitlab.greenwaves-tech.com && \
 
 RUN mkdir /gap_sdk && cd /gap_sdk && \
+      mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
-      ssh-keyscan gitlab.greenwaves-tech.com >> /root/.ssh/known_hosts && \
-      ssh-keyscan -p 443 alt-gitlab.greenwaves-tech.com >> /root/.ssh/known_hosts && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
       git checkout master && \
       git submodule update --init --recursive && \

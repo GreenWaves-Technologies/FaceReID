@@ -5,6 +5,7 @@
 #include "strangers_db.h"
 
 int initHandler(struct pi_device* fs);
+int prepareStranger(void* preview);
 int handleStranger(short* descriptor);
 
 

@@ -50,8 +50,8 @@ APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PA
 
 DATA_FILES = ../../ReID-Demo/quantized_model/*.bin
 
-FACE_DB_SIZE=$(shell wc -l < ../db_selector_test/known_faces/index.txt)
-DATA_FILES += ../db_selector_test/known_faces/index.txt ../db_selector_test/known_faces/*.bin
+FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
+DATA_FILES += ../../ReID-Demo/known_faces/index.txt ../../ReID-Demo/known_faces/*.bin
 APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
 APP_CFLAGS += -Os
