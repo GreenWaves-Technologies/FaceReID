@@ -1,5 +1,4 @@
 # Build
-
 ## Environment Setup
 
 The demo requires extra packages for build and testing:

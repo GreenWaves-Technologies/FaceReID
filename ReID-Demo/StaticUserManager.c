@@ -13,6 +13,11 @@ int initHandler(struct pi_device* fs)
     return status;
 }
 
+int prepareStranger(void* preview)
+{
+
+}
+
 int handleStranger(short* descriptor)
 {
     (void) descriptor;

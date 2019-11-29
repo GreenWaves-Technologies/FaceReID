@@ -44,8 +44,6 @@
 #  else
 #    include "StaticUserManager.h"
 #  endif
-#elif defined(USE_PS2_KEYBOARD)
-# include "KeyboardUserManager.h"
 #elif defined(USE_BLE_USER_MANAGEMENT)
 #include "BleUserManager.h"
 #endif
@@ -108,7 +106,7 @@ static int open_camera_mt9v034(struct pi_device *device)
     val = MT9V034_AEC_ENABLE_A | MT9V034_AGC_ENABLE_A;
     pi_camera_reg_set(device, MT9V034_AEC_AGC_ENABLE, (uint8_t *) &val);
 
-    //MAX and MIN AEC 
+    //MAX and MIN AEC
     //Minimum Coarse Shutter Width
     val = 0x0000; //def 1
     pi_camera_reg_set(device, 0xAC, (uint8_t *) &val);
@@ -242,7 +240,7 @@ void body(void* parameters)
 #if defined(HAVE_DISPLAY)
     PRINTF("Initializing display\n");
     struct pi_ili9341_conf ili_conf;
-    
+
     pi_ili9341_conf_init(&ili_conf);
     pi_open_from_conf(&display, &ili_conf);
     if (pi_display_open(&display))
@@ -336,8 +334,6 @@ void body(void* parameters)
 # else
     status = initHandler(&fs);
 #endif
-#elif defined(USE_PS2_KEYBOARD)
-    status = initHandler(&display);
 #elif defined(USE_BLE_USER_MANAGEMENT)
     status = initHandler(&gpio_port);
 #endif
@@ -360,7 +356,6 @@ void body(void* parameters)
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
     pi_open_from_conf(&cluster_dev, &cluster_conf);
-    PRINTF("before pi_cluster_open\n");
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 

@@ -37,7 +37,7 @@ $(EXTRA_MODEL_GEN_C): GenExtraTile
 
 extra_model: $(EXTRA_MODEL_GEN_C)
 
-APP_SRCS = main.c ../../ReID-Demo/network_process_manual.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC)
+APP_SRCS = main.c ../../ReID-Demo/network_process_manual.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c ../../ReID-Demo/ImgIO.c $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC)
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 

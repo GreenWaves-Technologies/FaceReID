@@ -1,0 +1,99 @@
+image: asmorkalov/gap_sdk
+
+stages:
+  - BuildDemo_GAPOC
+  - BuildDemo_GAPUINO
+  - BuildDemo_DUMP_DESCRIPTORS
+  - BuildDemo_GAPOC_STATIC
+  - BuildDemo_DUMP_DESCRIPTORS
+  - BuildDemo_GAPOC_STATIC_BLE
+  - BuildDemo_GAPOC_STATIC_BLE_SILENT
+  - BuildBleTest
+  - DbSelectorTest
+  - PreparePipelineTest
+  - SingleLayerTest
+  - InferenceTest
+
+BuildDemo_GAPOC:
+  stage: BuildDemo_GAPOC
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a all
+  artifacts:
+    paths:
+      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+
+BuildDemo_DUMP_DESCRIPTORS:
+  stage: BuildDemo_DUMP_DESCRIPTORS
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a DUMP_SUCCESSFUL_FRAME=1 all
+  artifacts:
+    paths:
+      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+
+BuildDemo_DUMP_DESCRIPTORS:
+  stage: BuildDemo_DUMP_DESCRIPTORS
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a DUMP_SUCCESSFUL_FRAME=1 all
+  artifacts:
+    paths:
+      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+
+BuildDemo_GAPOC_STATIC:
+  stage: BuildDemo_GAPOC_STATIC
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 all
+
+BuildDemo_GAPOC_STATIC_BLE:
+  stage: BuildDemo_GAPOC_STATIC_BLE
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 BLE_NOTIFIER=1 all
+
+BuildDemo_GAPOC_STATIC_BLE_SILENT:
+  stage: BuildDemo_GAPOC_STATIC_BLE_SILENT
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 BLE_NOTIFIER=1 SILENT=1 all
+  artifacts:
+    paths:
+      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+
+BuildDemo_GAPUINO:
+  stage: BuildDemo_GAPUINO
+BuildDemo_GAPUINO:
+  stage: BuildDemo_GAPUINO
+  script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapuino all
+
+SingleLayerTest:
+  stage: SingleLayerTest
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_layers_one_by_one.sh -gapuino
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/single_layer_test_summary.csv
+      - tests/single_logs/*.log
+  tags:
+    - gapuino
+
+InferenceTest:
+  stage: InferenceTest
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh -gapuino
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/inference_test_summary.csv
+      - tests/inference_logs/*.log
+  tags:
+    - gapuino
+
+DbSelectorTest:
+  stage: DbSelectorTest
+  script: source /gap_sdk/sourceme.sh && cd ./tests/db_selector_test && make run
+  tags:
+    - gapuino
+
+BuildBleTest:
+  stage: BuildBleTest
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ble_test && make all
+
+PreparePipelineTest:
+  stage: PreparePipelineTest
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ./test_prepare_pipeline.sh -gapuino
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/prepare_pipeline_logs/*
+  tags:
+    - gapuino
