@@ -266,7 +266,7 @@ void body(void* parameters)
     }
     PRINTF("Initializing display done\n");
 
-    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, display_orientation);
+    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, &display_orientation);
 
     writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
     setTextColor(&display,0x0000);
@@ -397,7 +397,7 @@ void body(void* parameters)
         PRINTF("Error: display init failed\n");
         pmsis_exit(-5);
     }
-    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, display_orientation);
+    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, &display_orientation);
     writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
     setTextColor(&display,0x0000);
     add_gwt_logo(&display);
