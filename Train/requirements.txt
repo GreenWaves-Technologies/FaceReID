@@ -1,0 +1,13 @@
+Cython
+h5py
+numpy
+Pillow
+torch>=0.4.1
+torchvision>=0.2.1
+tqdm
+glog
+matplotlib
+opencv-python
+tensorboardX
+scipy==1.1.0
+sklearn
