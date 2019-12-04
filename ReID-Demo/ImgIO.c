@@ -51,10 +51,10 @@ static void progress_bar(const char *prefix, int n, int tot)
 }
 
 static unsigned int SkipComment(unsigned char *Img, unsigned int Ind)
-
 {
 	while (Img[Ind] == '#') {
-		while (Img[Ind] != '\n') {PRINTF("%c", Img[Ind]);Ind++;}
+		PRINTF("#");
+		do { Ind++; PRINTF("%c", Img[Ind]); } while (Img[Ind] != '\n');
 		Ind++;
 	}
 	return Ind;
