@@ -36,22 +36,19 @@
 #define PPM_HEADER 40
 #define CHUNK_SIZE 8192
 
-static void progress_bar(char * OutString, int n, int tot){
-	int tot_chars = 30;
-	PRINTF("%s",OutString);
-	PRINTF(" [");
-	int chars = (n*tot_chars)/tot;
+static void progress_bar(const char *prefix, int n, int tot)
+{
+#define PB_CHARS   30
 
-	for(int i=0;i<tot_chars;i++){
-		if(i<=chars)
-			PRINTF("#");
-		else PRINTF(" ");
-	}
-	PRINTF("]");
-	PRINTF("\n");
+	int chars = (n * PB_CHARS) / tot;
 
+	char bar[PB_CHARS + 1];
+	for (int i = 0; i < PB_CHARS; i++)
+		bar[i] = (i <= chars) ? '#' : ' ';
+	bar[PB_CHARS] = '\0';
+
+	PRINTF("%s [%s]\n", prefix, bar);
 }
-
 
 static unsigned int SkipComment(unsigned char *Img, unsigned int Ind)
 
