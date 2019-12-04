@@ -33,14 +33,6 @@
 #define PRINTF printf
 #endif  /* DEBUG */
 
-#if defined(USE_PS2_KEYBOARD) && defined(STATIC_FACE_DB)
-# error("Static DB is read-only DB. Users management with PS/2 keybard is not possible.");
-#endif
-
-#if defined(USE_PS2_KEYBOARD) && !defined(HAVE_DISPLAY)
-# error("PS/2 Keyboard can be used with display only.");
-#endif
-
 #if defined(_FOR_GAPOC_)
 #define CAMERA_WIDTH    (((640/2)/4)*4)
 #define CAMERA_HEIGHT   (((480/2)/4)*4)
