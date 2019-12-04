@@ -91,9 +91,8 @@ static void body(void* parameters)
     }
     PRINTF("Initializing display done\n");
 
-    int display_orientation = PI_ILI_ORIENTATION_270;
-    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, &display_orientation);
-    writeFillRect(&display, 0, 0, 240, 320, 0xFFFF);
+    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, (void *)PI_ILI_ORIENTATION_270);
+    writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
 #endif
 
     PRINTF("NINA BLE module test body\n");

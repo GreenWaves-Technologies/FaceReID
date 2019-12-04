@@ -46,7 +46,7 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
 
 #if defined(HAVE_DISPLAY)
     setCursor(display, 0, 220);
-    writeFillRect(display, 0, LCD_OFF_Y, 240, 320, 0xFFFF);
+    writeFillRect(display, 0, LCD_OFF_Y, 320, 240, 0xFFFF);
     writeText(display, "Enabling BLE", 2);
 #endif
 
