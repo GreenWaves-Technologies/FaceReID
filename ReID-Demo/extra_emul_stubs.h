@@ -17,10 +17,6 @@
 #ifndef __EXTRA_EMUL_STUBS_H__
 #define __EXTRA_EMUL_STUBS_H__
 
-#ifndef PPM_HEADER
-# define PPM_HEADER                          40
-#endif
-
 #ifndef RT_FREQ_DOMAIN_FC
 # define RT_FREQ_DOMAIN_FC 0
 #endif

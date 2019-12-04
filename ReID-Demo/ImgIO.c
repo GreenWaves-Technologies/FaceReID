@@ -33,6 +33,7 @@
 
 #define ALIGN(Value, Size)      (((Value)&((1<<(Size))-1))?((((Value)>>(Size))+1)<<(Size)):(Value))
 
+#define PPM_HEADER 40
 #define CHUNK_SIZE 8192
 
 static void progress_bar(char * OutString, int n, int tot){
@@ -221,9 +222,7 @@ static void WritePPMHeader(int FD, unsigned int W, unsigned int H)
   	/* 255 <cr> */
   	Buffer[Ind++] = 0x32; Buffer[Ind++] = 0x35; Buffer[Ind++] = 0x35; Buffer[Ind++] = 0xA;
 
-  	for (unsigned int a=0; a<Ind; a++){
-  		rt_bridge_write(FD,&(Buffer[a]), sizeof(unsigned char),NULL);
-	}
+	rt_bridge_write(FD, Buffer, Ind * sizeof(unsigned char), NULL);
 
 	rt_free( RT_ALLOC_L2_CL_DATA, Buffer, PPM_HEADER*sizeof(unsigned char));
 
