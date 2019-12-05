@@ -149,7 +149,8 @@ void body(void * parameters)
 
     pi_open_from_conf(&fs, &conf);
 
-    if (int error = pi_fs_mount(&fs))
+    int error;
+    if (error = pi_fs_mount(&fs))
     {
         PRINTF("Error: FS mount failed with error %d\n", error);
         pmsis_exit(-3);

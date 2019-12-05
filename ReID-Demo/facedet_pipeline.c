@@ -36,7 +36,7 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
     unsigned int Log2Core;
     unsigned int Chunk;
 
-    NCore = pi_nb_cluster_cores();
+    NCore = pi_cl_cluster_nb_cores();
     Log2Core = gap_fl1(NCore);
     Chunk = (X>>Log2Core) + ((X&(NCore-1))!=0);
     return Chunk;
@@ -60,7 +60,7 @@ void detection_cluster_init(ArgCluster_T *ArgC)
     rt_perf_init(ArgC->perf);
     // Configure performance counters for counting the cycles
     rt_perf_conf(ArgC->perf, (1<<RT_PERF_CYCLES));
-    //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, pi_nb_cluster_cores());
+    //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, pi_cl_cluster_nb_cores());
     #endif
 }
 
@@ -100,7 +100,7 @@ static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_rep
 
 void detection_cluster_main(ArgCluster_T *ArgC)
 {
-    unsigned int MaxCore = pi_nb_cluster_cores();
+    unsigned int MaxCore = pi_cl_cluster_nb_cores();
 
     #ifdef PERF_COUNT
     gap_cl_starttimer();
