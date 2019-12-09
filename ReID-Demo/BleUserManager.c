@@ -209,7 +209,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
 
 #if defined(HAVE_DISPLAY)
     setCursor(display, 0, 220);
-    writeFillRect(context.display, 0, LCD_OFF_Y, 240, 320, 0xFFFF);
+    writeFillRect(context.display, 0, LCD_OFF_Y, 320, 240, 0xFFFF); // clear whole screen except the logo
     writeText(display, "Loading Photos", 2);
 #endif
 
@@ -233,7 +233,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Switching to UART mode\n");
 #if defined(HAVE_DISPLAY)
     setCursor(display, 0, 220);
-    writeFillRect(context.display, 0, LCD_OFF_Y, 240, 320, 0xFFFF);
+    writeFillRect(context.display, 0, 220, 240, 8*2, 0xFFFF);
     writeText(display, "Enabling BLE", 2);
 #endif
 
