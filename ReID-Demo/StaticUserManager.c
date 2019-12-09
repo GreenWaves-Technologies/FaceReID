@@ -31,7 +31,7 @@ int initHandler(struct pi_device* fs)
 
 int prepareStranger(void* preview)
 {
-
+    return 0;
 }
 
 int handleStranger(short* descriptor)

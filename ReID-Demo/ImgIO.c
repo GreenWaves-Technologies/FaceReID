@@ -33,30 +33,28 @@
 
 #define ALIGN(Value, Size)      (((Value)&((1<<(Size))-1))?((((Value)>>(Size))+1)<<(Size)):(Value))
 
+#define PPM_HEADER 40
 #define CHUNK_SIZE 8192
 
-static void progress_bar(char * OutString, int n, int tot){
-	int tot_chars = 30;
-	PRINTF("%s",OutString);
-	PRINTF(" [");
-	int chars = (n*tot_chars)/tot;
+static void progress_bar(const char *prefix, int n, int tot)
+{
+#define PB_CHARS   30
 
-	for(int i=0;i<tot_chars;i++){
-		if(i<=chars)
-			PRINTF("#");
-		else PRINTF(" ");
-	}
-	PRINTF("]");
-	PRINTF("\n");
+	int chars = (n * PB_CHARS) / tot;
 
+	char bar[PB_CHARS + 1];
+	for (int i = 0; i < PB_CHARS; i++)
+		bar[i] = (i <= chars) ? '#' : ' ';
+	bar[PB_CHARS] = '\0';
+
+	PRINTF("%s [%s]\n", prefix, bar);
 }
 
-
 static unsigned int SkipComment(unsigned char *Img, unsigned int Ind)
-
 {
 	while (Img[Ind] == '#') {
-		while (Img[Ind] != '\n') {PRINTF("%c", Img[Ind]);Ind++;}
+		PRINTF("#");
+		do { Ind++; PRINTF("%c", Img[Ind]); } while (Img[Ind] != '\n');
 		Ind++;
 	}
 	return Ind;
@@ -221,9 +219,7 @@ static void WritePPMHeader(int FD, unsigned int W, unsigned int H)
   	/* 255 <cr> */
   	Buffer[Ind++] = 0x32; Buffer[Ind++] = 0x35; Buffer[Ind++] = 0x35; Buffer[Ind++] = 0xA;
 
-  	for (unsigned int a=0; a<Ind; a++){
-  		rt_bridge_write(FD,&(Buffer[a]), sizeof(unsigned char),NULL);
-	}
+	rt_bridge_write(FD, Buffer, Ind * sizeof(unsigned char), NULL);
 
 	rt_free( RT_ALLOC_L2_CL_DATA, Buffer, PPM_HEADER*sizeof(unsigned char));
 
