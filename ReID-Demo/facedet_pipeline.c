@@ -36,7 +36,7 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
     unsigned int Log2Core;
     unsigned int Chunk;
 
-    NCore = pi_nb_cluster_cores();
+    NCore = gap_ncore();
     Log2Core = gap_fl1(NCore);
     Chunk = (X>>Log2Core) + ((X&(NCore-1))!=0);
     return Chunk;
@@ -100,7 +100,7 @@ static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_rep
 
 void detection_cluster_main(ArgCluster_T *ArgC)
 {
-    unsigned int MaxCore = pi_nb_cluster_cores();
+    unsigned int MaxCore = gap_ncore();
 
     #ifdef PERF_COUNT
     gap_cl_starttimer();
