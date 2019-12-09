@@ -60,7 +60,7 @@ void detection_cluster_init(ArgCluster_T *ArgC)
     rt_perf_init(ArgC->perf);
     // Configure performance counters for counting the cycles
     rt_perf_conf(ArgC->perf, (1<<RT_PERF_CYCLES));
-    //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, pi_nb_cluster_cores());
+    //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, gap_ncore());
     #endif
 }
 

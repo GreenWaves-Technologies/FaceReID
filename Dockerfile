@@ -31,17 +31,21 @@ RUN apt-get update && \
         scons \
         gtkwave \
         libsndfile1-dev \
-        imagemagick && \
-        ln -s /usr/bin/libftdi-config /usr/bin/libftdi1-config && \
-        ln -s /usr/lib/x86_64-linux-gnu/libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4 && \
+        imagemagick \
+        rsync \
+        autoconf \
+        automake \
+        texinfo \
+        libtool \
+        pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install wheel && pip3 install pyelftools opencv-python
+RUN pip3 install wheel && pip3 install opencv-python
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 RUN mkdir -p /tmp/toolchain && cd /tmp/toolchain && \
-    git lfs clone https://github.com/GreenWaves-Technologies/gap_riscv_toolchain.git . && \
+    git clone https://github.com/GreenWaves-Technologies/gap_riscv_toolchain_ubuntu_18.git . && \
     ./install.sh && \
     rm -rf /tmp/toolchain
 
@@ -55,6 +59,7 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
       git checkout master && \
       git submodule update --init --recursive && \
+      pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
       source ./sourceme.sh && make all autotiler
 
