@@ -38,11 +38,9 @@ RUN apt-get update && \
         texinfo \
         libtool \
         pkg-config && \
-        ln -s /usr/bin/libftdi-config /usr/bin/libftdi1-config && \
-        ln -s /usr/lib/x86_64-linux-gnu/libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install wheel && pip3 install pyelftools opencv-python prettytable
+RUN pip3 install wheel && pip3 install opencv-python
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
@@ -61,6 +59,7 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
       git checkout master && \
       git submodule update --init --recursive && \
+      pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
       source ./sourceme.sh && make all autotiler
 
