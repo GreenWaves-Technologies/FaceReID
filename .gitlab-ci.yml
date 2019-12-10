@@ -58,7 +58,7 @@ BuildDemo_GAPUINO:
 
 SingleLayerTest:
   stage: SingleLayerTest
-  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_layers_one_by_one.sh -gapuino
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_bn ./activations_dump && ./test_layers_one_by_one.sh -gapuino
   artifacts:
     when: on_failure
     paths:
@@ -69,7 +69,7 @@ SingleLayerTest:
 
 InferenceTest:
   stage: InferenceTest
-  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh -gapuino
+  script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_bn ./activations_dump && ./test_inference.sh -gapuino
   artifacts:
     when: on_failure
     paths:

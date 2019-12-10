@@ -108,7 +108,7 @@ python train_imgreid.py \
 --landmarks-path data/LFW/landmarks.txt \
 --euclid-loss lifted \ # what euclidean-based loss should be used. Possible options: triplet or lifted
 --train-sampler RandomIdentitySampler \ # sampler for trainloader
---convbn False # run training with batch norm augmentation
+--convbn False # run training with batch normalization
 ```
 
 There are some key points will be displayed before training:
