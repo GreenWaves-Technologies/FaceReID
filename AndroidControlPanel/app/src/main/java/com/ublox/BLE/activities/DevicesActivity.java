@@ -49,7 +49,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private static final int REQUEST_ENABLE_BT = 1;
 
     public static final String EXTRA_DEVICE = "device";
-    public static final String EXTRA_REMOTE = "remote";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
