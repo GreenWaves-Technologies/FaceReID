@@ -29,7 +29,7 @@ echo "Generating Model"
 make -C ../ReID-Demo clean > ./inference_logs/model_generaition.log 2>&1
 make -j8 -C ../ReID-Demo reid_model >> ./inference_logs/model_generaition.log 2>&1 # to generate layers blobs for GAP
 
-../scripts/json2bin.py ./activations_dump/conv1/input.json ./first_n_layers_test/input.bin
+../scripts/json2bin.py ./activations_dump/conv1.0/input.json ./first_n_layers_test/input.bin
 cd first_n_layers_test
 
 make -f $MAKEFILE_NAME clean > /dev/null 2>&1
