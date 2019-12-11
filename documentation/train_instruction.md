@@ -100,15 +100,14 @@ python train_imgreid.py \
 --save-dir <path to save checkpoints> \ # where to save the log and models
 --train-batch-size 768 \
 --eval-freq 1 \ # evaluation frequency
---mean 0.449 \
---std 0.225 \
 --distance l2 \
 --xent-loss xent \ # use cross entropy loss
 --gpu-devices 0 \ # gpu device ids for CUDA_VISIBLE_DEVICES
 --landmarks-path data/LFW/landmarks.txt \
 --euclid-loss lifted \ # what euclidean-based loss should be used. Possible options: triplet or lifted
 --train-sampler RandomIdentitySampler \ # sampler for trainloader
---convbn False # run training with batch normalization
+--no-normalize
+--convbn # run training with batch normalization
 ```
 
 There are some key points will be displayed before training:

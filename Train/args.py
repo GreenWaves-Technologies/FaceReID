@@ -43,8 +43,6 @@ def argument_parser():
     # ************************************************************
     # LFW-specific settings
     # ************************************************************
-    parser.add_argument('--val-step', type=int, default=200,
-                        help="step for validation on LFW")
     parser.add_argument('--show-failed', action='store_true', help="show misclassified LFW pairs")
     parser.add_argument('--distmat-hist', action='store_true',
                         help='Distances histogram for elements in validation set')
