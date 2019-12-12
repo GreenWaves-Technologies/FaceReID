@@ -24,6 +24,10 @@ if(len(sys.argv) <= 2):
     print("Inpunt and output files are not set in command line\n")
     sys.exit(-1)
 
+tolerance = 1
+if(len(sys.argv) > 3):
+    tolerance = int(sys.argv[3])
+
 with open(sys.argv[1], "rt") as js_input:
     data = json.load(js_input)
 
@@ -46,7 +50,7 @@ for g in gold:
     diff_sum = diff_sum + diff
     if(diff > max_diff):
         max_diff = diff
-    if(diff > 1):
+    if(diff > tolerance):
         outlier_count = outlier_count + 1
 
 bin_output.close()
