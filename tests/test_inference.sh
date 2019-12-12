@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-tolerance=5 
+tolerance=4
 
 if [ "$1" = "-gapoc" ]; then
     MAKEFILE_NAME="Makefile BOARD_NAME=gapoc_a"
