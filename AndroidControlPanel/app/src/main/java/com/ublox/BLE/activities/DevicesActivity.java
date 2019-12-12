@@ -8,8 +8,10 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,6 +33,8 @@ import com.ublox.BLE.utils.UBloxDevice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
@@ -43,6 +47,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private static final String TAG = DevicesActivity.class.getSimpleName();
     private static final int LOCATION_REQUEST = 255;
     private LeDeviceListAdapter mLeDeviceListAdapter;
+    private Set<String> favorites;
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
 
@@ -77,7 +82,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
-
     }
 
     @Override
@@ -117,15 +121,19 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
         if (!mBluetoothAdapter.isEnabled()) {
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
+
+        // Reload the list of favourites
+        Context context = getApplicationContext();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+        favorites = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
     }
 
     private void setListAdapter(BaseAdapter baseAdapter) {
@@ -229,7 +237,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
                 notifyDataSetChanged();
             }
             if (!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
+                if (favorites.contains(device.getAddress())) {
+                    mLeDevices.add(0, device);
+                } else {
+                    mLeDevices.add(device);
+                }
                 notifyDataSetChanged();
             }
         }

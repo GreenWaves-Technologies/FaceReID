@@ -34,6 +34,8 @@
     <string name="remote_start_button">Stop</string>
     <string name="remote_stop_button">Start</string>
 
+    <string name="preferences_key">favorites</string>
+
     <string-array name="conn_prio">
         <item>BALANCED</item>
         <item>HIGH</item>
