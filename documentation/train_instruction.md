@@ -2,7 +2,7 @@
 
 ## Installation and enviroment setup
 
-Then download and install CUDA following the official instructions on the website:
+Download and install CUDA following the official instructions on the website:
 
 `https://docs.nvidia.com/cuda/cuda-installation-guide-linux/`
 
@@ -98,7 +98,7 @@ python train_imgreid.py \
 --source-names vggface2 \ # source dataset for training
 --target-names lfw \ # target dataset for test
 --save-dir <path to save checkpoints> \ # where to save the log and models
---train-batch-size 768 \
+--train-batch-size 256 \
 --eval-freq 1 \ # evaluation frequency
 --distance l2 \
 --xent-loss xent \ # use cross entropy loss

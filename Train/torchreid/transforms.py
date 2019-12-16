@@ -34,7 +34,7 @@ class Random2DTranslation(object):
         """
         if random.uniform(0, 1) > self.p:
             return img.resize((self.width, self.height), self.interpolation)
-        
+
         new_width, new_height = int(round(self.width * 1.125)), int(round(self.height * 1.125))
         resized_img = img.resize((new_width, new_height), self.interpolation)
         x_maxrange = new_width - self.width
@@ -95,7 +95,7 @@ def build_transforms(height, width, is_train, grayscale=False, no_normalize=Fals
     - width (int): target image width.
     - is_train (bool): train or test phase.
     """
-    
+
     # use imagenet mean and std as default
 
     grayscale_mean = [0.449]
@@ -108,6 +108,8 @@ def build_transforms(height, width, is_train, grayscale=False, no_normalize=Fals
     if is_train:
         transforms += [Random2DTranslation(height, width)]
         transforms += [RandomHorizontalFlip()]
+        transforms += [ColorJitter(0.5, 0.5, 0.5, 0.25)]
+
     else:
         transforms += [Resize((height, width))]
 
