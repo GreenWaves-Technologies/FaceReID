@@ -81,6 +81,8 @@ class ImageDataManager(BaseDataManager):
         transform_train = build_transforms(self.height, self.width, is_train=True, **kwargs)
         transform_test = build_transforms(self.height, self.width, is_train=False, **kwargs)
 
+        self.transform_test = transform_test
+        self.transform_train = transform_train
         print("=> Initializing TRAIN (source) datasets")
         self.train = []
         self._num_train_pids = 0
@@ -124,12 +126,16 @@ class ImageDataManager(BaseDataManager):
         else:
             def sampler(data_source): return None
             shuffle = True
-        self.trainloader = DataLoader(
-            ImageDataset(self.train, transform=transform_train),
-            sampler=sampler(self.train),
-            batch_size=self.train_batch_size, shuffle=shuffle, num_workers=self.workers,
-            pin_memory=self.pin_memory, drop_last=True
-        )
+
+        if len(self.train):
+            self.trainloader = DataLoader(
+                ImageDataset(self.train, transform=transform_train),
+                sampler=sampler(self.train),
+                batch_size=self.train_batch_size, shuffle=shuffle, num_workers=self.workers,
+                pin_memory=self.pin_memory, drop_last=True
+            )
+        else:
+            self.trainloader = None
 
         print("=> Initializing TEST (target) datasets")
         self.testloader_dict = {name: {'query': None, 'gallery': None, 'test': None} for name in self.target_names}

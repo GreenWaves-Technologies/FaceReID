@@ -195,16 +195,18 @@ def argument_parser():
     parser.add_argument('--convert-to-onnx', action='store_true',
                         help="Convert to ONNX")
     parser.add_argument('--absorb-bn', action='store_true')
-    parser.add_argument('--quantization', action='store_true', help='Emulate quantized 16 bits inference')
-    parser.add_argument('--quantized', action='store_true', help='Flag that loaded model is already quantized')
-    parser.add_argument('--bits', type=int, default=16, help='Number of bits to store quantized values')
     parser.add_argument('--infer', action='store_true', help='run inference of the network')
     parser.add_argument('--image-path', type=str, default='face.jpg', help='Image to run inference on')
     parser.add_argument('--save-quantized-model', action='store_true', help='Save quantized weights')
-    parser.add_argument('--save-quantized-pytorch-model', action='store_true', help='Save quantized weights in pth file')
     parser.add_argument('--distance', type=str, choices=['l2', 'cosine'], default='l2', help='Distance to use')
     parser.add_argument('--convbn', action='store_true',
-                        help='Normalize features vector on the output of the network')
+                        help='Use batch normalizations for convolutions')
+    # ************************************************************
+    # Quantization
+    # ************************************************************
+    parser.add_argument('--quantization', action='store_true', help='Emulate quantized 16 bits inference')
+    parser.add_argument('--bits', type=int, default=16, help='Number of bits to store quantized values')
+    parser.add_argument('--quant-data-dir', type=str, help="path to the directory with images for quantization")
     return parser
 
 

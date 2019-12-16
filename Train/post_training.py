@@ -29,10 +29,6 @@ from torchreid.utils.reidtools import visualize_ranked_results, distmat_hist, ca
 from torchreid.eval_metrics import test
 from torchreid.utils.load_weights import load_weights
 from torchreid.utils.absorb_bn import search_absorbed_bn
-from torchreid.utils.quantization import collect_stats, quantize_hook, save_quantized_weights, save_act_hook
-from torchreid.utils.convert import convert_to_onnx
-from torchreid.utils.inference import inference
-from test_on_lfw import roc_auc
 from torchreid.evaluate_lfw import evaluate, compute_embeddings_lfw
 
 
@@ -69,93 +65,62 @@ def main():
     print("Initializing model: {}".format(args.arch))
     model = models.init_model(name=args.arch, num_classes=num_train_pids, loss={'xent', 'htri'},
                               pretrained=False if args.load_weights else 'imagenet', grayscale=args.grayscale,
-                              ceil_mode=not args.convert_to_onnx, infer=True,
-                              quantized=args.quantization or args.quantized, bits=args.bits,
-                              normalize_embeddings=args.normalize_embeddings, normalize_fc=args.normalize_fc)
+                              ceil_mode=not args.convert_to_onnx, infer=True, bits=args.bits,
+                              normalize_embeddings=args.normalize_embeddings, normalize_fc=args.normalize_fc, convbn=args.convbn)
     print("Model size: {:.3f} M".format(count_num_param(model)))
 
     if args.load_weights and check_isfile(args.load_weights):
-        # if args.quantized:
-        #     num_channels = 3
-        #     if args.grayscale:
-        #         num_channels = 1
-        #     model.eval()
         #     _ = model(torch.rand(1, num_channels, 224, 224))
         # load pretrained weights but ignore layers that don't match in size
         load_weights(model, args.load_weights)
         print("Loaded pretrained weights from '{}'".format(args.load_weights))
 
-    if args.convert_to_onnx:
-        convert_to_onnx(model, args)
-        return
-
-    mean = torch.tensor(args.mean)
-    std = torch.tensor(args.std)
-    scale = 255
-
-    if args.no_normalize and not args.quantized:
-        model.conv1.bias.data = model.conv1.bias.data - model.conv1.weight.data[:, 0, 0, 0] * mean / std
-        model.conv1.weight.data /= (scale * std)
-    print(model.conv1.bias.data, model.conv1.weight.data)
     if args.absorb_bn:
         search_absorbed_bn(model)
 
+    if args.quantization or args.save_quantized_model:
+        from gap_quantization.quantization import ModelQuantizer
+
+        if args.quant_data_dir is None:
+            raise AttributeError('quant-data-dir argument is required.')
+
+        num_channels = 1 if args.grayscale else 3
+        cfg = {
+            "bits": args.bits,  # number of bits to store weights and activations
+            "accum_bits": 32,  # number of bits to store intermediate convolution result
+            "signed": True,  # use signed numbers
+            "save_folder": args.save_dir,  # folder to save results
+            "data_source": args.quant_data_dir,  # folder with images to collect dataset statistics
+            "use_gpu": False,  # use GPU for inference
+            "batch_size": 1,
+            "num_workers": 0,  # number of workers for PyTorch dataloader
+            "verbose": True,
+            "save_params": args.save_quantized_model,  # save quantization parameters to the file
+            "quantize_forward": True,  # replace usual convs, poolings, ... with GAP-like ones
+            "num_input_channels": num_channels,
+            "raw_input": args.no_normalize
+        }
+
+        model = model.cpu()
+        quantizer = ModelQuantizer(model, cfg, dm.transform_test)  # transform test is OK if we use args.no_normalize
+        quantizer.quantize_model()                                  # otherwise we need to add QuantizeInput operation
+
+        if args.infer:
+            if args.image_path == '':
+                raise AttributeError('Image for inference is required')
+
+            quantizer.dump_activations(args.image_path, dm.transform_test,
+                                       save_dir=os.path.join(args.save_dir, 'activation_dump'))
+
     if use_gpu:
-        # model = nn.DataParallel(model).cuda()
+        model = nn.DataParallel(model).cuda()
         model = model.cuda()
 
-    if args.quantization or args.save_quantized_model:
-        if args.no_normalize:
-            int_input_bits = 15  # input is a tensor filled with 8-bit integers
-        else:
-            int_input_bits = 2  # can be derived from normalize transform parameters
-
-        if args.quantization:
-            hook = partial(quantize_hook, bits=args.bits, int_input_bits=int_input_bits, accum_bits=32)
-
-        handles = []
-        for name, module in model.named_modules():
-            handles.append(module.register_forward_hook(partial(hook, module_name=name)))
-
-        collect_stats(model, testloader_dict[args.target_names[0]]['query'], use_gpu)
-        for handle in handles:  # delete forward hooks
-            handle.remove()
-        if args.save_quantized_pytorch_model:
-            # if use_gpu:
-            #     state_dict = model.module.state_dict()
-            # else:
-            state_dict = model.state_dict()
-            save_checkpoint({
-                'state_dict': state_dict,
-                # 'lfw_acc': all_acc,  # rank1 on the last measured dataset!
-                # 'epoch': epoch,
-                # 'optim': optimizer.state_dict()
-            }, False, args.load_weights[:args.load_weights.find('.')] + '_quantized.pth.tar')
-            print('quantized model was saved to ', args.load_weights[:args.load_weights.find('.')] + '_quantized.pth.tar')
-        if args.save_quantized_model:
-            for name, module in model.named_modules():
-                save_quantized_weights(module, name, os.path.join(args.save_dir, 'quantized_model'))
-        print('Weights were quantized!')
-
-    if args.infer:
-        if args.image_path == '':
-            raise AttributeError('Image for inference is required')
-
-        handles = []
-        for name, module in model.named_modules():
-            hook = partial(save_act_hook, save_dir=os.path.join(args.save_dir, 'activation_dump'), name=name)
-            handles.append(module.register_forward_hook(hook))
-        inference(model, args.image_path, args, use_gpu)
-
-        for handle in handles:  # delete forward hooks
-            handle.remove()
 
     if args.evaluate:
         print("Evaluate only")
 
         for name in args.target_names:
-            if 'msceleb' in name.lower():
-                continue
             if not 'lfw' in name.lower():
                 print("Evaluating {} ...".format(name))
                 queryloader = testloader_dict[name]['query']
