@@ -64,7 +64,7 @@ make -j8 -C ../ReID-Demo reid_model >> ./groups_logs/model_generaition.log 2>&1 
 
 echo "Stop macro; Output blob; Found outliers; Max diff; Diff summary;" > group_layer_test_summary.csv
 
-../scripts/json2bin.py ./activations_dump/conv1/input.json ./first_n_layers_test/input.bin
+../scripts/json2bin.py ./activations_dump/conv1.0/input.json ./first_n_layers_test/input.bin
 cd first_n_layers_test
 
 status=0

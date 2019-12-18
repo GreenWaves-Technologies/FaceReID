@@ -17,7 +17,7 @@
     # create virtual environment using virtualenv (in this example)/pyvenv/conda/etc.
     $ virtualenv -p /usr/bin/python3 ./venv
     $ . venv/bin/activate
-    $ pip3 install -r ./requirements-dev.txt
+    $ pip3 install -r ./requirements.txt
 
 ```
 
@@ -54,8 +54,8 @@ Copy file `norm_list.h` and put it into `ReID-Demo` folder.
 Use `-gapoc` as target platform if you're using Gapoc A board and `-gapuino` if you're using Gapuino board.
 You will see results of tests on each layer like this:
 ```
-    Layer 0: conv1/input.json => conv1/output.json
-    Layer 0: conv1/input.json => conv1/output.json PASSED
+    Layer 0: conv1.0/input.json => conv1.0/output.json
+    Layer 0: conv1.0/input.json => conv1.0/output.json PASSED
 
 ```
 

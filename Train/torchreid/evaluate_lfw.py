@@ -88,7 +88,7 @@ def load_embedding(file_path):
 def compute_embeddings_lfw(args, dataset, model, batch_size, dump_embeddings,
                            pdist, flipped_embeddings=False, load_embeddings=False):
     """Computes embeddings of all images from the LFW dataset using PyTorch"""
-    val_loader = DataLoader(dataset, batch_size=batch_size, num_workers=4, shuffle=False)
+    val_loader = DataLoader(dataset, batch_size=batch_size, num_workers=0, shuffle=False)
     scores_with_gt = []
     embeddings = []
     ids = []

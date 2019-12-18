@@ -270,40 +270,6 @@ def train(epoch, model, criterions, optimizer, trainloader, use_gpu, train_write
     for batch_idx, (imgs, pids, _, _) in enumerate(trainloader):
         iteration = epoch * len(trainloader) + batch_idx
 
-        if lfw is not None and iteration % args.val_step == 0 and iteration != 0:
-            checkpoint_name = osp.join(args.save_dir, 'checkpoint_ep' + str(epoch + 1)+ '_iter' + str(batch_idx + 1) + '.pth.tar')
-
-            log.info('Evaluating Snapshot: ' + checkpoint_name)
-            model.eval()
-            same_acc, diff_acc, all_acc, auc, thresh = evaluate(args, lfw, model, compute_embeddings_lfw,
-                                                        args.test_batch_size, verbose=False)
-
-            if iteration > 0:
-                log.info('Saving Snapshot: ' + checkpoint_name)
-                if use_gpu:
-                    state_dict = model.module.state_dict()
-                else:
-                    state_dict = model.state_dict()
-
-                save_checkpoint({
-                    'state_dict': state_dict,
-                    'lfw_acc': all_acc,  # rank1 on the last measured dataset!
-                    'epoch': epoch,
-                    'optim': optimizer.state_dict()
-                }, False, checkpoint_name)
-
-            model.train()
-
-            print('Validation accuracy: {0:.4f}, {1:.4f}'.format(same_acc, diff_acc))
-            print('Validation accuracy mean: {0:.4f}'.format(all_acc))
-            print('Validation AUC: {0:.4f}'.format(auc))
-            print('Estimated threshold: {0:.4f}'.format(thresh))
-            train_writer.add_scalar('Accuracy/Val_same_accuracy', same_acc, iteration)
-            train_writer.add_scalar('Accuracy/Val_diff_accuracy', diff_acc, iteration)
-            train_writer.add_scalar('Accuracy/Val_accuracy', all_acc, iteration)
-            train_writer.add_scalar('Accuracy/AUC', auc, iteration)
-            #exit(-1)
-
         data_time.update(time.time() - end)
 
         if fixbase and batch_idx > 100:

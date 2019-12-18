@@ -2,7 +2,7 @@
 
 ## Installation and enviroment setup
 
-Then download and install CUDA following the official instructions on the website:
+Download and install CUDA following the official instructions on the website:
 
 `https://docs.nvidia.com/cuda/cuda-installation-guide-linux/`
 
@@ -98,16 +98,16 @@ python train_imgreid.py \
 --source-names vggface2 \ # source dataset for training
 --target-names lfw \ # target dataset for test
 --save-dir <path to save checkpoints> \ # where to save the log and models
---train-batch-size 768 \
+--train-batch-size 256 \
 --eval-freq 1 \ # evaluation frequency
---mean 0.449 \
---std 0.225 \
 --distance l2 \
 --xent-loss xent \ # use cross entropy loss
 --gpu-devices 0 \ # gpu device ids for CUDA_VISIBLE_DEVICES
 --landmarks-path data/LFW/landmarks.txt \
 --euclid-loss lifted \ # what euclidean-based loss should be used. Possible options: triplet or lifted
---train-sampler RandomIdentitySampler # sampler for trainloader
+--train-sampler RandomIdentitySampler \ # sampler for trainloader
+--no-normalize
+--convbn # run training with batch normalization
 ```
 
 There are some key points will be displayed before training:
