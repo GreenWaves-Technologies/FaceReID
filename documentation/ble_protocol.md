@@ -12,6 +12,8 @@ Gapoc A board includes Bluetooth LE module that makes possible smart door bell m
 
 # Administration Mode Test
 
+Pre-built Android application package: [link](https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
+
 The demo repository includes simple administration mode test in `tests/ble_test` folder. The test application for Gapoc A board loads photos and descriptors for Lena and Francesco from host to strangers list and invokes full users administration pipeline on push button press. Please do the following steps:
 
 0. Install and run GAP ReID app on you Android Phone.

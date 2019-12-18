@@ -15,7 +15,7 @@ For Gapuino board:
 For Gapoc A board:
 - Adafruit 2.8 TFT display with SPI interface
 - Push button, 10kOm resistor and some wires
-- Android-based smartphone
+- Android-based smartphone with [pre-built user management application] (https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
 
 # Documentation Pages
 
@@ -31,7 +31,7 @@ For Gapoc A board:
 
 # Papers
 
-- 512KiB RAM Is Enough! Live Camera Face Recognition DNN on MCU [link](http://openaccess.thecvf.com/content_ICCVW_2019/html/LPCV/Zemlyanikin_512KiB_RAM_Is_Enough_Live_Camera_Face_Recognition_DNN_on_ICCVW_2019_paper.html)
+- 512KiB RAM Is Enough! Live Camera Face Recognition DNN on MCU: [link](http://openaccess.thecvf.com/content_ICCVW_2019/html/LPCV/Zemlyanikin_512KiB_RAM_Is_Enough_Live_Camera_Face_Recognition_DNN_on_ICCVW_2019_paper.html)
 
 ```
 @InProceedings{Zemlyanikin_2019_ICCV,

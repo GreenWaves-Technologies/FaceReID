@@ -76,7 +76,7 @@ setup.h:
 
 # Tests
 
-0. Download and put activations dump to `tests/activations_dump` folder by [link](https://drive.google.com/open?id=15NbUlI_5Uwxx3owOLZvs6mSGNp7WjDrH) or use activations dump for self-trained network.
+0. Download and put activations dump to `tests/activations_dump` folder by [link](https://drive.google.com/open?id=1creh2qAjHYq2bLLcJoQS7W-q_B4pCIHN) or use activations dump for self-trained network.
 
 1. Run per-layer test:
 ```
