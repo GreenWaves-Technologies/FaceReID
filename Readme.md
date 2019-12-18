@@ -6,7 +6,7 @@ The project is aimed to create and deploy a smart doorbell application that woul
 
 # Target Platforms
 
-The demo is targeted for two boards Gapoc A and Gapuino. List of extra components is provided bellow.
+The demo is targeted for two boards Gapoc A and Gapuino and GAP SDK release 3.1. List of extra components is provided bellow.
 
 For Gapuino board:
 - HIGHMAX camera module
@@ -15,7 +15,7 @@ For Gapuino board:
 For Gapoc A board:
 - Adafruit 2.8 TFT display with SPI interface
 - Push button, 10kOm resistor and some wires
-- Android-based smartphone with [pre-built user management application] (https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
+- Android-based smartphone with [pre-built user management application](https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
 
 # Documentation Pages
 
@@ -42,3 +42,5 @@ month = {Oct},
 year = {2019}
 }
 ```
+
+- GreenWaves press release and demostration video: [link](https://greenwaves-technologies.com/face_reid_on_gap8/)
