@@ -3,13 +3,14 @@ package com.ublox.BLE.activities;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,30 +27,34 @@ import android.widget.Toast;
 
 import com.gwt.BLE.activities.MainActivity;
 import com.gwt.BLE.R;
+import com.ublox.BLE.bluetooth.BluetoothCentral;
+import com.ublox.BLE.bluetooth.BluetoothPeripheral;
+import com.ublox.BLE.bluetooth.BluetoothScanner;
 import com.ublox.BLE.interfaces.BluetoothDeviceRepresentation;
-import com.ublox.BLE.utils.UBloxDevice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_BONDING;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-public class DevicesActivity extends Activity implements AdapterView.OnItemClickListener {
+public class DevicesActivity extends Activity implements AdapterView.OnItemClickListener, BluetoothCentral.Delegate {
 
     private static final String TAG = DevicesActivity.class.getSimpleName();
     private static final int LOCATION_REQUEST = 255;
     private LeDeviceListAdapter mLeDeviceListAdapter;
+    private Set<String> favorites;
     private BluetoothAdapter mBluetoothAdapter;
-    private boolean mScanning;
+    private BluetoothCentral scanner;
 
     private static final int REQUEST_ENABLE_BT = 1;
 
     public static final String EXTRA_DEVICE = "device";
-    public static final String EXTRA_REMOTE = "remote";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,18 +65,13 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         setContentView(R.layout.activity_devices);
 
-        // Use this check to determine whether BLE is supported on the device.  Then you can
-        // selectively disable BLE-related features.
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
-        // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-
 
         // Checks if Bluetooth is supported on the device.
         if (mBluetoothAdapter == null) {
@@ -79,12 +79,14 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             finish();
         }
 
+        scanner = new BluetoothScanner(mBluetoothAdapter);
+        scanner.setDelegate(this);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_devices, menu);
-        if (!mScanning) {
+        if (scanner.getState() != BluetoothScanner.State.SCANNING) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_refresh).setActionView(null);
@@ -127,6 +129,12 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
+
+        // Reload the list of favourites
+        Context context = getApplicationContext();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+        favorites = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
     }
 
     private void setListAdapter(BaseAdapter baseAdapter) {
@@ -156,18 +164,17 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         if (enable) {
             verifyPermissionAndScan();
         } else {
-            mScanning = false;
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            scanner.stop();
         }
         invalidateOptionsMenu();
     }
 
     @TargetApi(23)
     private void verifyPermissionAndScan() {
-        if (ContextCompat.checkSelfPermission(this, ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED) {
-            startScan();
+        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED) {
+            scanner.scan(new ArrayList<>());
         } else {
-            requestPermissions(new String[] {ACCESS_COARSE_LOCATION}, LOCATION_REQUEST);
+            requestPermissions(new String[] {ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
         }
     }
 
@@ -176,15 +183,10 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         if (requestCode != LOCATION_REQUEST) return;
 
         if (grantResults.length > 0 && grantResults[0] == PERMISSION_GRANTED) {
-            startScan();
+            scanner.scan(new ArrayList<>());
         } else {
             Toast.makeText(this, R.string.location_permission_toast, Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void startScan() {
-        mScanning = true;
-        mBluetoothAdapter.startLeScan(mLeScanCallback);
     }
 
     @Override
@@ -193,16 +195,23 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             Log.d(TAG, "onListItemClick");
             BluetoothDeviceRepresentation device = mLeDeviceListAdapter.getDevice(position);
 
-            if (mScanning) {
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                mScanning = false;
-            }
+            scanner.stop();
 
-            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + String.valueOf(device == null));
             Intent intent = new Intent(this, MainActivity.class);
+            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + String.valueOf(device == null));
             intent.putExtra(EXTRA_DEVICE, device);
             startActivity(intent);
         }
+    }
+
+    @Override
+    public void centralChangedState(BluetoothCentral central) {
+        invalidateOptionsMenu();
+    }
+
+    @Override
+    public void centralFoundPeripheral(BluetoothCentral central, BluetoothPeripheral peripheral) {
+        runOnUiThread(() -> mLeDeviceListAdapter.addDevice(((com.ublox.BLE.bluetooth.BluetoothDevice) peripheral).toUbloxDevice(), peripheral.rssi()));
     }
 
     // Adapter for holding devices found through scanning.
@@ -230,7 +239,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
                 notifyDataSetChanged();
             }
             if (!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
+                if (favorites.contains(device.getAddress())) {
+                    mLeDevices.add(0, device);
+                } else {
+                    mLeDevices.add(device);
+                }
                 notifyDataSetChanged();
             }
         }
@@ -330,16 +343,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         }
 
     }
-
-    // Device scan callback.
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-
-                @Override
-                public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
-                    runOnUiThread(() -> mLeDeviceListAdapter.addDevice(new UBloxDevice(device), rssi));
-                }
-            };
 
     static class ViewHolder {
         ImageView imgRssi;

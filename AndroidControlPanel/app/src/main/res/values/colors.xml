@@ -18,10 +18,6 @@
 
 <resources>
     <color name="white_color">#FFFFFF</color>
-    <color name="gray_bg_color">#E5E5E5</color>
     <color name="gray_device_name">#63666f</color>
-    <color name="text_color">#333333</color>
     <color name="ublox_blue_color">#23a11d</color>
-    <color name="list_title_color">#666666</color>
-    <color name="chat_name_color">#BBBBBB</color>
 </resources>

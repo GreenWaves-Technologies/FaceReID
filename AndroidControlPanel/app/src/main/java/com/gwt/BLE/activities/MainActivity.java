@@ -8,8 +8,10 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,12 +32,13 @@ import android.widget.TextView;
 import com.gwt.BLE.R;
 import com.ublox.BLE.interfaces.BluetoothDeviceRepresentation;
 import com.ublox.BLE.services.BluetoothLeService;
-import com.ublox.BLE.services.BluetoothLeServiceReceiver;
 import com.ublox.BLE.utils.ConnectionState;
 import com.ublox.BLE.utils.GattAttributes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.ublox.BLE.services.BluetoothLeService.ITEM_TYPE_NOTIFICATION;
@@ -48,7 +51,6 @@ public class MainActivity extends Activity {
     private static final String TAG = "MyBleActivity";
 
     public static final String EXTRA_DEVICE = "device";
-    public static final String EXTRA_REMOTE = "remote";
 
     private static final byte BLE_ACK = (byte)0x33;
 
@@ -70,10 +72,11 @@ public class MainActivity extends Activity {
     private byte[] currentUserDescriptorToRead = new byte[512*2];
     private int currentUserDescriptorRead = 0;
 
-    private boolean isRemoteMode;
     private TextView tvStatus;
     private RelativeLayout rlProgress;
     private ListView androidListView;
+    private SharedPreferences preferences;
+    private Set<String> favorites;
 
     private BluetoothDeviceRepresentation mDevice;
 
@@ -91,10 +94,10 @@ public class MainActivity extends Activity {
     public final MyBroadcastReceiver mGattUpdateReceiver = new MyBroadcastReceiver();
 
     class PersonProfile {
-      public String name;
-      public byte[] photoData;
-      public byte[] descriptor;
-      public Bitmap photoPreview;
+        public String name;
+        public byte[] photoData;
+        public byte[] descriptor;
+        public Bitmap photoPreview;
     };
 
     ArrayList<PersonProfile> strangers;
@@ -168,9 +171,7 @@ public class MainActivity extends Activity {
                 tvStatus.setText(R.string.status_disconnected);
                 break;
             case CONNECTING:
-                if(!isRemoteMode) {
-                    tvStatus.setText(R.string.status_connecting);
-                }
+                tvStatus.setText(R.string.status_connecting);
                 break;
             case CONNECTED:
                 tvStatus.setText(R.string.status_connected);
@@ -204,6 +205,11 @@ public class MainActivity extends Activity {
             mConnectionState = ConnectionState.DISCONNECTED;
             mBluetoothLeService.unregister();
         } catch (Exception ignore) {}
+
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putStringSet(getString(R.string.preferences_key), favorites);
+        editor.commit();
+
         invalidateOptionsMenu();
     }
 
@@ -218,13 +224,15 @@ public class MainActivity extends Activity {
         tvStatus = findViewById(R.id.tvStatus);
         rlProgress = findViewById(R.id.rlProgress);
 
-        final Intent intent = getIntent();
-        isRemoteMode = intent.hasExtra(EXTRA_REMOTE);
         updateStatus();
+
+        Context context = getApplicationContext();
+        preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        favorites = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
 
         strangers = new ArrayList<>();
         PeopleListAdapter adapter = new PeopleListAdapter(this, strangers);
-        androidListView = (ListView) findViewById(R.id.person_list);
+        androidListView = findViewById(R.id.person_list);
         androidListView.setAdapter(adapter);
 
         androidListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -277,25 +285,20 @@ public class MainActivity extends Activity {
             }
         });
 
-        if(isRemoteMode) {
+        final Intent intent = getIntent();
+        connectToDevice((BluetoothDeviceRepresentation) intent.getParcelableExtra(EXTRA_DEVICE));
 
-            rlProgress.setVisibility(View.GONE);
+        // Get a ref to the actionbar and set the navigation mode
+        final ActionBar actionBar = getActionBar();
 
+        final String name = mDevice.getName();
+        if (!TextUtils.isEmpty(name)) {
+            getActionBar().setTitle(name);
         } else {
-            connectToDevice((BluetoothDeviceRepresentation) intent.getParcelableExtra(EXTRA_DEVICE));
-
-            // Get a ref to the actionbar and set the navigation mode
-            final ActionBar actionBar = getActionBar();
-
-            final String name = mDevice.getName();
-            if (!TextUtils.isEmpty(name)) {
-                getActionBar().setTitle(name);
-            } else {
-                getActionBar().setTitle(mDevice.getAddress());
-            }
-
-            actionBar.setDisplayShowCustomEnabled(true);
+            getActionBar().setTitle(mDevice.getAddress());
         }
+
+        actionBar.setDisplayShowCustomEnabled(true);
     }
 
     private void connectToDevice(BluetoothDeviceRepresentation bluetoothDevice) {
@@ -309,38 +312,38 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_connected, menu);
-        if(!isRemoteMode) {
-            switch (mConnectionState) {
-                case CONNECTED:
-                    Log.d(TAG, "Create menu in Connected mode");
-                    menu.findItem(R.id.menu_connect).setVisible(false);
-                    menu.findItem(R.id.menu_disconnect).setVisible(true);
-                    menu.findItem(R.id.menu_refresh_people).setVisible(true);
-                    break;
-                case CONNECTING:
-                    Log.d(TAG, "Create menu in Connecting mode");
-                    menu.findItem(R.id.menu_connect).setVisible(false);
-                    menu.findItem(R.id.menu_disconnect).setVisible(false);
-                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                    break;
-                case DISCONNECTED:
-                    Log.d(TAG, "Create menu in Disconnected mode");
-                    menu.findItem(R.id.menu_connect).setVisible(true);
-                    menu.findItem(R.id.menu_disconnect).setVisible(false);
-                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                    break;
-                case BLE_EXCHANGE:
-                    Log.d(TAG, "Create menu in Exchange mode");
-                    menu.findItem(R.id.menu_connect).setVisible(false);
-                    menu.findItem(R.id.menu_disconnect).setVisible(false);
-                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                    break;
-            }
-        } else {
-            menu.findItem(R.id.menu_connect).setVisible(false);
-            menu.findItem(R.id.menu_disconnect).setVisible(false);
-            menu.findItem(R.id.menu_refresh).setVisible(false);
+        switch (mConnectionState) {
+            case CONNECTED:
+                Log.d(TAG, "Create menu in Connected mode");
+                menu.findItem(R.id.menu_connect).setVisible(false);
+                menu.findItem(R.id.menu_disconnect).setVisible(true);
+                menu.findItem(R.id.menu_refresh_people).setVisible(true);
+                break;
+            case CONNECTING:
+                Log.d(TAG, "Create menu in Connecting mode");
+                menu.findItem(R.id.menu_connect).setVisible(false);
+                menu.findItem(R.id.menu_disconnect).setVisible(false);
+                menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                break;
+            case DISCONNECTED:
+                Log.d(TAG, "Create menu in Disconnected mode");
+                menu.findItem(R.id.menu_connect).setVisible(true);
+                menu.findItem(R.id.menu_disconnect).setVisible(false);
+                menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                break;
+            case BLE_EXCHANGE:
+                Log.d(TAG, "Create menu in Exchange mode");
+                menu.findItem(R.id.menu_connect).setVisible(false);
+                menu.findItem(R.id.menu_disconnect).setVisible(false);
+                menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                break;
         }
+        if(favorites.contains(mDevice.getAddress())) {
+            menu.findItem(R.id.menu_favorite).setIcon(R.drawable.favorite);
+        } else {
+            menu.findItem(R.id.menu_favorite).setIcon(R.drawable.not_favorite);
+        }
+        menu.findItem(R.id.menu_favorite).setVisible(true);
         return true;
     }
 
@@ -378,6 +381,15 @@ public class MainActivity extends Activity {
                     rlProgress.setVisibility(View.VISIBLE);
                 }
                 return true;
+            case R.id.menu_favorite:
+                if(favorites.contains(mDevice.getAddress())) {
+                    favorites.remove(mDevice.getAddress());
+                    item.setIcon(R.drawable.not_favorite);
+                } else {
+                    favorites.add(mDevice.getAddress());
+                    item.setIcon(R.drawable.favorite);
+                }
+                return true;
             case android.R.id.home:
                 onBackPressed();
                 return true;
@@ -385,7 +397,7 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class MyBroadcastReceiver implements BluetoothLeServiceReceiver {
+    private class MyBroadcastReceiver implements BluetoothLeService.Receiver {
         @Override
         public void onDescriptorWrite() {
             Log.d(TAG, "onDescriptorWrite call");

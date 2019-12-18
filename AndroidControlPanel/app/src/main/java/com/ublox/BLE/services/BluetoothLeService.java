@@ -13,6 +13,7 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -29,13 +30,13 @@ import java.util.UUID;
  * This service handles all the interaction with the BLE device.
  */
 public class BluetoothLeService {
-    private final static String TAG = "MyBleService"; // Tag for logging
+    private final static String TAG = BluetoothLeService.class.getSimpleName(); // Tag for logging
 
     private boolean initiated;
     private boolean supports2MPhy;
     private String mBluetoothDeviceAddress;
     private BluetoothGattRepresentation mBluetoothGatt;
-    private BluetoothLeServiceReceiver mReceiver;
+    private Receiver mReceiver;
 
     private PhyMode txPhyMode = PhyMode.PHY_UNDEFINED;
     private PhyMode rxPhyMode = PhyMode.PHY_UNDEFINED;
@@ -230,7 +231,7 @@ public class BluetoothLeService {
         return true;
     }
 
-    public void register(BluetoothLeServiceReceiver receiver) {
+    public void register(Receiver receiver) {
         mReceiver = receiver;
     }
 
@@ -274,6 +275,7 @@ public class BluetoothLeService {
         if (address.equals(mBluetoothDeviceAddress) && mBluetoothGatt != null) {
             if (mBluetoothGatt.connect()) {
                 mConnectionState = STATE_CONNECTING;
+                scheduleTimeoutAbort();
                 return true;
             } else {
                 return false;
@@ -283,7 +285,18 @@ public class BluetoothLeService {
         mBluetoothGatt = device.connectGatt(mContext, mGattCallback, supports2MPhy);
         mBluetoothDeviceAddress = address;
         mConnectionState = STATE_CONNECTING;
+        scheduleTimeoutAbort();
         return true;
+    }
+
+    private void scheduleTimeoutAbort() {
+        final long STANDARD_ANDROID_TIMEOUT_MILLIS = 30000;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (mConnectionState != STATE_CONNECTING) return;
+            close();
+            mConnectionState = STATE_DISCONNECTED;
+            broadcastUpdate(ACTION_GATT_DISCONNECTED);
+        }, STANDARD_ANDROID_TIMEOUT_MILLIS);
     }
 
     /**
@@ -337,10 +350,7 @@ public class BluetoothLeService {
         if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
             bleQueue.addAction(() -> {
                 BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(GattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-                if (descriptor == null || mBluetoothGatt == null) {
-                    Log.d(TAG, "Bluetooth descriptor getter failed!");
-                    return false;
-                }
+                if (descriptor == null || mBluetoothGatt == null) return false;
 
                 // Set write type to WRITE_TYPE_DEFAULT to fix an issue seen on some phone models and
                 // Android versions that enable notification with a write_command message instead of a
@@ -368,12 +378,7 @@ public class BluetoothLeService {
                 if (mBluetoothGatt == null) return false;
                 characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                 characteristic.setValue(data);
-                boolean status = mBluetoothGatt.writeCharacteristic(characteristic);
-                if (!status)
-                {
-                    Log.d("MyBleActivity", "writeCharacteristic call returns false!");
-                }
-                return status;
+                return  mBluetoothGatt.writeCharacteristic(characteristic);
             });
         }
         processQueue();
@@ -452,4 +457,16 @@ public class BluetoothLeService {
     private void setRxPhyMode(int rxPhy) {
         this.rxPhyMode = PhyMode.fromInteger(rxPhy);
     }
+
+    public interface Receiver {
+        void onDescriptorWrite();
+        void onPhyAvailable(boolean isUpdate);
+        void onMtuUpdate(int mtu, int status);
+        void onRssiUpdate(int rssi);
+        void onDataAvailable(UUID uUid, int type, byte[] data);
+        void onServicesDiscovered();
+        void onGattDisconnected();
+        void onGattConnected();
+    }
 }
+
