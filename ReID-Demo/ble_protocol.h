@@ -31,11 +31,11 @@
 
 #define BLE_EXIT           0x55
 
-// Chank size is maximum DMA transfer size
-// There is no sygnal from BLE module on actual data transfer and all blocking
-// functions just wait for DMA reqest if chunk size is larger than maximum DMA
-// trasnfer size several transfers are invoked that can lead to buffers overlap
-// and data loss
-#define DATA_CHANK_SIZE    1024
+// Chunk size is maximum DMA transfer size.
+// There is no signal from BLE module on actual data transfer and all blocking
+// functions just wait for DMA request. If chunk size is larger than maximum DMA
+// transfer size several transfers are invoked. Otherwise it can lead to buffers
+// overlap and data loss.
+#define DATA_CHUNK_SIZE    1024
 
 #endif

@@ -39,7 +39,6 @@ typedef struct BleContext_T
     char read_mode;
     char write_mode;
     int face_chunk_idx;
-    int descriptor_chank_idx;
     struct pi_device* display;
     pi_nina_ble_t* ble;
     Stranger* l2_strangers;
@@ -102,11 +101,11 @@ void ble_protocol_handler(void* params)
             PRINTF("BLE_GET_PHOTO request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
             {
-                char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHANK_SIZE);
-                int size = MIN(DATA_CHANK_SIZE, 128 * 128 - context->face_chunk_idx * DATA_CHANK_SIZE);
+                char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHUNK_SIZE);
+                int size = MIN(DATA_CHUNK_SIZE, 128 * 128 - context->face_chunk_idx * DATA_CHUNK_SIZE);
                 pi_nina_b112_send_data_blocking(context->ble,(uint8_t *) ptr, size);
                 context->face_chunk_idx++;
-                int iters = (128*128 + DATA_CHANK_SIZE-1) / DATA_CHANK_SIZE;
+                int iters = (128*128 + DATA_CHUNK_SIZE-1) / DATA_CHUNK_SIZE;
                 if(context->face_chunk_idx >= iters)
                 {
                     context->face_chunk_idx = 0;
