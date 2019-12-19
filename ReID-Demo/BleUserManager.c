@@ -30,8 +30,6 @@ uint8_t ack = BLE_ACK;
 uint8_t action = 0;
 volatile uint8_t ble_exit = 0;
 
-//#define PRINTF(...) pi_time_wait_us(1*1000)
-
 typedef struct BleContext_T
 {
     int queue_head;
@@ -308,13 +306,16 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     writeText(display, "Waiting for client", 2);
 #endif
 
-    // After Reboot of NINA,  central connects to NINA and NINA will provide
-    // unsollicited AT event: +UUBTACLC:<peer handle,0,<remote BT address>)
-    // (...but sometimes just provides empty event instead !?)
+    // Wait for a connection event: +UUBTACLC:<peer handle,0,<remote BT address> or +UUDPC.
+    while (1)
+    {
+		pi_nina_b112_wait_for_event(&ble, rx_buffer);
+		PRINTF("Received Event: %s\n", rx_buffer);
 
-    // Just make sure NINA sends something as AT unsolicited response, therefore is ready :
-    pi_nina_b112_wait_for_event(&ble, rx_buffer);
-    PRINTF("Received Event after reboot: %s\n", rx_buffer);
+		if ((strncmp(rx_buffer, "+UUBTACLC", 9) == 0) ||
+		    (strncmp(rx_buffer, "+UUDPC", 6) == 0))
+			break;
+    }
 
     // Enter Data Mode
     pi_nina_b112_AT_send(&ble, "O");
@@ -326,10 +327,11 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     writeText(display, "Client connected", 2);
 #endif
 
+    // 50 ms delay is required after entering data mode
     #ifdef __FREERTOS__
-    vTaskDelay( 1 * 1000 / portTICK_PERIOD_MS );
+    vTaskDelay( 50 / portTICK_PERIOD_MS );
     #else
-    pi_time_wait_us(1*1000*1000);
+    pi_time_wait_us(50 * 1000);
     #endif
 
     context.ble = &ble;
