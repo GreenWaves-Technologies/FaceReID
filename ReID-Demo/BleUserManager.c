@@ -162,7 +162,7 @@ void ble_protocol_handler(void* params)
             context->current_name[15] = '\0';
             PRINTF("Name %s got\n", context->current_name);
 
-            pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)  &ack, 1);
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
             if (context->write_mode && (context->queue_head != context->queue_tail))
             {
@@ -180,12 +180,13 @@ void ble_protocol_handler(void* params)
             // Add to Known People DB here
             add_to_db(context->current_descriptor, context->current_name);
 
-            pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)  &ack, 1);
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
         } break;
 
         case BLE_EXIT:
             PRINTF("BLE_EXIT request got\n");
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("Closing BLE connection\n");
             ble_exit = 1;
             break;
@@ -300,7 +301,6 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("BLE configuration : %s\n", rx_buffer);
     pi_nina_b112_AT_query(&ble, "+UBTLN?", (char *) rx_buffer);
     PRINTF("BLE name : %s\n", rx_buffer);
-    //nina_b112_close(&ble);
 
     PRINTF("AT Config Done\n");
 

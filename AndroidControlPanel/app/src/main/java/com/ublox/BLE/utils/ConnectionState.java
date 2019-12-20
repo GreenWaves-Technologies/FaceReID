@@ -1,8 +1,9 @@
 package com.ublox.BLE.utils;
 
 public enum ConnectionState {
-    DISCONNECTED,
     CONNECTING,
     CONNECTED,
+    DISCONNECTING,
+    DISCONNECTED,
     BLE_EXCHANGE
 }

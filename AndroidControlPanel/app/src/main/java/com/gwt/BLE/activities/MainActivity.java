@@ -167,17 +167,21 @@ public class MainActivity extends Activity {
 
     private void updateStatus() {
         switch (mConnectionState) {
-            case DISCONNECTED:
-                tvStatus.setText(R.string.status_disconnected);
-                break;
             case CONNECTING:
                 tvStatus.setText(R.string.status_connecting);
                 break;
             case CONNECTED:
                 tvStatus.setText(R.string.status_connected);
                 break;
+            case DISCONNECTING:
+                tvStatus.setText(R.string.status_disconnecting);
+                break;
+            case DISCONNECTED:
+                tvStatus.setText(R.string.status_disconnected);
+                break;
             case BLE_EXCHANGE:
                 tvStatus.setText("loading data");
+                break;
         }
     }
 
@@ -325,6 +329,12 @@ public class MainActivity extends Activity {
                 menu.findItem(R.id.menu_disconnect).setVisible(false);
                 menu.findItem(R.id.menu_refresh_people).setVisible(false);
                 break;
+            case DISCONNECTING:
+                Log.d(TAG, "Create menu in Disconnecting mode");
+                menu.findItem(R.id.menu_connect).setVisible(false);
+                menu.findItem(R.id.menu_disconnect).setVisible(false);
+                menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                break;
             case DISCONNECTED:
                 Log.d(TAG, "Create menu in Disconnected mode");
                 menu.findItem(R.id.menu_connect).setVisible(true);
@@ -360,8 +370,15 @@ public class MainActivity extends Activity {
             case R.id.menu_disconnect:
                 if((mConnectionState == ConnectionState.CONNECTED) || (mConnectionState==ConnectionState.BLE_EXCHANGE)) {
                     mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_EXIT});
+                    previousBleRequest = BLE_EXIT;
+                    mConnectionState = ConnectionState.DISCONNECTING;
                 }
-                mBluetoothLeService.disconnect();
+                else
+                {
+                    mBluetoothLeService.disconnect();
+                }
+
+                invalidateOptionsMenu();
                 updateStatus();
                 rlProgress.setVisibility(View.VISIBLE);
                 return true;
@@ -435,6 +452,13 @@ public class MainActivity extends Activity {
                         typeString = "UNKNOWN";
                 }
                 Log.d(TAG, "onDataAvailable call: Data type " + typeString + " with size " + data.length + " is available!");
+
+                if (previousBleRequest == BLE_EXIT) {
+                    Log.d(TAG, "previousBleRequest == EXIT");
+                    Log.d(TAG, "Response code: " + data[0]);
+                    mBluetoothLeService.disconnect();
+                    return;
+                }
 
                 if(type == ITEM_TYPE_NOTIFICATION) {
                     Log.d(TAG, "previousBleRequest was " + previousBleRequest);
@@ -569,7 +593,7 @@ public class MainActivity extends Activity {
                             }
                             break;
                         case BLE_SET_DESCRIPTOR:
-                            Log.d(TAG, "previousBleRequest == SET_NAME");
+                            Log.d(TAG, "previousBleRequest == SET_DESCRIPTOR");
                             Log.d(TAG, "Response code: " + data[0]);
                             if (data[0] == BLE_ACK) {
                                 // exclude from list

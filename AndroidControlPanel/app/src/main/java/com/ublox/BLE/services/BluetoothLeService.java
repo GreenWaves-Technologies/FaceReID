@@ -469,4 +469,3 @@ public class BluetoothLeService {
         void onGattConnected();
     }
 }
-
