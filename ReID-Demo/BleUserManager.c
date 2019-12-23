@@ -29,7 +29,7 @@ uint8_t empty_response = '\0';
 uint8_t ack = BLE_ACK;
 uint8_t action = 0;
 volatile uint8_t ble_exit = 0;
-uint8_t cb_triggered = 0;
+rt_timer_t ble_timer;
 
 typedef struct BleContext_T
 {
@@ -52,7 +52,7 @@ void ble_protocol_handler(void* params)
 {
     BleContext* context = (BleContext*)params;
 
-    cb_triggered = 1;
+    rt_timer_stop(&ble_timer);
 
     switch(action)
     {
@@ -195,6 +195,20 @@ void ble_protocol_handler(void* params)
     }
 }
 
+static void timeout_handler(void *params)
+{
+    BleContext *context = (BleContext *)params;
+
+    PRINTF("BLE timeout\n");
+#if defined(HAVE_DISPLAY)
+    setCursor(context->display, 0, 220);
+    writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
+    writeText(context->display, "BLE connection lost", 2);
+#endif
+
+    ble_exit = 1;
+}
+
 void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t button_pin)
 {
     PRINTF("Starting Admin (BLE) body\n");
@@ -281,7 +295,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     // Enable BLE (release reset)
     rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 1);
 
-    pi_time_wait_us(1*1000*1000);
+    rt_time_wait_us(1*1000*1000);
     #endif
 
     // Initiliaze NINA as BLE Peripheral
@@ -335,13 +349,16 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     #ifdef __FREERTOS__
     vTaskDelay( 50 / portTICK_PERIOD_MS );
     #else
-    pi_time_wait_us(50 * 1000);
+    rt_time_wait_us(50 * 1000);
     #endif
 
     context.ble = &ble;
 
     struct pi_task ble_command_task;
-    unsigned cur_time, act_time;
+    if (rt_timer_create(&ble_timer, RT_TIMER_ONE_SHOT, rt_event_get(NULL, timeout_handler, &context)))
+    {
+        PRINTF("Failed to create timer\n");
+    }
 
     pi_gpio_pin_notif_clear(gpio_port, button_pin);
 
@@ -355,33 +372,19 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
         }
         else
         {
-            cur_time = act_time = rt_time_get_us();
-            cb_triggered = 0;
+            rt_timer_start(&ble_timer, BLE_TIMEOUT);
             pi_nina_b112_get_data(&ble, &action, 1, pi_task_callback(&ble_command_task, ble_protocol_handler, &context));
-            while (cur_time - act_time <= BLE_TIMEOUT)
-            {
-                if (cb_triggered != 0)
-                    break;
-                rt_time_wait_us(50 * 1000);
-                cur_time = rt_time_get_us();
-            }
-
-            if (cb_triggered == 0)
-            {
-                PRINTF("BLE timeout: %u %u\n", cur_time, act_time);
-#if defined(HAVE_DISPLAY)
-                setCursor(display, 0, 220);
-                writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-                writeText(display, "BLE connection lost", 2);
-#endif
-                // Exit BLE data mode
-                pi_time_wait_us(1000 * 1000);
-                pi_nina_b112_exit_data_mode(&ble);
-                pi_time_wait_us(1000 * 1000);
-                break;
-            }
+            rt_event_yield(NULL);
         }
     }
+
+    rt_timer_stop(&ble_timer);
+    rt_timer_destroy(&ble_timer);
+
+    // Exit BLE data mode
+    rt_time_wait_us(1000 * 1000);
+    pi_nina_b112_exit_data_mode(&ble);
+    rt_time_wait_us(1000 * 1000);
 
 #if defined(HAVE_DISPLAY)
     setCursor(display, 0, 220);
