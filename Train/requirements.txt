@@ -2,8 +2,8 @@ Cython
 h5py
 numpy
 Pillow
-torch==1.1.0
-torchvision==0.3.0
+torch==1.2.0
+torchvision==0.4.0
 tqdm
 glog
 matplotlib
