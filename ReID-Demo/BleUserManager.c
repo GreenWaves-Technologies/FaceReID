@@ -29,8 +29,7 @@ uint8_t empty_response = '\0';
 uint8_t ack = BLE_ACK;
 uint8_t action = 0;
 volatile uint8_t ble_exit = 0;
-
-//#define PRINTF(...) pi_time_wait_us(1*1000)
+uint8_t cb_triggered = 0;
 
 typedef struct BleContext_T
 {
@@ -39,7 +38,6 @@ typedef struct BleContext_T
     char read_mode;
     char write_mode;
     int face_chunk_idx;
-    int descriptor_chank_idx;
     struct pi_device* display;
     pi_nina_ble_t* ble;
     Stranger* l2_strangers;
@@ -53,6 +51,9 @@ typedef struct BleContext_T
 void ble_protocol_handler(void* params)
 {
     BleContext* context = (BleContext*)params;
+
+    cb_triggered = 1;
+
     switch(action)
     {
         case BLE_READ:
@@ -102,11 +103,11 @@ void ble_protocol_handler(void* params)
             PRINTF("BLE_GET_PHOTO request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
             {
-                char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHANK_SIZE);
-                int size = MIN(DATA_CHANK_SIZE, 128 * 128 - context->face_chunk_idx * DATA_CHANK_SIZE);
+                char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHUNK_SIZE);
+                int size = MIN(DATA_CHUNK_SIZE, 128 * 128 - context->face_chunk_idx * DATA_CHUNK_SIZE);
                 pi_nina_b112_send_data_blocking(context->ble,(uint8_t *) ptr, size);
                 context->face_chunk_idx++;
-                int iters = (128*128 + DATA_CHANK_SIZE-1) / DATA_CHANK_SIZE;
+                int iters = (128*128 + DATA_CHUNK_SIZE-1) / DATA_CHUNK_SIZE;
                 if(context->face_chunk_idx >= iters)
                 {
                     context->face_chunk_idx = 0;
@@ -161,7 +162,7 @@ void ble_protocol_handler(void* params)
             context->current_name[15] = '\0';
             PRINTF("Name %s got\n", context->current_name);
 
-            pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)  &ack, 1);
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
             if (context->write_mode && (context->queue_head != context->queue_tail))
             {
@@ -179,12 +180,13 @@ void ble_protocol_handler(void* params)
             // Add to Known People DB here
             add_to_db(context->current_descriptor, context->current_name);
 
-            pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)  &ack, 1);
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
         } break;
 
         case BLE_EXIT:
             PRINTF("BLE_EXIT request got\n");
+            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("Closing BLE connection\n");
             ble_exit = 1;
             break;
@@ -299,7 +301,6 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("BLE configuration : %s\n", rx_buffer);
     pi_nina_b112_AT_query(&ble, "+UBTLN?", (char *) rx_buffer);
     PRINTF("BLE name : %s\n", rx_buffer);
-    //nina_b112_close(&ble);
 
     PRINTF("AT Config Done\n");
 
@@ -309,13 +310,16 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     writeText(display, "Waiting for client", 2);
 #endif
 
-    // After Reboot of NINA,  central connects to NINA and NINA will provide
-    // unsollicited AT event: +UUBTACLC:<peer handle,0,<remote BT address>)
-    // (...but sometimes just provides empty event instead !?)
+    // Wait for a connection event: +UUBTACLC:<peer handle,0,<remote BT address> or +UUDPC.
+    while (1)
+    {
+		pi_nina_b112_wait_for_event(&ble, rx_buffer);
+		PRINTF("Received Event: %s\n", rx_buffer);
 
-    // Just make sure NINA sends something as AT unsolicited response, therefore is ready :
-    pi_nina_b112_wait_for_event(&ble, rx_buffer);
-    PRINTF("Received Event after reboot: %s\n", rx_buffer);
+		if ((strncmp(rx_buffer, "+UUBTACLC", 9) == 0) ||
+		    (strncmp(rx_buffer, "+UUDPC", 6) == 0))
+			break;
+    }
 
     // Enter Data Mode
     pi_nina_b112_AT_send(&ble, "O");
@@ -327,15 +331,17 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     writeText(display, "Client connected", 2);
 #endif
 
+    // 50 ms delay is required after entering data mode
     #ifdef __FREERTOS__
-    vTaskDelay( 1 * 1000 / portTICK_PERIOD_MS );
+    vTaskDelay( 50 / portTICK_PERIOD_MS );
     #else
-    pi_time_wait_us(1*1000*1000);
+    pi_time_wait_us(50 * 1000);
     #endif
 
     context.ble = &ble;
 
     struct pi_task ble_command_task;
+    unsigned cur_time, act_time;
 
     pi_gpio_pin_notif_clear(gpio_port, button_pin);
 
@@ -349,8 +355,31 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
         }
         else
         {
+            cur_time = act_time = rt_time_get_us();
+            cb_triggered = 0;
             pi_nina_b112_get_data(&ble, &action, 1, pi_task_callback(&ble_command_task, ble_protocol_handler, &context));
-            pi_yield();
+            while (cur_time - act_time <= BLE_TIMEOUT)
+            {
+                if (cb_triggered != 0)
+                    break;
+                rt_time_wait_us(50 * 1000);
+                cur_time = rt_time_get_us();
+            }
+
+            if (cb_triggered == 0)
+            {
+                PRINTF("BLE timeout: %u %u\n", cur_time, act_time);
+#if defined(HAVE_DISPLAY)
+                setCursor(display, 0, 220);
+                writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
+                writeText(display, "BLE connection lost", 2);
+#endif
+                // Exit BLE data mode
+                pi_time_wait_us(1000 * 1000);
+                pi_nina_b112_exit_data_mode(&ble);
+                pi_time_wait_us(1000 * 1000);
+                break;
+            }
         }
     }
 

@@ -21,6 +21,7 @@
     <string name="bonded_state">bonded</string>
     <string name="bonding_state">bonding</string>
 
+    <string name="status_disconnecting">disconnecting...</string>
     <string name="status_disconnected">disconnected</string>
     <string name="status_connecting">connecting...</string>
     <string name="status_connected">gatt connected</string>
