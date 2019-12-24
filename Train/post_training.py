@@ -70,7 +70,6 @@ def main():
     print("Model size: {:.3f} M".format(count_num_param(model)))
 
     if args.load_weights and check_isfile(args.load_weights):
-        #     _ = model(torch.rand(1, num_channels, 224, 224))
         # load pretrained weights but ignore layers that don't match in size
         load_weights(model, args.load_weights)
         print("Loaded pretrained weights from '{}'".format(args.load_weights))
