@@ -368,7 +368,7 @@ public class MainActivity extends Activity {
                 rlProgress.setVisibility(View.VISIBLE);
                 return true;
             case R.id.menu_disconnect:
-                if((mConnectionState == ConnectionState.CONNECTED) || (mConnectionState==ConnectionState.BLE_EXCHANGE)) {
+                if ((mConnectionState == ConnectionState.CONNECTED) || (mConnectionState == ConnectionState.BLE_EXCHANGE)) {
                     mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_EXIT});
                     previousBleRequest = BLE_EXIT;
                     mConnectionState = ConnectionState.DISCONNECTING;
@@ -452,13 +452,6 @@ public class MainActivity extends Activity {
                         typeString = "UNKNOWN";
                 }
                 Log.d(TAG, "onDataAvailable call: Data type " + typeString + " with size " + data.length + " is available!");
-
-                if (previousBleRequest == BLE_EXIT) {
-                    Log.d(TAG, "previousBleRequest == EXIT");
-                    Log.d(TAG, "Response code: " + data[0]);
-                    mBluetoothLeService.disconnect();
-                    return;
-                }
 
                 if(type == ITEM_TYPE_NOTIFICATION) {
                     Log.d(TAG, "previousBleRequest was " + previousBleRequest);
@@ -613,6 +606,13 @@ public class MainActivity extends Activity {
                                 {
                                     mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_EXIT});
                                 }
+                            }
+                            break;
+                        case BLE_EXIT:
+                            Log.d(TAG, "previousBleRequest == EXIT");
+                            Log.d(TAG, "Response code: " + data[0]);
+                            if (data[0] == BLE_ACK) {
+                                mBluetoothLeService.disconnect();
                             }
                             break;
                     }
