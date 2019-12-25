@@ -232,7 +232,8 @@ public class MainActivity extends Activity {
 
         Context context = getApplicationContext();
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        favorites = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
+        Set<String> tmp = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
+        favorites = new HashSet<>(tmp);
 
         strangers = new ArrayList<>();
         PeopleListAdapter adapter = new PeopleListAdapter(this, strangers);
