@@ -39,12 +39,12 @@
 #include "bsp/buffer.h"
 #include "bsp/camera/himax.h"
 #include "bsp/camera/mt9v034.h"
-#include "bsp/display/ili9341.h"
 #include "bsp/ram/hyperram.h"
 
 #include "setup.h"
 #include "ImgIO.h"
 #include "cascade.h"
+#include "display.h"
 
 #include "strangers_db.h"
 
@@ -171,14 +171,6 @@ static int open_camera(struct pi_device *device)
 #endif
 }
 
-static void add_gwt_logo(struct pi_device* display)
-{
-    setCursor(display, 30, 0);
-    writeText(display, "GreenWaves\0", 3);
-    setCursor(display, 10, 3*8);
-    writeText(display, "Technologies\0", 3);
-}
-
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
 static void __gpio_init()
 {
@@ -249,27 +241,16 @@ void body(void* parameters)
 
 #if defined(HAVE_DISPLAY)
     PRINTF("Initializing display\n");
-    struct pi_ili9341_conf ili_conf;
-
-    pi_ili9341_conf_init(&ili_conf);
-    pi_open_from_conf(&display, &ili_conf);
-    if (pi_display_open(&display))
+    if (open_display(&display))
     {
-        PRINTF("Error: display init failed\n");
         pmsis_exit(-5);
     }
     PRINTF("Initializing display done\n");
 
-    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, (void *)display_orientation);
-
-    writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
-    setTextColor(&display,0x0000);
-    add_gwt_logo(&display);
-
-    setCursor(&display, 0, 220);
-    writeFillRect(&display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(&display, "Loading network", 2);
-
+    clear_stripe(&display, 0, LCD_HEIGHT);
+    setTextColor(&display, LCD_TXT_CLR);
+    draw_gwt_logo(&display);
+    draw_text(&display, "Loading network", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
 
     PRINTF("Camera resolution: %dx%d\n", CAMERA_WIDTH, CAMERA_HEIGHT);
@@ -383,18 +364,13 @@ void body(void* parameters)
     // SPI API does not handle clocks change correctly for now
 #if defined(HAVE_DISPLAY)
     PRINTF("Initializing display for the second time\n");
-    pi_ili9341_conf_init(&ili_conf);
-
-    pi_open_from_conf(&display, &ili_conf);
-    if (pi_display_open(&display))
+    if (open_display(&display))
     {
-        PRINTF("Error: display init failed\n");
         pmsis_exit(-5);
     }
-    pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, (void *)display_orientation);
-    writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
-    setTextColor(&display,0x0000);
-    add_gwt_logo(&display);
+    clear_stripe(&display, LCD_TXT_POS_Y, LCD_TXT_HEIGHT(2));
+    setTextColor(&display, LCD_TXT_CLR);
+    draw_gwt_logo(&display);
     PRINTF("Initializing display done\n");
 #endif
 
@@ -436,9 +412,7 @@ void body(void* parameters)
 
     PRINTF("Main cycle\n");
 
-    setCursor(&display, 0, 220);
-    writeFillRect(&display, 0, 220, 240, 8*2, 0xFFFF);
-    //writeText(&display, "Ready", 2);
+    //draw_text(&display, "Ready", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     int saved_index = 0;
     while(1)
@@ -518,19 +492,12 @@ void body(void* parameters)
 #endif
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-#if defined(HAVE_DISPLAY)
-                    setCursor(&display, 0, 220);
-                    writeFillRect(&display, 0, 220, 240, 8*2, 0xFFFF);
-                    writeText(&display, "Writing photo", 2);
-#endif
+                    draw_text(&display, "Writing photo", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+
                     sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
                     WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
 
-#if defined(HAVE_DISPLAY)
-                    setCursor(&display, 0, 220);
-                    writeFillRect(&display, 0, 220, 240, 8*2, 0xFFFF);
-                    writeText(&display, "Writing descriptor", 2);
-#endif
+                    draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined (USE_BLE_USER_MANAGEMENT)
@@ -584,25 +551,14 @@ void body(void* parameters)
                     sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)((float)(1/(50000000.f/ClusterDnnCall.cycles)) * 16800.f));
                     //sprintf(string_buffer, "ReID NN GCycles: %d\n", ClusterDnnCall.cycles/1000000);
                     PRINTF(string_buffer);
-
-#if defined(HAVE_DISPLAY)
-                    setCursor(&display, 0, 220);
-                    writeFillRect(&display, 0, 220, 240, 8*2, 0xFFFF);
-
-                    writeText(&display, string_buffer, 2);
-
-                    setCursor(&display, 0, 200);
-                    writeFillRect(&display, 0, 200, 240, 8*2, 0xFFFF);
-#endif
+                    draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
                     if ((id_l2 >= 0) && (id_l2 < REID_L2_THRESHOLD))
                     {
                         pi_cluster_close(&cluster_dev);
                         sprintf(string_buffer, "Hi, %s!\n", person_name);
                         PRINTF(string_buffer);
-#if defined(HAVE_DISPLAY)
-                        writeText(&display, string_buffer, 2);
-#endif
+                        draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
 #if defined(BLE_NOTIFIER)
                         handleUser(person_name);
 #endif
@@ -611,11 +567,8 @@ void body(void* parameters)
                     {
                         pi_cluster_close(&cluster_dev);
                         PRINTF("STOP, Stranger!\n");
-
-#if defined(HAVE_DISPLAY)
-                        writeText(&display, "STOP, Stranger!\n", 2);
+                        draw_text(&display, "STOP, Stranger!\n", LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
                         PRINTF("Adding stranger to queue\n");
-#endif
                         status = handleStranger(ClusterDnnCall.output);
                         switch(status)
                         {

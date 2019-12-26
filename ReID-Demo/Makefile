@@ -83,7 +83,7 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model $(CNN_LAYERS_BIN)
 
-APP_SRCS = main.c cascade.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
+APP_SRCS = main.c cascade.c display.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
 
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB=1

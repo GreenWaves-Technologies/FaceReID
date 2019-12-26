@@ -18,11 +18,11 @@
 
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
-#include "bsp/display/ili9341.h"
-#include "pmsis.h"
 
 #include "StaticUserManagerBleNotifier.h"
+#include "strangers_db.h"
 #include "face_db.h"
+#include "display.h"
 
 #define STRANGER_MESSAGE 0x10
 #define USER_MESSAGE 0x20
@@ -44,11 +44,8 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
 
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_UART_RX_PAD_FUNC);
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, LCD_OFF_Y, 320, 240, 0xFFFF);
-    writeText(display, "Enabling BLE", 2);
-#endif
+    clear_stripe(display, LCD_OFF_Y, LCD_HEIGHT);
+    draw_text(display, "Enabling BLE", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     uint8_t rx_buffer[PI_AT_RESP_ARRAY_LENGTH];
 
@@ -110,15 +107,10 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
     PRINTF("BLE configuration : %s\n", rx_buffer);
     pi_nina_b112_AT_query(&ble, "+UBTLN?", (char *) rx_buffer);
     PRINTF("BLE name : %s\n", rx_buffer);
-    //pi_nina_b112_close(&ble);
 
     PRINTF("AT Config Done\n");
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Waiting for client", 2);
-#endif
+    draw_text(display, "Waiting for client", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     pi_nina_b112_wait_for_event(&ble, rx_buffer);
     PRINTF("Received Event after reboot: %s\n", rx_buffer);
@@ -127,11 +119,7 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
     pi_nina_b112_AT_send(&ble, "O");
     PRINTF("Data Mode Entered!\n");
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Client connected", 2);
-#endif
+    draw_text(display, "Client connected", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_HYPERRAM_DATA6_PAD_FUNC);
 

@@ -24,7 +24,7 @@
 # define PERF_COUNT
 #endif
 
-#define HAVE_DISPLAY 1
+#define HAVE_DISPLAY
 #define HAVE_CAMERA
 
 #ifdef SILENT
@@ -34,8 +34,8 @@
 #endif  /* DEBUG */
 
 #if defined(CONFIG_GAPOC_A)
-#define CAMERA_WIDTH    (((640/2)/4)*4)
-#define CAMERA_HEIGHT   (((480/2)/4)*4)
+#define CAMERA_WIDTH  320
+#define CAMERA_HEIGHT 240
 #else
 #define CAMERA_WIDTH 324
 #define CAMERA_HEIGHT 244
@@ -46,8 +46,10 @@
 #define WOUT_INIT 64
 #define HOUT_INIT 48
 
-#define LCD_OFF_X 40
-#define LCD_OFF_Y 60
+#define LCD_WIDTH  320
+#define LCD_HEIGHT 240
+
+#define LCD_ORIENTATION PI_ILI_ORIENTATION_270
 
 #define FACE_DESCRIPTOR_SIZE 512
 
@@ -74,10 +76,5 @@
 
 #define BUTTON_FUNCTION_PIN 25 // button pin id for pi_pad_init call on Gapoc A
 #define BUTTON_PIN_ID 19 // button pin id for pi_gpio_ calls on Gapoc A
-
-// Temporary headers for not exported display functions
-void writeFillRect(struct pi_device *device, unsigned short x, unsigned short y, unsigned short w, unsigned short h, unsigned short color);
-void setCursor(struct pi_device *device, signed short x, signed short y);
-void writeText(struct pi_device *device, char* str,int fontsize);
 
 #endif //SETUP_H
