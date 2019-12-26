@@ -188,6 +188,11 @@ void ble_protocol_handler(void* params)
             PRINTF("BLE_EXIT request got\n");
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("Closing BLE connection\n");
+#if defined(HAVE_DISPLAY)
+            setCursor(context->display, 0, 220);
+            writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
+            writeText(context->display, "Client disconnected", 2);
+#endif
             ble_exit = 1;
             break;
         default:
@@ -273,8 +278,11 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     #endif
 
     pi_nina_ble_t ble;
-    pi_nina_b112_open(&ble);
-
+    if (pi_nina_b112_open(&ble))
+    {
+        PRINTF("Failed to open NINA BLE\n");
+        return;
+    }
 
     PRINTF("BLE UART init done\n");
 
@@ -353,6 +361,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     #endif
 
     context.ble = &ble;
+    ble_exit = 0;
 
     struct pi_task ble_command_task;
     if (rt_timer_create(&ble_timer, RT_TIMER_ONE_SHOT, rt_event_get(NULL, timeout_handler, &context)))
@@ -386,13 +395,11 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     pi_nina_b112_exit_data_mode(&ble);
     rt_time_wait_us(1000 * 1000);
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Disabling BLE", 2);
-#endif
-
+    PRINTF("Disabling BLE\n");
     pi_nina_b112_close(&ble);
+
+    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 1);
+    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 0);
 
     PRINTF("Switching back to HYPERRAM mode\n");
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_HYPERRAM_DATA6_PAD_FUNC);
@@ -400,6 +407,10 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Dropping strangers info fro L3\n");
     dropStrangers();
     PRINTF("Exiting admin (BLE) mode\n");
+
+#if defined(HAVE_DISPLAY)
+    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
+#endif
 }
 
 uint32_t preview_hyper;
