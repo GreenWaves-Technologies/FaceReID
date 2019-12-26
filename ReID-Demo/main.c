@@ -43,14 +43,8 @@
 #include "bsp/ram/hyperram.h"
 
 #include "setup.h"
-#include "cascade.h"
 #include "ImgIO.h"
-
 #include "cascade.h"
-
-#if defined(_FOR_GAPOC_)
-# include "bsp/gapoc_a.h"
-#endif
 
 #include "strangers_db.h"
 
@@ -95,7 +89,7 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 #define MT9V034_AEC_ENABLE_A      (1 << 0)
 #define MT9V034_AGC_ENABLE_A      (1 << 1)
 
-#if defined(_FOR_GAPOC_)
+#if defined(CONFIG_GAPOC_A)
 static int open_camera_mt9v034(struct pi_device *device)
 {
     uint16_t val;
@@ -166,7 +160,7 @@ static int open_camera_himax(struct pi_device *device)
 static int open_camera(struct pi_device *device)
 {
 #if defined(HAVE_CAMERA)
-#if defined(_FOR_GAPOC_)
+#if defined(CONFIG_GAPOC_A)
     return open_camera_mt9v034(device);
 #else
     return open_camera_himax(device);
@@ -184,8 +178,6 @@ static void add_gwt_logo(struct pi_device* display)
     setCursor(display, 10, 3*8);
     writeText(display, "Technologies\0", 3);
 }
-
-#define IMAGE_SIZE CAMERA_WIDTH*CAMERA_HEIGHT
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
 static void __gpio_init()
@@ -214,6 +206,8 @@ static void __bsp_init_pads()
     __gpio_init();
 }
 #endif
+
+#define IMAGE_SIZE (CAMERA_WIDTH * CAMERA_HEIGHT)
 
 void body(void* parameters)
 {

@@ -33,7 +33,7 @@
 #define PRINTF printf
 #endif  /* DEBUG */
 
-#if defined(_FOR_GAPOC_)
+#if defined(CONFIG_GAPOC_A)
 #define CAMERA_WIDTH    (((640/2)/4)*4)
 #define CAMERA_HEIGHT   (((480/2)/4)*4)
 #else

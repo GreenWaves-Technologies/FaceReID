@@ -37,7 +37,7 @@ REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -D_FOR_GAPOC_=1 -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -69,10 +69,6 @@ DATA_FILES += ../../ReID-Demo/known_faces/index.txt ../../ReID-Demo/known_faces/
 APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
 APP_CFLAGS += -Os
-
-ifeq ($(BOARD_NAME),gapoc_a)
-  APP_CFLAGS += -D_FOR_GAPOC_=1
-endif
 
 PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
 
