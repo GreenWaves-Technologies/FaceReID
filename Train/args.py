@@ -40,6 +40,7 @@ def argument_parser():
                         help="Mean of the image")
     parser.add_argument('--std', nargs='+', type=float, default=[0.229, 0.224, 0.225],
                         help="Standard deviation of the image")
+    parser.add_argument('--double-precision', action='store_true', help = "use double precision convolution")
     # ************************************************************
     # LFW-specific settings
     # ************************************************************

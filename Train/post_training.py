@@ -97,7 +97,8 @@ def main():
             "save_params": args.save_quantized_model,  # save quantization parameters to the file
             "quantize_forward": True,  # replace usual convs, poolings, ... with GAP-like ones
             "num_input_channels": num_channels,
-            "raw_input": args.no_normalize
+            "raw_input": args.no_normalize,
+            "double_precision": args.double_precision # use double precision convolutions
         }
 
         model = model.cpu()
@@ -113,7 +114,6 @@ def main():
 
     if use_gpu:
         model = nn.DataParallel(model).cuda()
-        model = model.cuda()
 
 
     if args.evaluate:
