@@ -349,7 +349,7 @@ void body(void* parameters)
     status = initHandler(&fs, &display);
 # else
     status = initHandler(&fs);
-#endif
+# endif
 #elif defined(USE_BLE_USER_MANAGEMENT)
     status = initHandler(&gpio_port);
 #endif

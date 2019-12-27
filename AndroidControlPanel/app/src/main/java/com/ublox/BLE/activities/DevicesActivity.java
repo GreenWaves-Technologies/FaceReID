@@ -49,6 +49,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private static final int LOCATION_REQUEST = 255;
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private Set<String> favorites;
+    private int favListCnt;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothCentral scanner;
 
@@ -224,6 +225,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         public LeDeviceListAdapter() {
             super();
             mLeDevices = new ArrayList<>();
+            favListCnt = 0;
             mInflator = DevicesActivity.this.getLayoutInflater();
         }
 
@@ -240,7 +242,8 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             }
             if (!mLeDevices.contains(device)) {
                 if (favorites.contains(device.getAddress())) {
-                    mLeDevices.add(0, device);
+                    mLeDevices.add(favListCnt, device);
+                    favListCnt++;
                 } else {
                     mLeDevices.add(device);
                 }
@@ -254,6 +257,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         public void clear() {
             mLeDevices.clear();
+            favListCnt = 0;
         }
 
         @Override
