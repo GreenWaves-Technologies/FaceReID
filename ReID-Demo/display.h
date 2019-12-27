@@ -23,7 +23,7 @@
 #define LCD_OFF_X 40
 #define LCD_OFF_Y 60
 
-#define LCD_TXT_POS_X         0
+#define LCD_TXT_POS_X         2
 #define LCD_TXT_POS_Y       220
 #define LCD_TXT_HEIGHT(i) ((i) * 8)
 

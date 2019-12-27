@@ -370,7 +370,6 @@ void body(void* parameters)
     }
     clear_stripe(&display, LCD_TXT_POS_Y, LCD_TXT_HEIGHT(2));
     setTextColor(&display, LCD_TXT_CLR);
-    draw_gwt_logo(&display);
     PRINTF("Initializing display done\n");
 #endif
 

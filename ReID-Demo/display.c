@@ -42,9 +42,9 @@ void clear_stripe(struct pi_device *display, unsigned posY, unsigned height)
 void draw_gwt_logo(struct pi_device *display)
 {
 #if defined(HAVE_DISPLAY)
-    setCursor(display, 30, 0);
+    setCursor(display, 30, 2);
     writeText(display, "GreenWaves", 3);
-    setCursor(display, 10, LCD_TXT_HEIGHT(3));
+    setCursor(display, 10, LCD_TXT_HEIGHT(3) + 2);
     writeText(display, "Technologies", 3);
 #endif
 }
