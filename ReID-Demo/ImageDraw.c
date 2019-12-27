@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "DataTypes.h"
+#include "ImageDraw.h"
 
 
 void GrayImageToRGB(Pixu *In, Pixu *Out, int W, int H)
