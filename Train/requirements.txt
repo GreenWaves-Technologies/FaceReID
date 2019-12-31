@@ -2,12 +2,12 @@ Cython
 h5py
 numpy
 Pillow
-torch>=0.4.1
-torchvision>=0.2.1
+torch==1.2.0
+torchvision==0.4.0
 tqdm
 glog
 matplotlib
-opencv-python
+opencv-python==3.4.1.15
 tensorboardX
 scipy==1.1.0
 sklearn

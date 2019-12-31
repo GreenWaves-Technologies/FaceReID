@@ -32,7 +32,10 @@ As a result, `eval_metrics_cy.so` is generated under the same folder. To test if
 ```
     $ python test_cython.py
 ```
-
+Also it's required to install `gap_quantization` package:
+```
+    $ pip install git+https://github.com/xperience-ai/gap_quantization.git
+```
 ## Datasets
 
 You can use the following datasets to train and test the model:

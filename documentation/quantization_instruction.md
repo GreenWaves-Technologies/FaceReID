@@ -23,10 +23,13 @@
 
 ## Quantization
 
-1. Create a folder with a subset of the validation dataset (~100 images should be enough) and specify path to it in `examples/quantization_re_id.py`'s cfg:
-`"data_source": "<created folder>"`
+1. Create a folder with a subset of the validation dataset (~100 images should be enough).
 
 2. Run quantization script:
+
+`python post_training.py -a squeezenet1_1 --grayscale --height 128 --width 128 --target-names lfw --load-weights <path to the trained model> --distance l2 --no-normalize --landmarks-path <path to the txt file with landmarks> --convbn --save-dir <directory to save the results>  --quantization --bits 16 --quant-data-dir <directory with images for quantization> --save-quantized-model --infer --image-path <path to the image for inference>`
+
+To measure the quality with quantized model: `python post_training.py -a squeezenet1_1 --grayscale --height 128 --width 128 --target-names lfw --load-weights <path to the trained model> --distance l2 --no-normalize --landmarks-path <path to the txt file with landmarks> --convbn --save-dir <directory to save the results>  --quantization --bits 16 --quant-data-dir <directory with images for quantization> --evaluate`
 
 ```
     $PYTHONPATH=. python examples/quantization_re_id.py --trained-model <path to saved checkpoints of last epoch>

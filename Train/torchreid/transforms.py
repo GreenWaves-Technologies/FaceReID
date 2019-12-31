@@ -7,6 +7,7 @@ import torch
 from PIL import Image
 import random
 import time
+import math
 import numpy as np
 
 from torchreid.utils.quantization import int_bits
@@ -45,11 +46,6 @@ class Random2DTranslation(object):
         return croped_img
 
 
-class GrayScale(object):
-    def __call__(self, img):
-        return img.convert('L')
-
-
 class ToTensorNoNorm(object):
     def __call__(self, pic):
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
@@ -72,11 +68,7 @@ class Quantize(object):
         self.counter = 0
 
     def __call__(self, tensor):
-        if self.counter >= 100:
-            return integerize(tensor, self.float_bits, self.bits)
-        else:
-            self.counter += 1
-            return tensor
+        return integerize(tensor, self.float_bits, self.bits)
 
 
 class ImShow(object):
@@ -114,10 +106,12 @@ def build_transforms(height, width, is_train, grayscale=False, no_normalize=Fals
         transforms += [Resize((height, width))]
 
     if grayscale:
-        transforms += [GrayScale()]
+        transforms += [Grayscale()]
     #transforms += [ImShow()]
     if no_normalize:
         transforms += [ToTensorNoNorm()]
+        if quantization and bits < 9:
+            transforms += [lambda x: torch.clamp(torch.round(x / math.pow(2, 9-bits)), 0, math.pow(2, bits-1)-1)]
     else:
         transforms += [ToTensor()]
         transforms += [normalize]

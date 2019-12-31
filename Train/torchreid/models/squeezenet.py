@@ -6,6 +6,7 @@ from itertools import repeat
 from collections import OrderedDict
 import math
 
+from gap_quantization.layers import Concat
 import torch
 import torch.nn as nn
 from torch.utils import model_zoo
@@ -25,64 +26,17 @@ model_urls = {
 }
 
 
-class QuantizedConv2d(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, bits=16):
-        super(QuantizedConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
-                 padding, dilation, groups, bias)
-        self.bits = bits
-        self.first_forward = False
-
-    def forward(self, input):
-        try: # quantized convolution
-            # out = F.conv2d(input, self.weight, None, self.stride,
-            #          self.padding, self.dilation, self.groups)
-            # out = torch.clamp(out, -math.pow(2., 31), math.pow(2., 31) - 1)
-            # out = gap8_clip(roundnorm_reg(out, self.norm), self.bits)
-            # out += self.bias.view(1, -1, 1, 1).expand_as(out)
-            self.weights = nn.ParameterList(
-                [nn.Parameter(self.weight.data[:, i, :, :].unsqueeze_(1)) for i in range(self.weight.shape[1])])
-            out = None
-            for i in range(input.shape[1]):
-                conv_res = F.conv2d(input[:, i, :, :].unsqueeze_(1), self.weights[i], None, self.stride,
-                         self.padding, self.dilation, self.groups)
-                #out = torch.clamp(out, -math.pow(2., 31), math.pow(2., 31) - 1)
-                tmp = gap8_clip(roundnorm_reg(conv_res, self.norm), self.bits)
-                if out is None:
-                    out = tmp
-                else:
-                    out += tmp
-            out += self.bias.view(1, -1, 1, 1).expand_as(out)
-            out = torch.clamp(out, -math.pow(2., self.bits - 1), math.pow(2., self.bits) - 1)
-            return out
-        except AttributeError:
-            if not self.first_forward:
-                self.first_forward = True
-            else:
-                print('Something went wrong!')
-            return F.conv2d(input, self.weight, self.bias, self.stride,
-                        self.padding, self.dilation, self.groups)
-
-
 def conv2d(input_channels, out_channels, quantized=False, bits=16, convbn=False, **kwargs):
-    if quantized:
-        return QuantizedConv2d(input_channels, out_channels, bits=bits, **kwargs)
-    elif convbn:
-        return nn.Sequential(nn.Conv2d(input_channels, out_channels, **kwargs),
-                             nn.BatchNorm2d(out_channels))
-    else:
-        return nn.Conv2d(input_channels, out_channels, **kwargs)
+    if convbn:
+        return nn.Sequential(nn.Conv2d(input_channels, out_channels, **kwargs), nn.BatchNorm2d(out_channels))
+    return nn.Conv2d(input_channels, out_channels, **kwargs)
 
 
-def average_pooling(kernel_size, quantized=False, bits=16, **kwargs):
-    if quantized:
-        return GapAvgPool(kernel_size, out_bits=bits)
-    else:
-        return nn.AvgPool2d(kernel_size)
-    
+def average_pooling(kernel_size, bits=16, **kwargs):
+    return nn.AvgPool2d(kernel_size)    
+
 
 class Fire(nn.Module):
-
     def __init__(self, inplanes, squeeze_planes,
                  expand1x1_planes, expand3x3_planes, pool=False, ceil_mode=True, **kwargs):
         super(Fire, self).__init__()
@@ -101,39 +55,20 @@ class Fire(nn.Module):
             self.maxpool1x1 = nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode)
             self.maxpool3x3 = nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode)
 
+        self.cat = Concat(1)
+
     def forward(self, x):
         x = self.squeeze_activation(self.squeeze(x))
         if self.pool == 'max':
-            return torch.cat([
+            return self.cat([
                 self.maxpool1x1(self.expand1x1_activation(self.expand1x1(x))),
                 self.maxpool3x3(self.expand3x3_activation(self.expand3x3(x)))
-            ], 1)
+            ])
         else:
-            return torch.cat([
+            return self.cat([
                 self.expand1x1_activation(self.expand1x1(x)),
                 self.expand3x3_activation(self.expand3x3(x))
-            ], 1)
-
-
-class Identity(nn.Module):
-    def forward(self, input):
-        return input
-
-
-class GapAvgPool(nn.Module): # Avg Pooling was tested only like Global Average Pooling
-    def __init__(self, kernel_size, out_bits=16):
-        super(GapAvgPool, self).__init__()
-        self.kernel_size = kernel_size
-        self.out_bits = out_bits
-
-    def forward(self, input):
-        input = F.avg_pool2d(input, self.kernel_size)
-        input = torch.floor_(input * self.kernel_size * self.kernel_size + 0.1)
-        pool_factor = math.pow(2, 16) // math.pow(self.kernel_size, 2)
-        bound = math.pow(2.0, self.out_bits - 1)
-        min_val = -bound
-        max_val = bound - 1
-        return torch.clamp(roundnorm_reg(input * pool_factor, self.out_bits), min_val, max_val)
+            ])
 
 
 class SqueezeNet(nn.Module):
@@ -183,10 +118,10 @@ class SqueezeNet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode),
                 Fire(64, 16, 64, 64, **kwargs),
                 Fire(128, 16, 64, 64, pool='max', ceil_mode=ceil_mode, **kwargs),
-                Identity(), #nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode),
+                nn.Identity(), #nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode),
                 Fire(128, 32, 128, 128, **kwargs),
                 Fire(256, 32, 128, 128, pool='max', ceil_mode=ceil_mode, **kwargs),
-                Identity(), #nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode),
+                nn.Identity(), #nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=ceil_mode),
                 Fire(256, 48, 192, 192, **kwargs),
                 Fire(384, 48, 192, 192, **kwargs),
                 Fire(384, 64, 256, 256, **kwargs),
