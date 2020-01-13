@@ -298,7 +298,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Set UBTUB\n");
     pi_nina_b112_AT_send(&ble, "+UBTLE=2");
     PRINTF("Set UBTLE\n");
-    pi_nina_b112_AT_send(&ble, "+UBTLN=GreenWaves-GAPOC");
+    pi_nina_b112_AT_send(&ble, "+UBTLN=" BLE_NAME);
     PRINTF("Set UBTLN\n");
     pi_nina_b112_AT_query(&ble, "+UMRS?", (char *) rx_buffer);
     PRINTF("BLE configuration : %s\n", rx_buffer);

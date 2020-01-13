@@ -61,6 +61,9 @@
 
 #define FACE_DETECTOR_STABILIZATION_PERIOD 3
 
+#ifndef BLE_NAME
+# define BLE_NAME "GreenWaves-GAPOC"
+#endif
 #define BLE_TIMEOUT 60000000 // 60 s
 
 #if defined(USE_BLE_USER_MANAGEMENT)
