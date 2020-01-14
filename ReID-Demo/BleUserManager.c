@@ -27,7 +27,7 @@
 #include "display.h"
 
 uint8_t empty_response = '\0';
-uint8_t ack = BLE_ACK;
+uint8_t ack = BLE_CMD_ACK;
 uint8_t action = 0;
 volatile uint8_t ble_exit = 0;
 rt_timer_t ble_timer;
@@ -57,8 +57,8 @@ void ble_protocol_handler(void* params)
 
     switch(action)
     {
-        case BLE_READ:
-            PRINTF("BLE_READ request got\n");
+        case BLE_CMD_READ:
+            PRINTF("BLE READ request got\n");
             PRINTF("Queue head: %d, Queue tail: %d\n", context->queue_head, context->queue_tail);
 
             if(context->queue_head != context->queue_tail)
@@ -81,8 +81,8 @@ void ble_protocol_handler(void* params)
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
-        case BLE_GET_NAME:
-            PRINTF("BLE_GET_NAME request got\n");
+        case BLE_CMD_GET_NAME:
+            PRINTF("BLE GET_NAME request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
             {
                 pi_nina_b112_send_data_blocking(context->ble, (uint8_t *) context->l2_strangers[context->queue_head].name, 16);
@@ -94,8 +94,8 @@ void ble_protocol_handler(void* params)
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
-        case BLE_GET_PHOTO:
-            PRINTF("BLE_GET_PHOTO request got\n");
+        case BLE_CMD_GET_PHOTO:
+            PRINTF("BLE GET_PHOTO request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
             {
                 char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHUNK_SIZE);
@@ -116,8 +116,8 @@ void ble_protocol_handler(void* params)
                 pi_nina_b112_send_data_blocking(context->ble,&empty_response, 1);
             }
             break;
-        case BLE_GET_DESCRIPTOR:
-            PRINTF("BLE_GET_DESCRIPTOR request got\n");
+        case BLE_CMD_GET_DESCRIPTOR:
+            PRINTF("BLE GET_DESCRIPTOR request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
             {
                 pi_nina_b112_send_data_blocking(context->ble,(uint8_t *) context->l2_strangers[context->queue_head].descriptor, 512*sizeof(short));
@@ -129,8 +129,8 @@ void ble_protocol_handler(void* params)
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
-        case BLE_REMOVE:
-            PRINTF("BLE_REMOVE request got\n");
+        case BLE_CMD_REMOVE:
+            PRINTF("BLE REMOVE request got\n");
             if(context->read_mode && (context->queue_head != context->queue_tail))
             {
                 context->read_mode = 0;
@@ -146,13 +146,13 @@ void ble_protocol_handler(void* params)
             }
             break;
 
-        case BLE_WRITE:
-            PRINTF("BLE_WRITE request got\n");
+        case BLE_CMD_WRITE:
+            PRINTF("BLE WRITE request got\n");
             context->write_mode = 1;
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
             break;
-        case BLE_SET_NAME:
+        case BLE_CMD_SET_NAME:
             pi_nina_b112_get_data_blocking(context->ble, (uint8_t *) context->current_name, 16);
             context->current_name[15] = '\0';
             PRINTF("Name %s got\n", context->current_name);
@@ -164,12 +164,12 @@ void ble_protocol_handler(void* params)
                 memcpy(context->l2_strangers[context->queue_head].name, context->current_name, 16);
             }
             break;
-        case BLE_SET_DESCRIPTOR:
+        case BLE_CMD_SET_DESCRIPTOR:
         {
             // In GAP side, you don't need to devide it into package size,
             // you can program the udma for 1K, than the uDMA will wait for each package
             pi_nina_b112_get_data_blocking(context->ble, (uint8_t *) context->current_descriptor, 512*sizeof(short));
-            PRINTF("BLE_SET_DESCRIPTOR request got\n");
+            PRINTF("BLE SET_DESCRIPTOR request got\n");
             PRINTF("Got face descriptor\n");
 
             // Add to Known People DB here
@@ -179,13 +179,16 @@ void ble_protocol_handler(void* params)
             PRINTF("BLE_ACK responded\n");
         } break;
 
-        case BLE_EXIT:
-            PRINTF("BLE_EXIT request got\n");
+        case BLE_CMD_EXIT:
+            PRINTF("BLE EXIT request got\n");
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("Closing BLE connection\n");
             draw_text(context->display, "Client disconnected", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
             ble_exit = 1;
+            break;
+        case BLE_CMD_HB:
+            PRINTF("BLE HB got\n");
             break;
         default:
             PRINTF("Error: invalid request %d\n", action);
@@ -377,7 +380,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Switching back to HYPERRAM mode\n");
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_HYPERRAM_DATA6_PAD_FUNC);
 
-    PRINTF("Dropping strangers info fro L3\n");
+    PRINTF("Dropping strangers info from L3\n");
     dropStrangers();
 
     clear_stripe(display, LCD_TXT_POS_Y, LCD_TXT_HEIGHT(2));

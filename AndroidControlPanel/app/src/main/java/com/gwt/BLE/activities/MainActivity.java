@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import static com.ublox.BLE.services.BluetoothLeService.ITEM_TYPE_NOTIFICATION;
@@ -52,19 +54,24 @@ public class MainActivity extends Activity {
 
     public static final String EXTRA_DEVICE = "device";
 
-    private static final byte BLE_ACK = (byte)0x33;
+    private static final byte BLE_ACK = 0x33;
 
-    private static final byte BLE_READ = (byte)0x10;
-    private static final byte BLE_GET_NAME = (byte)0x11;
-    private static final byte BLE_GET_PHOTO = (byte)0x12;
-    private static final byte BLE_GET_DESCRIPTOR = (byte)0x13;
-    private static final byte BLE_REMOVE = (byte)0x14;
+    private static final byte BLE_READ = 0x10;
+    private static final byte BLE_GET_NAME = 0x11;
+    private static final byte BLE_GET_PHOTO = 0x12;
+    private static final byte BLE_GET_DESCRIPTOR = 0x13;
+    private static final byte BLE_REMOVE = 0x14;
 
-    private static final byte BLE_WRITE = (byte)0x20;
-    private static final byte BLE_SET_NAME = (byte)0x21;
-    private static final byte BLE_SET_DESCRIPTOR = (byte)0x22;
+    private static final byte BLE_WRITE = 0x20;
+    private static final byte BLE_SET_NAME = 0x21;
+    private static final byte BLE_SET_DESCRIPTOR = 0x22;
 
-    private static final byte BLE_EXIT = (byte)0x55;
+    private static final byte BLE_EXIT = 0x55;
+
+    private static final byte BLE_HEART_BEAT = 0x56;
+
+    private static final int hbInterval = 10000; // 10s
+    private Timer hbTimer;
 
     private byte previousBleRequest;
     private byte[] currentUserPhotoToRead = new byte[128*128];
@@ -139,7 +146,7 @@ public class MainActivity extends Activity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view = convertView;
-            if(view == null){
+            if (view == null) {
                 view = inflater.inflate(R.layout.listitem_person, parent, false);
             }
 
@@ -185,6 +192,22 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void startHBTimer() {
+        hbTimer = new Timer();
+        TimerTask hbTask = new TimerTask() {
+            public void run() {
+                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_HEART_BEAT});
+            }
+        };
+        hbTimer.schedule(hbTask, hbInterval / 2, hbInterval);
+    }
+
+    private void stopHBTimer() {
+        if (hbTimer != null) {
+            hbTimer.cancel();
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -204,6 +227,7 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         try {
+            stopHBTimer();
             mBluetoothLeService.disconnect();
             mBluetoothLeService.close();
             mConnectionState = ConnectionState.DISCONNECTED;
@@ -369,6 +393,7 @@ public class MainActivity extends Activity {
                 rlProgress.setVisibility(View.VISIBLE);
                 return true;
             case R.id.menu_disconnect:
+                stopHBTimer();
                 if ((mConnectionState == ConnectionState.CONNECTED) || (mConnectionState == ConnectionState.BLE_EXCHANGE)) {
                     mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_EXIT});
                     previousBleRequest = BLE_EXIT;
@@ -649,6 +674,7 @@ public class MainActivity extends Activity {
                 updateStatus();
                 rlProgress.setVisibility(View.GONE);
             });
+            stopHBTimer();
         }
 
         @Override
@@ -659,6 +685,7 @@ public class MainActivity extends Activity {
                 updateStatus();
                 rlProgress.setVisibility(View.GONE);
             });
+            startHBTimer();
         }
     }
 }

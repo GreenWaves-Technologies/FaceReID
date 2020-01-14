@@ -64,7 +64,7 @@
 #ifndef BLE_NAME
 # define BLE_NAME "GreenWaves-GAPOC"
 #endif
-#define BLE_TIMEOUT 60000000 // 60 s
+#define BLE_TIMEOUT 30000000 // 30 s
 
 #if defined(USE_BLE_USER_MANAGEMENT)
 # define STRANGERS_DB_SIZE 10
