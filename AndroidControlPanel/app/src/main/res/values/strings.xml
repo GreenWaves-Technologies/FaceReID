@@ -21,9 +21,10 @@
     <string name="bonded_state">bonded</string>
     <string name="bonding_state">bonding</string>
 
-    <string name="status_disconnecting">disconnecting...</string>
+    <string name="status_disconnecting">disconnecting&#8230;</string>
     <string name="status_disconnected">disconnected</string>
-    <string name="status_connecting">connecting...</string>
+    <string name="status_connecting">connecting&#8230;</string>
+    <string name="status_loading">loading data</string>
     <string name="status_connected">gatt connected</string>
     <string name="status_discovered">gatt connected, services discovered</string>
     <string name="not_available">N/A</string>

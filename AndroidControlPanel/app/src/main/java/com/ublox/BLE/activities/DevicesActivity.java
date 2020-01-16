@@ -222,14 +222,14 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         private HashMap<BluetoothDeviceRepresentation, Integer> mDevicesRssi = new HashMap<>();
 
-        public LeDeviceListAdapter() {
+        private LeDeviceListAdapter() {
             super();
             mLeDevices = new ArrayList<>();
             favListCnt = 0;
             mInflator = DevicesActivity.this.getLayoutInflater();
         }
 
-        public void addDevice(BluetoothDeviceRepresentation device, int rssi) {
+        private void addDevice(BluetoothDeviceRepresentation device, int rssi) {
             if (mDevicesRssi.containsKey(device)) {
                 int oldRssi = mDevicesRssi.get(device);
                 if (Math.abs(oldRssi - rssi) > 10) {
@@ -251,11 +251,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             }
         }
 
-        public BluetoothDeviceRepresentation getDevice(int position) {
+        private BluetoothDeviceRepresentation getDevice(int position) {
             return mLeDevices.get(position);
         }
 
-        public void clear() {
+        private void clear() {
             mLeDevices.clear();
             favListCnt = 0;
         }

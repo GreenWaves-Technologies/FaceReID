@@ -102,10 +102,10 @@ public class MainActivity extends Activity {
 
     class PersonProfile {
         public String name;
-        public byte[] photoData;
-        public byte[] descriptor;
-        public Bitmap photoPreview;
-    };
+        private byte[] photoData;
+        private byte[] descriptor;
+        private Bitmap photoPreview;
+    }
 
     ArrayList<PersonProfile> strangers;
     private PersonProfile currentUserToRead = new PersonProfile();
@@ -117,15 +117,11 @@ public class MainActivity extends Activity {
         LayoutInflater inflater;
         ArrayList<PersonProfile> people;
 
-        public PeopleListAdapter(Context context, ArrayList<PersonProfile> people)
+        private PeopleListAdapter(Context context, ArrayList<PersonProfile> people)
         {
             this.context = context;
             this.people = people;
             inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        }
-
-        public ArrayList<PersonProfile> getPeople() {
-            return people;
         }
 
         @Override
@@ -152,10 +148,10 @@ public class MainActivity extends Activity {
 
             PersonProfile person = people.get(position);
 
-            TextView personTextView = (TextView) view.findViewById(R.id.person_name);
+            TextView personTextView = view.findViewById(R.id.person_name);
             personTextView.setText(person.name);
 
-            ImageView personPreview = (ImageView) view.findViewById(R.id.person_photo);
+            ImageView personPreview = view.findViewById(R.id.person_photo);
 
             final int pixCount = 128 * 128;
             int[] intGreyBuffer = new int[pixCount];
@@ -170,7 +166,7 @@ public class MainActivity extends Activity {
 
             return view;
         }
-    };
+    }
 
     private void updateStatus() {
         switch (mConnectionState) {
@@ -187,7 +183,7 @@ public class MainActivity extends Activity {
                 tvStatus.setText(R.string.status_disconnected);
                 break;
             case BLE_EXCHANGE:
-                tvStatus.setText("loading data");
+                tvStatus.setText(R.string.status_loading);
                 break;
         }
     }
@@ -315,7 +311,7 @@ public class MainActivity extends Activity {
         });
 
         final Intent intent = getIntent();
-        connectToDevice((BluetoothDeviceRepresentation) intent.getParcelableExtra(EXTRA_DEVICE));
+        connectToDevice(intent.getParcelableExtra(EXTRA_DEVICE));
 
         // Get a ref to the actionbar and set the navigation mode
         final ActionBar actionBar = getActionBar();
@@ -463,7 +459,7 @@ public class MainActivity extends Activity {
 
        @Override
         public void onDataAvailable(UUID uUid, int type, byte[] data) {
-                String typeString = "";
+                String typeString;
                 switch (type) {
                     case ITEM_TYPE_READ:
                         typeString = "ITEM_TYPE_READ";
@@ -511,9 +507,7 @@ public class MainActivity extends Activity {
                             break;
                         case BLE_GET_PHOTO:
                             Log.d(TAG, "previousBleRequest == BLE_GET_PHOTO");
-                            for (int i = 0; i < data.length; i++) {
-                                currentUserPhotoToRead[currentUserPhotoRead + i] = data[i];
-                            }
+                            System.arraycopy(data, 0, currentUserPhotoToRead, currentUserPhotoRead, data.length);
                             currentUserPhotoRead += data.length;
                             Log.d(TAG, "Received " + currentUserPhotoRead + " bytes from " + currentUserPhotoToRead.length);
                             if (currentUserPhotoRead >= currentUserPhotoToRead.length) {
@@ -534,9 +528,7 @@ public class MainActivity extends Activity {
                             break;
                         case BLE_GET_DESCRIPTOR:
                             Log.d(TAG, "previousBleRequest == BLE_GET_DESCRIPTOR");
-                            for (int i = 0; i < data.length; i++) {
-                                currentUserDescriptorToRead[currentUserDescriptorRead + i] = data[i];
-                            }
+                            System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
                             currentUserDescriptorRead += data.length;
                             Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
                             if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
@@ -575,7 +567,7 @@ public class MainActivity extends Activity {
                                 else
                                 {
                                     Log.d(TAG, "Name is shorter than 16 letters, adding zeros.");
-                                    name =  new byte[16];
+                                    name = new byte[16];
                                     System.arraycopy(currentUserToWrite.name.getBytes(),0, name, 0, currentUserToWrite.name.length());
                                     for(int i = currentUserToWrite.name.length(); i < 16; i++)
                                     {
@@ -602,10 +594,10 @@ public class MainActivity extends Activity {
                             Log.d(TAG, "Response code: " + data[0]);
                             if (data[0] == BLE_ACK) {
                                 mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
-                                int chunksize = 20;
-                                int packetsToSend = (currentUserToWrite.descriptor.length + 19) / chunksize;
+                                int chunkSize = 20;
+                                int packetsToSend = (currentUserToWrite.descriptor.length + chunkSize - 1) / chunkSize;
                                 for(int i = 0; i < packetsToSend; i++) {
-                                    byte[] tmp = Arrays.copyOfRange(currentUserToWrite.descriptor, i*chunksize, min(i*chunksize + chunksize, 1024));
+                                    byte[] tmp = Arrays.copyOfRange(currentUserToWrite.descriptor, i*chunkSize, min(i*chunkSize + chunkSize, 1024));
                                     mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
                                 }
                                 previousBleRequest = BLE_SET_DESCRIPTOR;
