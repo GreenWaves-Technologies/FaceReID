@@ -7,10 +7,8 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -27,6 +25,8 @@ import android.widget.Toast;
 
 import com.gwt.BLE.activities.MainActivity;
 import com.gwt.BLE.R;
+import com.gwt.BLE.data.DataBaseHelper;
+import com.gwt.BLE.data.Device;
 import com.ublox.BLE.bluetooth.BluetoothCentral;
 import com.ublox.BLE.bluetooth.BluetoothPeripheral;
 import com.ublox.BLE.bluetooth.BluetoothScanner;
@@ -34,8 +34,7 @@ import com.ublox.BLE.interfaces.BluetoothDeviceRepresentation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Map;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
@@ -48,10 +47,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private static final String TAG = DevicesActivity.class.getSimpleName();
     private static final int LOCATION_REQUEST = 255;
     private LeDeviceListAdapter mLeDeviceListAdapter;
-    private Set<String> favorites;
-    private int favListCnt;
+    private Map<String, Device> reidDevices;
+    private int favCnt;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothCentral scanner;
+    private DataBaseHelper db;
 
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -131,11 +131,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
 
-        // Reload the list of favourites
-        Context context = getApplicationContext();
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        // Reopen DB
+        db = new DataBaseHelper(getApplicationContext());
 
-        favorites = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
+        // Reload known devices list
+        reidDevices = db.getAllDevices();
     }
 
     private void setListAdapter(BaseAdapter baseAdapter) {
@@ -159,6 +159,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         super.onPause();
         scanLeDevice(false);
         mLeDeviceListAdapter.clear();
+        db.closeDB();
     }
 
     private void scanLeDevice(final boolean enable) {
@@ -225,7 +226,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         private LeDeviceListAdapter() {
             super();
             mLeDevices = new ArrayList<>();
-            favListCnt = 0;
+            favCnt = 0;
             mInflator = DevicesActivity.this.getLayoutInflater();
         }
 
@@ -241,9 +242,10 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
                 notifyDataSetChanged();
             }
             if (!mLeDevices.contains(device)) {
-                if (favorites.contains(device.getAddress())) {
-                    mLeDevices.add(favListCnt, device);
-                    favListCnt++;
+                Device d = reidDevices.get(device.getAddress());
+                if (d != null && d.isFavourite()) {
+                    mLeDevices.add(favCnt, device);
+                    favCnt++;
                 } else {
                     mLeDevices.add(device);
                 }
@@ -257,7 +259,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         private void clear() {
             mLeDevices.clear();
-            favListCnt = 0;
+            favCnt = 0;
         }
 
         @Override

@@ -8,10 +8,8 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,6 +28,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.gwt.BLE.R;
+import com.gwt.BLE.data.DataBaseHelper;
+import com.gwt.BLE.data.Device;
 import com.ublox.BLE.interfaces.BluetoothDeviceRepresentation;
 import com.ublox.BLE.services.BluetoothLeService;
 import com.ublox.BLE.utils.ConnectionState;
@@ -37,8 +37,6 @@ import com.ublox.BLE.utils.GattAttributes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -82,8 +80,6 @@ public class MainActivity extends Activity {
     private TextView tvStatus;
     private RelativeLayout rlProgress;
     private ListView androidListView;
-    private SharedPreferences preferences;
-    private Set<String> favorites;
 
     private BluetoothDeviceRepresentation mDevice;
 
@@ -91,6 +87,9 @@ public class MainActivity extends Activity {
     private static ConnectionState mConnectionState = ConnectionState.DISCONNECTED;
 
     private BluetoothGattCharacteristic characteristicFifo;
+
+    private DataBaseHelper db;
+    private Device dbDevice;
 
     public void onServiceConnected() {
         if (!mBluetoothLeService.initialize(this)) {
@@ -207,6 +206,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        db = new DataBaseHelper(getApplicationContext());
+        dbDevice = db.getDevice(mDevice.getAddress());
+        if (dbDevice != null) {
+            dbDevice.setName(mDevice.getName());
+        } else {
+            dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
+            db.createDevice(dbDevice);
+        }
+
         if (mBluetoothLeService != null) {
             mBluetoothLeService.register(mGattUpdateReceiver);
             final boolean result = mBluetoothLeService.connect(mDevice);
@@ -230,9 +239,8 @@ public class MainActivity extends Activity {
             mBluetoothLeService.unregister();
         } catch (Exception ignore) {}
 
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putStringSet(getString(R.string.preferences_key), favorites);
-        editor.commit();
+        db.updateDevice(dbDevice);
+        db.closeDB();
 
         invalidateOptionsMenu();
     }
@@ -249,11 +257,6 @@ public class MainActivity extends Activity {
         rlProgress = findViewById(R.id.rlProgress);
 
         updateStatus();
-
-        Context context = getApplicationContext();
-        preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        Set<String> tmp = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
-        favorites = new HashSet<>(tmp);
 
         strangers = new ArrayList<>();
         PeopleListAdapter adapter = new PeopleListAdapter(this, strangers);
@@ -369,7 +372,7 @@ public class MainActivity extends Activity {
                 menu.findItem(R.id.menu_refresh_people).setVisible(false);
                 break;
         }
-        if(favorites.contains(mDevice.getAddress())) {
+        if (dbDevice.isFavourite()) {
             menu.findItem(R.id.menu_favorite).setIcon(R.drawable.favorite);
         } else {
             menu.findItem(R.id.menu_favorite).setIcon(R.drawable.not_favorite);
@@ -421,11 +424,11 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.menu_favorite:
-                if(favorites.contains(mDevice.getAddress())) {
-                    favorites.remove(mDevice.getAddress());
+                if (dbDevice.isFavourite()) {
+                    dbDevice.setFavourite(false);
                     item.setIcon(R.drawable.not_favorite);
                 } else {
-                    favorites.add(mDevice.getAddress());
+                    dbDevice.setFavourite(true);
                     item.setIcon(R.drawable.favorite);
                 }
                 return true;
