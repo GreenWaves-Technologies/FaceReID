@@ -1,5 +1,6 @@
 package com.gwt.BLE.data;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -112,6 +113,20 @@ public class Visitor {
 
     public byte[] getPhotoData() {
         return photoData;
+    }
+
+    public Bitmap getPhoto() {
+        if (photoData == null) {
+            return null;
+        }
+
+        final int pixCount = 128 * 128;
+        int[] intGreyBuffer = new int[pixCount];
+        for (int i = 0; i < pixCount; i++) {
+            int greyValue = (int) photoData[i] & 0xff;
+            intGreyBuffer[i] = 0xff000000 | (greyValue << 16) | (greyValue << 8) | greyValue;
+        }
+        return Bitmap.createBitmap(intGreyBuffer, 128, 128, Bitmap.Config.ARGB_8888);
     }
 
     public Access getAccess(String address) {
