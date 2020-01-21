@@ -17,11 +17,16 @@
 #ifndef __BLE_PROTOCAL_H__
 #define __BLE_PROTOCAL_H__
 
-#define BLE_CMD_READ           0x10
-#define BLE_CMD_GET_NAME       0x11
-#define BLE_CMD_GET_PHOTO      0x12
-#define BLE_CMD_GET_DESCRIPTOR 0x13
-#define BLE_CMD_REMOVE         0x14
+#define BLE_CMD_READ_STRANGER           0x10
+#define BLE_CMD_GET_STRANGER_NAME       0x11
+#define BLE_CMD_GET_STRANGER_PHOTO      0x12
+#define BLE_CMD_GET_STRANGER_DESCRIPTOR 0x13
+#define BLE_CMD_DROP_STRANGER           0x14
+
+#define BLE_CMD_READ_VISITOR            0x15
+#define BLE_CMD_GET_VISITOR_NAME        0x16
+#define BLE_CMD_GET_VISITOR_DESCRIPTOR  0x17
+#define BLE_CMD_DROP_VISITOR            0x18
 
 #define BLE_CMD_WRITE          0x20
 #define BLE_CMD_SET_NAME       0x21

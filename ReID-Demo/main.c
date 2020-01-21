@@ -356,7 +356,7 @@ void body(void* parameters)
 
     //Setting Cluster to 150MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
-    // and using FC clocks over 150Mhz is dengerous
+    // and using FC clocks over 150Mhz is dangerous
     rt_freq_set(RT_FREQ_DOMAIN_CL, 150000000);
 #endif
 

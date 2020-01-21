@@ -64,7 +64,7 @@ char addStrangerL2(char* preview, short* descriptor)
 
 char addStrangerL3(char* preview, short* descriptor)
 {
-    if(global_stranger_idx >= 10)
+    if(global_stranger_idx >= STRANGERS_DB_SIZE)
     {
         return DB_FULL;
     }
@@ -87,7 +87,7 @@ char addStrangerL3(char* preview, short* descriptor)
 
 char getStranger(int idx, Stranger* s)
 {
-    if((idx < 0) || (idx >=10))
+    if((idx < 0) || (idx >= STRANGERS_DB_SIZE))
     {
         return -1;
     }
