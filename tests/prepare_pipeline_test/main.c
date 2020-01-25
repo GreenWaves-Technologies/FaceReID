@@ -49,7 +49,7 @@ char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CA
 char* tmp_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194;
 char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194-128*128;
 
-#if defined(_FOR_GAPOC_)
+#if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
 L2_MEM cascade_reponse_t test_response_l0 =
 {

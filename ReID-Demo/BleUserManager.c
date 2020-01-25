@@ -24,6 +24,7 @@
 #include "strangers_db.h"
 #include "face_db.h"
 #include "dnn_utils.h"
+#include "display.h"
 
 uint8_t empty_response = '\0';
 uint8_t ack = BLE_ACK;
@@ -65,9 +66,7 @@ void ble_protocol_handler(void* params)
 #if defined(HAVE_DISPLAY)
                 char message[32];
                 sprintf(message, "Sending %d/%d", context->queue_head+1, context->queue_tail);
-                setCursor(context->display, 0, 220);
-                writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
-                writeText(context->display, message, 2);
+                draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
 
                 // there is something in queue
@@ -78,11 +77,7 @@ void ble_protocol_handler(void* params)
             else
             {
                 PRINTF("Nothing to read\n");
-#if defined(HAVE_DISPLAY)
-                setCursor(context->display, 0, 220);
-                writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
-                writeText(context->display, "Ready", 2);
-#endif
+                draw_text(context->display, "Ready", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
@@ -188,11 +183,8 @@ void ble_protocol_handler(void* params)
             PRINTF("BLE_EXIT request got\n");
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("Closing BLE connection\n");
-#if defined(HAVE_DISPLAY)
-            setCursor(context->display, 0, 220);
-            writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
-            writeText(context->display, "Client disconnected", 2);
-#endif
+            draw_text(context->display, "Client disconnected", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+
             ble_exit = 1;
             break;
         default:
@@ -205,11 +197,7 @@ static void timeout_handler(void *params)
     BleContext *context = (BleContext *)params;
 
     PRINTF("BLE timeout\n");
-#if defined(HAVE_DISPLAY)
-    setCursor(context->display, 0, 220);
-    writeFillRect(context->display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(context->display, "BLE connection lost", 2);
-#endif
+    draw_text(context->display, "BLE connection lost", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     ble_exit = 1;
 }
@@ -228,11 +216,8 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
 
     context.display = display;
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(context.display, 0, LCD_OFF_Y, 320, 240, 0xFFFF); // clear whole screen except the logo
-    writeText(display, "Loading Photos", 2);
-#endif
+    clear_stripe(display, LCD_OFF_Y, LCD_HEIGHT); // clear whole screen except the logo
+    draw_text(display, "Loading Photos", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     context.queue_head = 0;
     context.queue_tail = getStrangersCount(); // to allocate memory in future
@@ -252,11 +237,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     }
 
     PRINTF("Switching to UART mode\n");
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(context.display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Enabling BLE", 2);
-#endif
+    draw_text(display, "Enabling BLE", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_UART_RX_PAD_FUNC);
 
@@ -326,11 +307,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
 
     PRINTF("AT Config Done\n");
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Waiting for client", 2);
-#endif
+    draw_text(display, "Waiting for client", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     // Wait for a connection event: +UUBTACLC:<peer handle,0,<remote BT address> or +UUDPC.
     while (1)
@@ -347,11 +324,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     pi_nina_b112_AT_send(&ble, "O");
     PRINTF("Data Mode Entered!\n");
 
-#if defined(HAVE_DISPLAY)
-    setCursor(display, 0, 220);
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-    writeText(display, "Client connected", 2);
-#endif
+    draw_text(display, "Client connected", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     // 50 ms delay is required after entering data mode
     #ifdef __FREERTOS__
@@ -406,11 +379,9 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
 
     PRINTF("Dropping strangers info fro L3\n");
     dropStrangers();
-    PRINTF("Exiting admin (BLE) mode\n");
 
-#if defined(HAVE_DISPLAY)
-    writeFillRect(display, 0, 220, 240, 8*2, 0xFFFF);
-#endif
+    clear_stripe(display, LCD_TXT_POS_Y, LCD_TXT_HEIGHT(2));
+    PRINTF("Exiting admin (BLE) mode\n");
 }
 
 uint32_t preview_hyper;

@@ -43,7 +43,7 @@ DETECTION_MODEL_GEN_C = $(addsuffix .c, $(DETECTION_MODEL_GEN))
 DETECTION_MODEL_GEN_CLEAN = $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
 
 ifeq ($(BOARD_NAME),gapoc_a)
-  TILER_PLATFORM_FLAGS=-D_FOR_GAPOC_=1
+  TILER_PLATFORM_FLAGS=-DCONFIG_GAPOC_A
 endif
 
 GenDetectionTile: $(DETECTION_MODEL_SRC)
@@ -83,11 +83,9 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model $(CNN_LAYERS_BIN)
 
-APP_SRCS = main.c cascade.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
+APP_SRCS = main.c cascade.c display.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
 
-ifeq ($(BOARD_NAME),gapoc_a)
-  APP_CFLAGS += -D_FOR_GAPOC_=1
-else
+ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB=1
 endif
 

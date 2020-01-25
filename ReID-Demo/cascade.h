@@ -34,10 +34,6 @@
 
 #define NON_MAX_THRES 250
 
-#define WOUT_INIT 64
-#define HOUT_INIT 48
-
-
 typedef struct single_cascade
 {
     //unsigned short num_stages;

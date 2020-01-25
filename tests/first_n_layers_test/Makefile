@@ -32,7 +32,7 @@ REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -D_FOR_GAPOC_=1 -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet

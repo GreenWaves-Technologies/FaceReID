@@ -32,7 +32,7 @@ REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -D_FOR_GAPOC_=1 -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -57,10 +57,6 @@ APP_SRCS = main.c ../../ReID-Demo/reid_pipeline.c ../../ReID-Demo/network_proces
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
-
-ifeq ($(BOARD_NAME),gapoc_a)
-  APP_CFLAGS += -D_FOR_GAPOC_=1
-endif
 
 PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
 
