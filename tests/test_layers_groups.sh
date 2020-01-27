@@ -28,7 +28,7 @@ stop_macros=(\
 "" )
 
 layer_outputs=(\
-conv1/output.json \
+conv1.0/output.json \
 features.2/output.json \
 features.3/output.json \
 features.4/output.json \
