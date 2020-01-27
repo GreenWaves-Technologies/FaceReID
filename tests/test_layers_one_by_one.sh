@@ -15,36 +15,36 @@
 # limitations under the License.
 
 layer_inputs=(\
-conv1.0/input.json \
-features.0.0/input.json \
-features.3.squeeze.0/input.json \
-features.3.expand1x1.0/input.json \
-features.3.expand3x3.0/input.json \
-features.4.squeeze.0/input.json \
-features.4.expand1x1.0/input.json \
-features.4.expand3x3.0/input.json \
-features.6.squeeze.0/input.json \
-features.6.expand1x1.0/input.json \
-features.6.expand3x3.0/input.json \
-features.7.squeeze.0/input.json \
-features.7.expand1x1.0/input.json \
-features.7.expand3x3.0/input.json \
-features.9.squeeze.0/input.json \
-features.9.expand1x1.0/input.json \
-features.9.expand3x3.0/input.json \
-features.10.squeeze.0/input.json \
-features.10.expand1x1.0/input.json \
-features.10.expand3x3.0/input.json \
-features.11.squeeze.0/input.json \
-features.11.expand1x1.0/input.json \
-features.11.expand3x3.0/input.json \
-features.12.squeeze.0/input.json \
-features.12.expand1x1.0/input.json \
-features.12.expand3x3.0/input.json \
+conv1/input.json \
+features.0/input.json \
+features.3.squeeze/input.json \
+features.3.expand1x1/input.json \
+features.3.expand3x3/input.json \
+features.4.squeeze/input.json \
+features.4.expand1x1/input.json \
+features.4.expand3x3/input.json \
+features.6.squeeze/input.json \
+features.6.expand1x1/input.json \
+features.6.expand3x3/input.json \
+features.7.squeeze/input.json \
+features.7.expand1x1/input.json \
+features.7.expand3x3/input.json \
+features.9.squeeze/input.json \
+features.9.expand1x1/input.json \
+features.9.expand3x3/input.json \
+features.10.squeeze/input.json \
+features.10.expand1x1/input.json \
+features.10.expand3x3/input.json \
+features.11.squeeze/input.json \
+features.11.expand1x1/input.json \
+features.11.expand3x3/input.json \
+features.12.squeeze/input.json \
+features.12.expand1x1/input.json \
+features.12.expand3x3/input.json \
 global_avgpool/input.json )
 
 layer_outputs=(\
-conv1.0/output.json \
+conv1/output.json \
 features.2/output.json \
 features.3.squeeze_activation/output.json \
 features.3.expand1x1_activation/output.json \

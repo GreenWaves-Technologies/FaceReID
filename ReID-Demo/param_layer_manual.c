@@ -33,7 +33,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_0,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "conv1.0"},
+     .name = "conv1"},
 
     {.nb_if = 3,
      .nb_of = 64,
@@ -48,7 +48,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_1,
      .conv_padding = 0,
      .conv_stride = 2,
-     .name = "features.0.0"},
+     .name = "features.0"},
 
     // Fire modules
     {.nb_if = 64,
@@ -64,7 +64,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_2,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.3.squeeze.0"},
+     .name = "features.3.squeeze"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -79,7 +79,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_3,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.3.expand1x1.0"},
+     .name = "features.3.expand1x1"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -94,7 +94,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_4,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.3.expand3x3.0"},
+     .name = "features.3.expand3x3"},
 
     {.nb_if = 128,
      .nb_of = 16,
@@ -109,7 +109,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_5,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.4.squeeze.0"},
+     .name = "features.4.squeeze"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -124,7 +124,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_6,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.4.expand1x1.0"},
+     .name = "features.4.expand1x1"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -139,7 +139,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_7,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.4.expand3x3.0"},
+     .name = "features.4.expand3x3"},
 
     // MaxPool here
 
@@ -156,7 +156,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_8,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.6.squeeze.0"},
+     .name = "features.6.squeeze"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -171,7 +171,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_9,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.6.expand1x1.0"},
+     .name = "features.6.expand1x1"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -186,7 +186,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_10,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.6.expand3x3.0"},
+     .name = "features.6.expand3x3"},
 
     {.nb_if = 256,
      .nb_of = 32,
@@ -201,7 +201,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_11,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.7.squeeze.0"},
+     .name = "features.7.squeeze"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -216,7 +216,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_12,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.7.expand1x1.0"},
+     .name = "features.7.expand1x1"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -231,21 +231,21 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_13,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.7.expand3x3.0"},
+     .name = "features.7.expand3x3"},
 
     // MaxPool here
 
-    {256,48,7,7,1,1,1,0,0,0,NORM_14,1,1, "features.9.squeeze.0"},
-    {48,192,7,7,1,1,1,0,0,0,NORM_15,1,1, "features.9.expand1x1.0"},
-    {48,192,7,7,3,3,1,0,0,0,NORM_16,1,1, "features.9.expand3x3.0"},
+    {256,48,7,7,1,1,1,0,0,0,NORM_14,1,1, "features.9.squeeze"},
+    {48,192,7,7,1,1,1,0,0,0,NORM_15,1,1, "features.9.expand1x1"},
+    {48,192,7,7,3,3,1,0,0,0,NORM_16,1,1, "features.9.expand3x3"},
 
-    {384,48,7,7,1,1,1,0,0,0,NORM_17,1,1, "features.10.squeeze.0"},
-    {48,192,7,7,1,1,1,0,0,0,NORM_18,1,1, "features.10.expand1x1.0"},
-    {48,192,7,7,3,3,1,0,0,0,NORM_19,1,1, "features.10.expand3x3.0"},
+    {384,48,7,7,1,1,1,0,0,0,NORM_17,1,1, "features.10.squeeze"},
+    {48,192,7,7,1,1,1,0,0,0,NORM_18,1,1, "features.10.expand1x1"},
+    {48,192,7,7,3,3,1,0,0,0,NORM_19,1,1, "features.10.expand3x3"},
 
-    {384,64,7,7,1,1,1,0,0,0,NORM_20,1,1, "features.11.squeeze.0"},
-    {64,256,7,7,1,1,1,0,0,0,NORM_21,1,1, "features.11.expand1x1.0"},
-    {64,256,7,7,3,3,1,0,0,0,NORM_22,1,1, "features.11.expand3x3.0"},
+    {384,64,7,7,1,1,1,0,0,0,NORM_20,1,1, "features.11.squeeze"},
+    {64,256,7,7,1,1,1,0,0,0,NORM_21,1,1, "features.11.expand1x1"},
+    {64,256,7,7,3,3,1,0,0,0,NORM_22,1,1, "features.11.expand3x3"},
 
     {.nb_if = 512,
      .nb_of = 64,
@@ -260,7 +260,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_23,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.12.squeeze.0"},
+     .name = "features.12.squeeze"},
 
     {.nb_if = 64,
      .nb_of = 256,
@@ -275,7 +275,7 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_24,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.12.expand1x1.0"},
+     .name = "features.12.expand1x1"},
 
     {.nb_if = 64,
      .nb_of = 256,
@@ -290,5 +290,5 @@ struct param_conv_layer convLayers[] =
      .norm_data = NORM_25,
      .conv_padding = 1,
      .conv_stride = 1,
-     .name = "features.12.expand3x3.0"},
+     .name = "features.12.expand3x3"},
 };
