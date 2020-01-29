@@ -110,6 +110,10 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             case R.id.menu_stop:
                 scanLeDevice(false);
                 break;
+            case R.id.menu_visitors:
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                break;
         }
         return true;
     }

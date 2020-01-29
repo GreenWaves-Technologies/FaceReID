@@ -117,12 +117,6 @@ public class MainActivity extends Activity {
         ArrayList<Visitor> people;
         ArrayList<Integer> peoplePermitted; // Indicates that person has access to currently connected device
 
-        private PeopleListAdapter(Context context)
-        {
-            this.context = context;
-            inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        }
-
         private PeopleListAdapter(Context context, ArrayList<Visitor> people, ArrayList<Integer> peoplePermitted)
         {
             this.context = context;
@@ -239,12 +233,14 @@ public class MainActivity extends Activity {
         super.onResume();
 
         db = new DataBaseHelper(getApplicationContext());
-        dbDevice = db.getDevice(mDevice.getAddress());
-        if (dbDevice != null) {
-            dbDevice.setName(mDevice.getName());
-        } else {
-            dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
-            db.createDevice(dbDevice);
+        if (mDevice != null) {
+            dbDevice = db.getDevice(mDevice.getAddress());
+            if (dbDevice != null) {
+                dbDevice.setName(mDevice.getName());
+            } else {
+                dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
+                db.createDevice(dbDevice);
+            }
         }
 
         ArrayList<Visitor> dbVisitors = db.getAllVisitors(/*mDevice.getAddress()*/);
@@ -265,7 +261,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        if (mBluetoothLeService != null) {
+        if (mDevice != null && mBluetoothLeService != null) {
             mBluetoothLeService.register(mGattUpdateReceiver);
             final boolean result = mBluetoothLeService.connect(mDevice);
             Log.d(TAG, "Connect request result=" + result);
@@ -280,15 +276,19 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        try {
-            stopHBTimer();
-            mBluetoothLeService.disconnect();
-            mBluetoothLeService.close();
-            mConnectionState = ConnectionState.DISCONNECTED;
-            mBluetoothLeService.unregister();
-        } catch (Exception ignore) {}
+        if (mDevice != null) {
+            try {
+                stopHBTimer();
+                mBluetoothLeService.disconnect();
+                mBluetoothLeService.close();
+                mConnectionState = ConnectionState.DISCONNECTED;
+                mBluetoothLeService.unregister();
+            } catch (Exception ignore) {
+            }
 
-        db.updateDevice(dbDevice);
+            db.updateDevice(dbDevice);
+        }
+
         db.closeDB();
 
         invalidateOptionsMenu();
@@ -297,9 +297,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActionBar().setTitle("");
-        getActionBar().setLogo(R.drawable.logo);
-        getActionBar().setDisplayUseLogoEnabled(true);
+
+        final ActionBar actionBar = getActionBar();
+        actionBar.setTitle("");
+        actionBar.setLogo(R.drawable.logo);
+        actionBar.setDisplayUseLogoEnabled(true);
+
         setContentView(R.layout.activity_main);
 
         tvStatus = findViewById(R.id.tvStatus);
@@ -339,14 +342,17 @@ public class MainActivity extends Activity {
                                 ((BaseAdapter) a).notifyDataSetChanged();
                             }
 
-                            currentUserToWrite.setAccess(mDevice.getAddress(), true);
                             db.updateVisitor(currentUserToWrite);
-                            db.updateAccess(currentUserToWrite.getId(), mDevice.getAddress(), currentUserToWrite.getAccess(mDevice.getAddress()));
 
-                            Log.d(TAG, "Sending request to add new person");
-                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_WRITE});
-                            rlProgress.setVisibility(View.VISIBLE);
-                            currentBleRequest = BLE_WRITE;
+                            if (mDevice != null) {
+                                currentUserToWrite.setAccess(mDevice.getAddress(), true);
+                                db.updateAccess(currentUserToWrite.getId(), mDevice.getAddress(), currentUserToWrite.getAccess(mDevice.getAddress()));
+
+                                Log.d(TAG, "Sending request to add new person");
+                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_WRITE});
+                                rlProgress.setVisibility(View.VISIBLE);
+                                currentBleRequest = BLE_WRITE;
+                            }
                         }
                     }
                 });
@@ -360,15 +366,17 @@ public class MainActivity extends Activity {
                         visitors.remove(currentUserToWriteIdx);
                         db.deleteVisitor(currentUserToWrite);
 
-                        Log.d(TAG, "Sending request to drop a person");
-                        mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_VISITOR});
-                        int chunkSize = 20;
-                        int packetsToSend = (currentUserToWrite.getDescriptor().length + chunkSize - 1) / chunkSize;
-                        for(int i = 0; i < packetsToSend; i++) {
-                            byte[] tmp = Arrays.copyOfRange(currentUserToWrite.getDescriptor(), i*chunkSize, min(i*chunkSize + chunkSize, 1024));
-                            mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
+                        if (mDevice != null) {
+                            Log.d(TAG, "Sending request to drop a person");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_VISITOR});
+                            int chunkSize = 20;
+                            int packetsToSend = (currentUserToWrite.getDescriptor().length + chunkSize - 1) / chunkSize;
+                            for (int i = 0; i < packetsToSend; i++) {
+                                byte[] tmp = Arrays.copyOfRange(currentUserToWrite.getDescriptor(), i * chunkSize, min(i * chunkSize + chunkSize, 1024));
+                                mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
+                            }
+                            currentBleRequest = BLE_DROP_VISITOR;
                         }
-                        currentBleRequest = BLE_DROP_VISITOR;
 
                         final Adapter a = androidListView.getAdapter();
                         if (a instanceof BaseAdapter) {
@@ -384,25 +392,23 @@ public class MainActivity extends Activity {
         });
 
         final Intent intent = getIntent();
-        connectToDevice(intent.getParcelableExtra(EXTRA_DEVICE));
+        mDevice = intent.getParcelableExtra(EXTRA_DEVICE);
+        if (mDevice != null) {
+            connectToDevice();
 
-        // Get a ref to the actionbar and set the navigation mode
-        final ActionBar actionBar = getActionBar();
-
-        final String name = mDevice.getName();
-        if (!TextUtils.isEmpty(name)) {
-            getActionBar().setTitle(name);
-        } else {
-            getActionBar().setTitle(mDevice.getAddress());
+            final String name = mDevice.getName();
+            if (!TextUtils.isEmpty(name)) {
+                actionBar.setTitle(name);
+            } else {
+                actionBar.setTitle(mDevice.getAddress());
+            }
         }
 
         actionBar.setDisplayShowCustomEnabled(true);
     }
 
-    private void connectToDevice(BluetoothDeviceRepresentation bluetoothDevice) {
+    private void connectToDevice() {
         // get the information from the device scan
-        mDevice = bluetoothDevice;
-
         mBluetoothLeService = new BluetoothLeService();
         onServiceConnected();
     }
@@ -410,44 +416,54 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_connected, menu);
-        switch (mConnectionState) {
-            case CONNECTED:
-                Log.d(TAG, "Create menu in Connected mode");
-                menu.findItem(R.id.menu_connect).setVisible(false);
-                menu.findItem(R.id.menu_disconnect).setVisible(true);
-                menu.findItem(R.id.menu_refresh_people).setVisible(true);
-                break;
-            case CONNECTING:
-                Log.d(TAG, "Create menu in Connecting mode");
-                menu.findItem(R.id.menu_connect).setVisible(false);
-                menu.findItem(R.id.menu_disconnect).setVisible(false);
-                menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                break;
-            case DISCONNECTING:
-                Log.d(TAG, "Create menu in Disconnecting mode");
-                menu.findItem(R.id.menu_connect).setVisible(false);
-                menu.findItem(R.id.menu_disconnect).setVisible(false);
-                menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                break;
-            case DISCONNECTED:
-                Log.d(TAG, "Create menu in Disconnected mode");
-                menu.findItem(R.id.menu_connect).setVisible(true);
-                menu.findItem(R.id.menu_disconnect).setVisible(false);
-                menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                break;
-            case BLE_EXCHANGE:
-                Log.d(TAG, "Create menu in Exchange mode");
-                menu.findItem(R.id.menu_connect).setVisible(false);
-                menu.findItem(R.id.menu_disconnect).setVisible(false);
-                menu.findItem(R.id.menu_refresh_people).setVisible(false);
-                break;
-        }
-        if (dbDevice.isFavourite()) {
-            menu.findItem(R.id.menu_favorite).setIcon(R.drawable.ic_star_black_24dp);
+        if (mDevice != null) {
+            switch (mConnectionState) {
+                case CONNECTED:
+                    Log.d(TAG, "Create menu in Connected mode");
+                    menu.findItem(R.id.menu_connect).setVisible(false);
+                    menu.findItem(R.id.menu_disconnect).setVisible(true);
+                    menu.findItem(R.id.menu_refresh_people).setVisible(true);
+                    break;
+                case CONNECTING:
+                    Log.d(TAG, "Create menu in Connecting mode");
+                    menu.findItem(R.id.menu_connect).setVisible(false);
+                    menu.findItem(R.id.menu_disconnect).setVisible(false);
+                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                    break;
+                case DISCONNECTING:
+                    Log.d(TAG, "Create menu in Disconnecting mode");
+                    menu.findItem(R.id.menu_connect).setVisible(false);
+                    menu.findItem(R.id.menu_disconnect).setVisible(false);
+                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                    break;
+                case DISCONNECTED:
+                    Log.d(TAG, "Create menu in Disconnected mode");
+                    menu.findItem(R.id.menu_connect).setVisible(true);
+                    menu.findItem(R.id.menu_disconnect).setVisible(false);
+                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                    break;
+                case BLE_EXCHANGE:
+                    Log.d(TAG, "Create menu in Exchange mode");
+                    menu.findItem(R.id.menu_connect).setVisible(false);
+                    menu.findItem(R.id.menu_disconnect).setVisible(false);
+                    menu.findItem(R.id.menu_refresh_people).setVisible(false);
+                    break;
+            }
+
+            if (dbDevice.isFavourite()) {
+                menu.findItem(R.id.menu_favourite).setIcon(R.drawable.ic_star_black_24dp);
+            } else {
+                menu.findItem(R.id.menu_favourite).setIcon(R.drawable.ic_star_border_black_24dp);
+            }
+            menu.findItem(R.id.menu_favourite).setVisible(true);
         } else {
-            menu.findItem(R.id.menu_favorite).setIcon(R.drawable.ic_star_border_black_24dp);
+            Log.d(TAG, "Create menu in Detached mode");
+            menu.findItem(R.id.menu_connect).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_refresh_people).setVisible(false);
+            menu.findItem(R.id.menu_favourite).setVisible(false);
         }
-        menu.findItem(R.id.menu_favorite).setVisible(true);
+
         return true;
     }
 
@@ -491,7 +507,7 @@ public class MainActivity extends Activity {
                     //rlProgress.setVisibility(View.VISIBLE);
                 }
                 return true;
-            case R.id.menu_favorite:
+            case R.id.menu_favourite:
                 if (dbDevice.isFavourite()) {
                     dbDevice.setFavourite(false);
                     item.setIcon(R.drawable.ic_star_border_black_24dp);
@@ -500,6 +516,7 @@ public class MainActivity extends Activity {
                     item.setIcon(R.drawable.ic_star_black_24dp);
                 }
                 return true;
+            case R.id.menu_devices:
             case android.R.id.home:
                 onBackPressed();
                 return true;

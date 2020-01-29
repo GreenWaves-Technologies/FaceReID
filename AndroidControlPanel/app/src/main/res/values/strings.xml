@@ -16,6 +16,9 @@
     <string name="menu_refresh_people">Refresh</string>
     <string name="menu_scan">Scan</string>
     <string name="menu_stop">Stop</string>
+    <string name="menu_devices">Devices</string>
+    <string name="menu_visitors">Users</string>
+    <string name="menu_favourites">Add to favourites</string>
     <string name="action_settings">Settings</string>
 
     <string name="bonded_state">bonded</string>
@@ -24,7 +27,7 @@
     <string name="status_disconnecting">disconnecting&#8230;</string>
     <string name="status_disconnected">disconnected</string>
     <string name="status_connecting">connecting&#8230;</string>
-    <string name="status_loading">loading data</string>
+    <string name="status_loading">loading data&#8230;</string>
     <string name="status_connected">gatt connected</string>
     <string name="status_discovered">gatt connected, services discovered</string>
     <string name="not_available">N/A</string>
@@ -35,8 +38,6 @@
     <string name="port_hint">servers port</string>
     <string name="remote_start_button">Stop</string>
     <string name="remote_stop_button">Start</string>
-
-    <string name="preferences_key">favorites</string>
 
     <string-array name="conn_prio">
         <item>BALANCED</item>
