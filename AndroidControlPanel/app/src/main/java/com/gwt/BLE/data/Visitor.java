@@ -21,7 +21,7 @@ public class Visitor {
 
     //private Bitmap photoPreview;
 
-    static class Access {
+    public static class Access {
         public boolean granted;
         public boolean oldGranted;
     }

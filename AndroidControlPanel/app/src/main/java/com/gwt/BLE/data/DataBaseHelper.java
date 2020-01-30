@@ -304,14 +304,16 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return accesses;
     }
 
-    public int updateAccess(int visitorId, String address, Visitor.Access access) {
+    public long updateOrInsertAccess(int visitorId, String address, Visitor.Access access) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
+        values.put(KEY_ACCESS_VISITOR_ID, visitorId);
+        values.put(KEY_ACCESS_MACADDR, address);
         values.put(KEY_ACCESS_GRANTED, access.granted);
         values.put(KEY_ACCESS_OLD_GRANTED, access.oldGranted);
 
-        return db.update(TABLE_ACCESS, values, KEY_ACCESS_VISITOR_ID + " = ? AND " + KEY_ACCESS_MACADDR + " = ?", new String[] { String.valueOf(visitorId), address });
+        return db.replace(TABLE_ACCESS, null, values);
     }
 
     public void deleteAccess(int visitorId, String address) {

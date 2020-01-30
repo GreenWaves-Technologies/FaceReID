@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:baselineAligned="false" >
 
     <LinearLayout
         android:layout_width="80dp"
@@ -16,6 +16,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
+            android:contentDescription="@string/signal_strength"
             android:src="@drawable/signal_indicator_1" />
 
         <TextView
@@ -24,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:gravity="center"
-            android:text="-176 dBm"
+            android:text="@string/signal_strength_placeholder"
             android:textColor="@color/ublox_blue_color"
             android:textSize="12dp"
             android:textStyle="bold" />
@@ -61,19 +62,10 @@
             android:id="@+id/device_bonded"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="bonded"
+            android:text="@string/bonded_state"
             android:textAllCaps="true"
             android:visibility="visible" />
 
     </LinearLayout>
-
-
-    <!--<CheckBox-->
-        <!--android:clickable="false"-->
-        <!--android:layout_marginRight="16dp"-->
-        <!--android:layout_gravity="center_vertical"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:id="@+id/cbSelected" />-->
 
 </LinearLayout>

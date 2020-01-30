@@ -19,10 +19,11 @@
     <string name="menu_devices">Devices</string>
     <string name="menu_visitors">Users</string>
     <string name="menu_favourites">Add to favourites</string>
-    <string name="action_settings">Settings</string>
 
     <string name="bonded_state">bonded</string>
     <string name="bonding_state">bonding</string>
+    <string name="signal_strength">Signal Strength</string>
+    <string name="signal_strength_placeholder">-176 dBm</string>
 
     <string name="status_disconnecting">disconnecting&#8230;</string>
     <string name="status_disconnected">disconnected</string>
@@ -38,6 +39,13 @@
     <string name="port_hint">servers port</string>
     <string name="remote_start_button">Stop</string>
     <string name="remote_stop_button">Start</string>
+    <string name="visitor_name">Visitor\'s name</string>
+    <string name="visitor_name_placeholder">Name Surname</string>
+    <string name="visitor_description_placeholder">Very\nlong\ndescription</string>
+    <string name="visitor_photo">Visitor\'s photo</string>
+    <string name="visitor_indicator">Online indicator</string>
+    <string name="visitor_description">Description (optional)</string>
+    <string name="visitor_access">Access granted to:</string>
 
     <string-array name="conn_prio">
         <item>BALANCED</item>

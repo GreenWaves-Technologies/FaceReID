@@ -90,11 +90,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         if (scanner.getState() != BluetoothScanner.State.SCANNING) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
-            menu.findItem(R.id.menu_refresh).setActionView(null);
+            menu.findItem(R.id.menu_progress).setActionView(null);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            menu.findItem(R.id.menu_refresh).setActionView(
+            menu.findItem(R.id.menu_progress).setActionView(
                     R.layout.actionbar_indeterminate_progress);
         }
         return true;
@@ -110,7 +110,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             case R.id.menu_stop:
                 scanLeDevice(false);
                 break;
-            case R.id.menu_visitors:
+            case R.id.menu_visitor_list:
                 Intent intent = new Intent(this, MainActivity.class);
                 startActivity(intent);
                 break;
