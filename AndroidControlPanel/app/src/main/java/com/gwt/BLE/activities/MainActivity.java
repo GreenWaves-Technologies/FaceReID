@@ -8,10 +8,8 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,6 +28,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.gwt.BLE.R;
+import com.gwt.BLE.data.DataBaseHelper;
+import com.gwt.BLE.data.Device;
 import com.ublox.BLE.interfaces.BluetoothDeviceRepresentation;
 import com.ublox.BLE.services.BluetoothLeService;
 import com.ublox.BLE.utils.ConnectionState;
@@ -37,8 +37,8 @@ import com.ublox.BLE.utils.GattAttributes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import static com.ublox.BLE.services.BluetoothLeService.ITEM_TYPE_NOTIFICATION;
@@ -52,19 +52,24 @@ public class MainActivity extends Activity {
 
     public static final String EXTRA_DEVICE = "device";
 
-    private static final byte BLE_ACK = (byte)0x33;
+    private static final byte BLE_ACK = 0x33;
 
-    private static final byte BLE_READ = (byte)0x10;
-    private static final byte BLE_GET_NAME = (byte)0x11;
-    private static final byte BLE_GET_PHOTO = (byte)0x12;
-    private static final byte BLE_GET_DESCRIPTOR = (byte)0x13;
-    private static final byte BLE_REMOVE = (byte)0x14;
+    private static final byte BLE_READ = 0x10;
+    private static final byte BLE_GET_NAME = 0x11;
+    private static final byte BLE_GET_PHOTO = 0x12;
+    private static final byte BLE_GET_DESCRIPTOR = 0x13;
+    private static final byte BLE_REMOVE = 0x14;
 
-    private static final byte BLE_WRITE = (byte)0x20;
-    private static final byte BLE_SET_NAME = (byte)0x21;
-    private static final byte BLE_SET_DESCRIPTOR = (byte)0x22;
+    private static final byte BLE_WRITE = 0x20;
+    private static final byte BLE_SET_NAME = 0x21;
+    private static final byte BLE_SET_DESCRIPTOR = 0x22;
 
-    private static final byte BLE_EXIT = (byte)0x55;
+    private static final byte BLE_EXIT = 0x55;
+
+    private static final byte BLE_HEART_BEAT = 0x56;
+
+    private static final int hbInterval = 10000; // 10s
+    private Timer hbTimer;
 
     private byte previousBleRequest;
     private byte[] currentUserPhotoToRead = new byte[128*128];
@@ -75,8 +80,6 @@ public class MainActivity extends Activity {
     private TextView tvStatus;
     private RelativeLayout rlProgress;
     private ListView androidListView;
-    private SharedPreferences preferences;
-    private Set<String> favorites;
 
     private BluetoothDeviceRepresentation mDevice;
 
@@ -84,6 +87,9 @@ public class MainActivity extends Activity {
     private static ConnectionState mConnectionState = ConnectionState.DISCONNECTED;
 
     private BluetoothGattCharacteristic characteristicFifo;
+
+    private DataBaseHelper db;
+    private Device dbDevice;
 
     public void onServiceConnected() {
         if (!mBluetoothLeService.initialize(this)) {
@@ -95,10 +101,10 @@ public class MainActivity extends Activity {
 
     class PersonProfile {
         public String name;
-        public byte[] photoData;
-        public byte[] descriptor;
-        public Bitmap photoPreview;
-    };
+        private byte[] photoData;
+        private byte[] descriptor;
+        private Bitmap photoPreview;
+    }
 
     ArrayList<PersonProfile> strangers;
     private PersonProfile currentUserToRead = new PersonProfile();
@@ -110,15 +116,11 @@ public class MainActivity extends Activity {
         LayoutInflater inflater;
         ArrayList<PersonProfile> people;
 
-        public PeopleListAdapter(Context context, ArrayList<PersonProfile> people)
+        private PeopleListAdapter(Context context, ArrayList<PersonProfile> people)
         {
             this.context = context;
             this.people = people;
             inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        }
-
-        public ArrayList<PersonProfile> getPeople() {
-            return people;
         }
 
         @Override
@@ -139,16 +141,16 @@ public class MainActivity extends Activity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view = convertView;
-            if(view == null){
+            if (view == null) {
                 view = inflater.inflate(R.layout.listitem_person, parent, false);
             }
 
             PersonProfile person = people.get(position);
 
-            TextView personTextView = (TextView) view.findViewById(R.id.person_name);
+            TextView personTextView = view.findViewById(R.id.person_name);
             personTextView.setText(person.name);
 
-            ImageView personPreview = (ImageView) view.findViewById(R.id.person_photo);
+            ImageView personPreview = view.findViewById(R.id.person_photo);
 
             final int pixCount = 128 * 128;
             int[] intGreyBuffer = new int[pixCount];
@@ -163,7 +165,7 @@ public class MainActivity extends Activity {
 
             return view;
         }
-    };
+    }
 
     private void updateStatus() {
         switch (mConnectionState) {
@@ -180,14 +182,40 @@ public class MainActivity extends Activity {
                 tvStatus.setText(R.string.status_disconnected);
                 break;
             case BLE_EXCHANGE:
-                tvStatus.setText("loading data");
+                tvStatus.setText(R.string.status_loading);
                 break;
+        }
+    }
+
+    private void startHBTimer() {
+        hbTimer = new Timer();
+        TimerTask hbTask = new TimerTask() {
+            public void run() {
+                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_HEART_BEAT});
+            }
+        };
+        hbTimer.schedule(hbTask, hbInterval / 2, hbInterval);
+    }
+
+    private void stopHBTimer() {
+        if (hbTimer != null) {
+            hbTimer.cancel();
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        db = new DataBaseHelper(getApplicationContext());
+        dbDevice = db.getDevice(mDevice.getAddress());
+        if (dbDevice != null) {
+            dbDevice.setName(mDevice.getName());
+        } else {
+            dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
+            db.createDevice(dbDevice);
+        }
+
         if (mBluetoothLeService != null) {
             mBluetoothLeService.register(mGattUpdateReceiver);
             final boolean result = mBluetoothLeService.connect(mDevice);
@@ -204,15 +232,15 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         try {
+            stopHBTimer();
             mBluetoothLeService.disconnect();
             mBluetoothLeService.close();
             mConnectionState = ConnectionState.DISCONNECTED;
             mBluetoothLeService.unregister();
         } catch (Exception ignore) {}
 
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putStringSet(getString(R.string.preferences_key), favorites);
-        editor.commit();
+        db.updateDevice(dbDevice);
+        db.closeDB();
 
         invalidateOptionsMenu();
     }
@@ -229,11 +257,6 @@ public class MainActivity extends Activity {
         rlProgress = findViewById(R.id.rlProgress);
 
         updateStatus();
-
-        Context context = getApplicationContext();
-        preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        Set<String> tmp = preferences.getStringSet(getString(R.string.preferences_key), new HashSet<>());
-        favorites = new HashSet<>(tmp);
 
         strangers = new ArrayList<>();
         PeopleListAdapter adapter = new PeopleListAdapter(this, strangers);
@@ -291,7 +314,7 @@ public class MainActivity extends Activity {
         });
 
         final Intent intent = getIntent();
-        connectToDevice((BluetoothDeviceRepresentation) intent.getParcelableExtra(EXTRA_DEVICE));
+        connectToDevice(intent.getParcelableExtra(EXTRA_DEVICE));
 
         // Get a ref to the actionbar and set the navigation mode
         final ActionBar actionBar = getActionBar();
@@ -349,7 +372,7 @@ public class MainActivity extends Activity {
                 menu.findItem(R.id.menu_refresh_people).setVisible(false);
                 break;
         }
-        if(favorites.contains(mDevice.getAddress())) {
+        if (dbDevice.isFavourite()) {
             menu.findItem(R.id.menu_favorite).setIcon(R.drawable.favorite);
         } else {
             menu.findItem(R.id.menu_favorite).setIcon(R.drawable.not_favorite);
@@ -369,6 +392,7 @@ public class MainActivity extends Activity {
                 rlProgress.setVisibility(View.VISIBLE);
                 return true;
             case R.id.menu_disconnect:
+                stopHBTimer();
                 if ((mConnectionState == ConnectionState.CONNECTED) || (mConnectionState == ConnectionState.BLE_EXCHANGE)) {
                     mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_EXIT});
                     previousBleRequest = BLE_EXIT;
@@ -400,11 +424,11 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.menu_favorite:
-                if(favorites.contains(mDevice.getAddress())) {
-                    favorites.remove(mDevice.getAddress());
+                if (dbDevice.isFavourite()) {
+                    dbDevice.setFavourite(false);
                     item.setIcon(R.drawable.not_favorite);
                 } else {
-                    favorites.add(mDevice.getAddress());
+                    dbDevice.setFavourite(true);
                     item.setIcon(R.drawable.favorite);
                 }
                 return true;
@@ -438,7 +462,7 @@ public class MainActivity extends Activity {
 
        @Override
         public void onDataAvailable(UUID uUid, int type, byte[] data) {
-                String typeString = "";
+                String typeString;
                 switch (type) {
                     case ITEM_TYPE_READ:
                         typeString = "ITEM_TYPE_READ";
@@ -486,9 +510,7 @@ public class MainActivity extends Activity {
                             break;
                         case BLE_GET_PHOTO:
                             Log.d(TAG, "previousBleRequest == BLE_GET_PHOTO");
-                            for (int i = 0; i < data.length; i++) {
-                                currentUserPhotoToRead[currentUserPhotoRead + i] = data[i];
-                            }
+                            System.arraycopy(data, 0, currentUserPhotoToRead, currentUserPhotoRead, data.length);
                             currentUserPhotoRead += data.length;
                             Log.d(TAG, "Received " + currentUserPhotoRead + " bytes from " + currentUserPhotoToRead.length);
                             if (currentUserPhotoRead >= currentUserPhotoToRead.length) {
@@ -509,9 +531,7 @@ public class MainActivity extends Activity {
                             break;
                         case BLE_GET_DESCRIPTOR:
                             Log.d(TAG, "previousBleRequest == BLE_GET_DESCRIPTOR");
-                            for (int i = 0; i < data.length; i++) {
-                                currentUserDescriptorToRead[currentUserDescriptorRead + i] = data[i];
-                            }
+                            System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
                             currentUserDescriptorRead += data.length;
                             Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
                             if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
@@ -550,7 +570,7 @@ public class MainActivity extends Activity {
                                 else
                                 {
                                     Log.d(TAG, "Name is shorter than 16 letters, adding zeros.");
-                                    name =  new byte[16];
+                                    name = new byte[16];
                                     System.arraycopy(currentUserToWrite.name.getBytes(),0, name, 0, currentUserToWrite.name.length());
                                     for(int i = currentUserToWrite.name.length(); i < 16; i++)
                                     {
@@ -577,10 +597,10 @@ public class MainActivity extends Activity {
                             Log.d(TAG, "Response code: " + data[0]);
                             if (data[0] == BLE_ACK) {
                                 mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
-                                int chunksize = 20;
-                                int packetsToSend = (currentUserToWrite.descriptor.length + 19) / chunksize;
+                                int chunkSize = 20;
+                                int packetsToSend = (currentUserToWrite.descriptor.length + chunkSize - 1) / chunkSize;
                                 for(int i = 0; i < packetsToSend; i++) {
-                                    byte[] tmp = Arrays.copyOfRange(currentUserToWrite.descriptor, i*chunksize, min(i*chunksize + chunksize, 1024));
+                                    byte[] tmp = Arrays.copyOfRange(currentUserToWrite.descriptor, i*chunkSize, min(i*chunkSize + chunkSize, 1024));
                                     mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
                                 }
                                 previousBleRequest = BLE_SET_DESCRIPTOR;
@@ -649,6 +669,7 @@ public class MainActivity extends Activity {
                 updateStatus();
                 rlProgress.setVisibility(View.GONE);
             });
+            stopHBTimer();
         }
 
         @Override
@@ -659,6 +680,7 @@ public class MainActivity extends Activity {
                 updateStatus();
                 rlProgress.setVisibility(View.GONE);
             });
+            startHBTimer();
         }
     }
 }

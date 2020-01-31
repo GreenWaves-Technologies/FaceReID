@@ -111,6 +111,9 @@ else
     APP_SRCS += BleUserManager.c strangers_db.c
     APP_CFLAGS += -DUSE_BLE_USER_MANAGEMENT=1
   endif
+  ifneq ($(BLE_NAME),)
+    APP_CFLAGS += -DBLE_NAME='"$(BLE_NAME)"'
+  endif
 endif
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
