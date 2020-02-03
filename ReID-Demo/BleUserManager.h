@@ -17,8 +17,7 @@
 #ifndef __BLE_USER_MANAGER_H__
 #define __BLE_USER_MANAGER_H__
 
-#include "setup.h"
-#include "strangers_db.h"
+#include "pmsis.h"
 
 int initHandler(struct pi_device *gpio_port);
 int prepareStranger(void* preveiw);

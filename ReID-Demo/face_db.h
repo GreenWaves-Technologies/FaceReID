@@ -26,7 +26,11 @@ int identify_by_db(short* descriptor, char** name);
 
 #ifndef STATIC_FACE_DB
 int add_to_db(short* descriptor, char* name);
+int drop_from_db(short * descriptor);
 #endif
+
+char get_identities_count(void);
+char get_identity(int idx, short ** descriptor, char ** name);
 
 int db_free();
 

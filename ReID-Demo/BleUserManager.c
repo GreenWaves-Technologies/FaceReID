@@ -34,10 +34,10 @@ rt_timer_t ble_timer;
 
 typedef struct BleContext_T
 {
-    int queue_head;
-    int queue_tail;
-    char read_mode;
-    char write_mode;
+    int strangers_head;
+    int strangers_tail;
+    int visitors_head;
+    int visitors_tail;
     int face_chunk_idx;
     struct pi_device* display;
     pi_nina_ble_t* ble;
@@ -57,20 +57,19 @@ void ble_protocol_handler(void* params)
 
     switch(action)
     {
-        case BLE_CMD_READ:
-            PRINTF("BLE READ request got\n");
-            PRINTF("Queue head: %d, Queue tail: %d\n", context->queue_head, context->queue_tail);
+        case BLE_CMD_READ_STRANGER:
+            PRINTF("BLE READ STRANGER request got\n");
+            context->strangers_head++;
+            PRINTF("Queue head: %d, Queue tail: %d\n", context->strangers_head, context->strangers_tail);
 
-            if(context->queue_head != context->queue_tail)
+            if (context->strangers_head < context->strangers_tail)
             {
 #if defined(HAVE_DISPLAY)
                 char message[32];
-                sprintf(message, "Sending %d/%d", context->queue_head+1, context->queue_tail);
+                sprintf(message, "Sending %d/%d", context->strangers_head+1, context->strangers_tail);
                 draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
-
-                // there is something in queue
-                context->read_mode = 1;
+                // there is something in the queue
                 pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
                 PRINTF("BLE_ACK responded\n");
             }
@@ -79,28 +78,30 @@ void ble_protocol_handler(void* params)
                 PRINTF("Nothing to read\n");
                 draw_text(context->display, "Ready", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+                // Reset the queue head, so the queue can be reread
+                context->strangers_head = -1;
             }
             break;
-        case BLE_CMD_GET_NAME:
-            PRINTF("BLE GET_NAME request got\n");
-            if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
+        case BLE_CMD_GET_STRANGER_NAME:
+            PRINTF("BLE GET_STRANGER_NAME request got\n");
+            if (context->strangers_head < context->strangers_tail) // we have something in queue
             {
-                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *) context->l2_strangers[context->queue_head].name, 16);
-                PRINTF("Name %s responded\n", context->l2_strangers[context->queue_head].name);
+                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)context->l2_strangers[context->strangers_head].name, 16);
+                PRINTF("Name %s responded\n", context->l2_strangers[context->strangers_head].name);
             }
             else
             {
-                PRINTF("ERROR: Empty respond sent\n");
+                PRINTF("ERROR: Empty response sent\n");
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
-        case BLE_CMD_GET_PHOTO:
-            PRINTF("BLE GET_PHOTO request got\n");
-            if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
+        case BLE_CMD_GET_STRANGER_PHOTO:
+            PRINTF("BLE GET_STRANGER_PHOTO request got\n");
+            if (context->strangers_head < context->strangers_tail) // we have something in queue
             {
-                char* ptr = (char *) (context->l2_strangers[context->queue_head].preview + context->face_chunk_idx * DATA_CHUNK_SIZE);
+                char* ptr = (char *) (context->l2_strangers[context->strangers_head].preview + context->face_chunk_idx * DATA_CHUNK_SIZE);
                 int size = MIN(DATA_CHUNK_SIZE, 128 * 128 - context->face_chunk_idx * DATA_CHUNK_SIZE);
-                pi_nina_b112_send_data_blocking(context->ble,(uint8_t *) ptr, size);
+                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *) ptr, size);
                 context->face_chunk_idx++;
                 int iters = (128*128 + DATA_CHUNK_SIZE-1) / DATA_CHUNK_SIZE;
                 if(context->face_chunk_idx >= iters)
@@ -112,43 +113,127 @@ void ble_protocol_handler(void* params)
             }
             else
             {
-                PRINTF("ERROR: Empty respond sent\n");
-                pi_nina_b112_send_data_blocking(context->ble,&empty_response, 1);
-            }
-            break;
-        case BLE_CMD_GET_DESCRIPTOR:
-            PRINTF("BLE GET_DESCRIPTOR request got\n");
-            if(context->read_mode && (context->queue_head != context->queue_tail)) // we are reading and have something in queue
-            {
-                pi_nina_b112_send_data_blocking(context->ble,(uint8_t *) context->l2_strangers[context->queue_head].descriptor, 512*sizeof(short));
-                PRINTF("Face descriptor sent for %s\n", context->l2_strangers[context->queue_head].name);
-            }
-            else
-            {
-                PRINTF("ERROR: Empty respond sent\n");
+                PRINTF("ERROR: Empty response sent\n");
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
             }
             break;
-        case BLE_CMD_REMOVE:
-            PRINTF("BLE REMOVE request got\n");
-            if(context->read_mode && (context->queue_head != context->queue_tail))
+        case BLE_CMD_GET_STRANGER_DESCRIPTOR:
+            PRINTF("BLE GET_STRANGER_DESCRIPTOR request got\n");
+            if (context->strangers_head < context->strangers_tail) // we have something in queue
             {
-                context->read_mode = 0;
-                context->queue_head++;
-                PRINTF("Queue head: %d, Queue tail: %d\n", context->queue_head, context->queue_tail);
+                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)context->l2_strangers[context->strangers_head].descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+                PRINTF("Face descriptor sent for %s\n", context->l2_strangers[context->strangers_head].name);
+            }
+            else
+            {
+                PRINTF("ERROR: Empty response sent\n");
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+            }
+            break;
+        case BLE_CMD_DROP_STRANGER: // noop
+            PRINTF("BLE DROP STRANGER request got\n");
+            if (context->strangers_head < context->strangers_tail)
+            {
+                PRINTF("Queue head: %d, Queue tail: %d\n", context->strangers_head, context->strangers_tail);
                 pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
                 PRINTF("BLE_ACK responded\n");
             }
             else
             {
                 pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
-                PRINTF("ERROR: Empty respond sent\n");
+                PRINTF("ERROR: Empty response sent\n");
             }
             break;
 
+        case BLE_CMD_READ_VISITOR:
+            PRINTF("BLE READ VISITOR request got\n");
+            context->visitors_head++;
+            PRINTF("Queue head: %d, Queue tail: %d\n", context->visitors_head, context->visitors_tail);
+
+            if (context->visitors_head < context->visitors_tail)
+            {
+#if defined(HAVE_DISPLAY)
+                char message[32];
+                sprintf(message, "Sending %d/%d", context->visitors_head+1, context->visitors_tail);
+                draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+#endif
+                // there is something in the queue
+                pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
+                PRINTF("BLE_ACK responded\n");
+            }
+            else
+            {
+                PRINTF("Nothing to read\n");
+                draw_text(context->display, "Ready", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+                // Reset the queue head, so the queue can be reread
+                context->visitors_head = -1;
+            }
+            break;
+        case BLE_CMD_GET_VISITOR_NAME:
+        {
+            PRINTF("BLE GET VISITOR NAME request got\n");
+            char *name;
+            if ((context->visitors_head < context->visitors_tail) &&
+                (get_identity(context->visitors_head, NULL, &name) == 0))
+            {
+                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)name, 16);
+                PRINTF("Name %s responded\n", name);
+            }
+            else
+            {
+                PRINTF("ERROR: Empty response sent\n");
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+            }
+            break;
+        }
+        case BLE_CMD_GET_VISITOR_DESCRIPTOR:
+        {
+            PRINTF("BLE GET VISITOR DESCRIPTOR request got\n");
+            char *name;
+            short *descriptor;
+            if ((context->visitors_head < context->visitors_tail) &&
+                (get_identity(context->visitors_head, &descriptor, &name) == 0))
+            {
+                pi_nina_b112_send_data_blocking(context->ble, (uint8_t *)descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+                PRINTF("Face descriptor sent for %s\n", name);
+            }
+            else
+            {
+                PRINTF("ERROR: Empty response sent\n");
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+            }
+            break;
+        }
+        case BLE_CMD_DROP_VISITOR:
+        {
+            pi_nina_b112_get_data_blocking(context->ble, (uint8_t *)context->current_descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+            PRINTF("BLE DROP VISITOR request got\n");
+            PRINTF("Got face descriptor\n");
+            int res = drop_from_db(context->current_descriptor);
+            if (res >= 0)
+            {
+                if (res > context->visitors_head)
+                {
+                    context->visitors_tail--;
+                }
+                else
+                {
+                    context->visitors_head = 0;
+                    context->visitors_tail = get_identities_count();
+                }
+                pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
+                PRINTF("BLE_ACK responded\n");
+            }
+            else
+            {
+                PRINTF("ERROR: Empty response sent\n");
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+            }
+            break;
+        }
         case BLE_CMD_WRITE:
             PRINTF("BLE WRITE request got\n");
-            context->write_mode = 1;
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
             break;
@@ -159,26 +244,35 @@ void ble_protocol_handler(void* params)
 
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
             PRINTF("BLE_ACK responded\n");
-            if (context->write_mode && (context->queue_head != context->queue_tail))
+            // TODO: WTF?
+            /*if (context->strangers_head != context->strangers_tail)
             {
-                memcpy(context->l2_strangers[context->queue_head].name, context->current_name, 16);
-            }
+                memcpy(context->l2_strangers[context->strangers_head].name, context->current_name, 16);
+            }*/
             break;
         case BLE_CMD_SET_DESCRIPTOR:
         {
-            // In GAP side, you don't need to devide it into package size,
+            // On the GAP side, you don't need to divide it into package size,
             // you can program the udma for 1K, than the uDMA will wait for each package
-            pi_nina_b112_get_data_blocking(context->ble, (uint8_t *) context->current_descriptor, 512*sizeof(short));
-            PRINTF("BLE SET_DESCRIPTOR request got\n");
+            pi_nina_b112_get_data_blocking(context->ble, (uint8_t *)context->current_descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+            PRINTF("BLE SET DESCRIPTOR request got\n");
             PRINTF("Got face descriptor\n");
 
             // Add to Known People DB here
-            add_to_db(context->current_descriptor, context->current_name);
-
-            pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
-            PRINTF("BLE_ACK responded\n");
-        } break;
-
+            int res = add_to_db(context->current_descriptor, context->current_name);
+            if (res >= 0)
+            {
+                context->visitors_tail = get_identities_count();
+                pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
+                PRINTF("BLE_ACK responded\n");
+            }
+            else
+            {
+                PRINTF("ERROR: Empty response sent\n");
+                pi_nina_b112_send_data_blocking(context->ble, &empty_response, 1);
+            }
+            break;
+        }
         case BLE_CMD_EXIT:
             PRINTF("BLE EXIT request got\n");
             pi_nina_b112_send_data_blocking(context->ble, &ack, 1);
@@ -209,31 +303,29 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
 {
     PRINTF("Starting Admin (BLE) body\n");
 
-    uint8_t rx_buffer[PI_AT_RESP_ARRAY_LENGTH];
-
-    BleContext context;
-
-    context.read_mode = 0;
-    context.write_mode = 0;
-    context.face_chunk_idx = 0;
-
-    context.display = display;
-
     clear_stripe(display, LCD_OFF_Y, LCD_HEIGHT); // clear whole screen except the logo
     draw_text(display, "Loading Photos", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
-    context.queue_head = 0;
-    context.queue_tail = getStrangersCount(); // to allocate memory in future
-    PRINTF("Found %d strangers in queue\n", context.queue_tail);
+    char rx_buffer[PI_AT_RESP_ARRAY_LENGTH];
+
+    BleContext context;
+    context.face_chunk_idx = 0;
+    context.display = display;
+    context.strangers_head = -1;
+    context.strangers_tail = getStrangersCount(); // to allocate memory in future
+    PRINTF("Found %d strangers in queue\n", context.strangers_tail);
+    context.visitors_head = -1;
+    context.visitors_tail = get_identities_count();
     context.current_descriptor = memory_pool;
-    context.current_name = memory_pool + 512;
-    context.l2_strangers = (Stranger*) (memory_pool + 512 + 16/sizeof(short));
+    context.current_name = memory_pool + FACE_DESCRIPTOR_SIZE;
+    context.l2_strangers = (Stranger*) (memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
+
     Stranger* current_stranger = context.l2_strangers;
-    char* previews = (char*) &context.l2_strangers[context.queue_tail+1]; // right after the last structure
+    char* previews = (char*) &context.l2_strangers[context.strangers_tail+1]; // right after the last structure
 
     PRINTF("Getting the first stranger from queue\n");
 
-    for(int i = 0; i < context.queue_tail; i++)
+    for(int i = 0; i < context.strangers_tail; i++)
     {
         context.l2_strangers[i].preview = previews + i*128*128;
         getStranger(i, &context.l2_strangers[i]);
@@ -426,5 +518,3 @@ int handleStranger(short* descriptor)
     }
     return status;
 }
-
-#undef MIN

@@ -17,6 +17,7 @@
 #include "face_db.h"
 #include "dnn_utils.h"
 
+#include <string.h>
 #include <fcntl.h>
 
 #ifdef STATIC_FACE_DB
@@ -116,33 +117,79 @@ int identify_by_db(short* descriptor, char** name)
     return min_l2;
 }
 
+static int find_in_db(short *descriptor)
+{
+    int i;
+    for (i = 0; i < identified_people; i++)
+    {
+        if (memcmp(descriptor, PeopleDescriptors[i], FACE_DESCRIPTOR_SIZE * sizeof(short)) == 0)
+        {
+            PRINTF("Found descriptor with index: %d (%s)\n", i, PeopleNames[i]);
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 int add_to_db(short* descriptor, char* name)
 {
-    if(identified_people < FACE_DB_SIZE)
+    if(identified_people >= FACE_DB_SIZE)
     {
-        for(int i = 0; i < FACE_DESCRIPTOR_SIZE; i++)
-        {
-            PeopleDescriptors[identified_people][i] = descriptor[i];
-        }
-        int i = 0;
-        while((i < 16) && (name[i] !='\0'))
-        {
-            PeopleNames[identified_people][i] = name[i];
-            i++;
-        }
-
-        if(i == 16) i--;
-
-        PeopleNames[identified_people][i] = '\0';
-
-        identified_people++;
-
-        return identified_people-1;
+        PRINTF("Error: Descriptor DB is full\n");
+        return -1;
     }
-    else
+
+    memcpy(PeopleDescriptors[identified_people], descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+    int i;
+    for(i = 0; (i < 16) && (name[i] != '\0'); i++)
+    {
+        PeopleNames[identified_people][i] = name[i];
+    }
+
+    if(i == 16) i--;
+
+    PeopleNames[identified_people][i] = '\0';
+
+    return identified_people++;
+}
+
+int drop_from_db(short * descriptor)
+{
+    int i = find_in_db(descriptor);
+    if (i < 0)
     {
         return -1;
     }
+
+    identified_people--;
+    if (i != identified_people)
+    {
+        memcpy(PeopleDescriptors[i], PeopleDescriptors[identified_people], FACE_DESCRIPTOR_SIZE * sizeof(short));
+        memcpy(PeopleNames[i], PeopleNames[identified_people], 16 * sizeof(char));
+    }
+
+    return i;
+}
+
+char get_identities_count(void)
+{
+    return identified_people;
+}
+
+char get_identity(int idx, short ** descriptor, char ** name)
+{
+    if ((idx < 0) || (idx >= identified_people))
+    {
+        return -1;
+    }
+
+    if (name != NULL)
+        *name = PeopleNames[idx];
+    if (descriptor != NULL)
+        *descriptor = PeopleDescriptors[idx];
+
+    return 0;
 }
 
 void printf_db_descriptors()

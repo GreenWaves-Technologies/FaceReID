@@ -1,21 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item android:id="@+id/menu_favorite"
-        android:title="Add to Favorites"
-        android:icon="@drawable/not_favorite"
+    <item android:id="@+id/menu_favourite"
+        android:title="@string/menu_favourites"
+        android:icon="@drawable/ic_star_border_black_24dp"
         android:orderInCategory="99"
         android:showAsAction="always" />
     <item android:id="@+id/menu_connect"
         android:title="@string/menu_connect"
         android:orderInCategory="100"
-        android:showAsAction="ifRoom|withText" />
+        android:showAsAction="always|withText" />
     <item android:id="@+id/menu_disconnect"
         android:title="@string/menu_disconnect"
         android:orderInCategory="101"
-        android:showAsAction="ifRoom|withText" />
+        android:showAsAction="always|withText" />
     <item android:id="@+id/menu_refresh_people"
         android:title="@string/menu_refresh_people"
         android:orderInCategory="102"
-        android:showAsAction="ifRoom|withText" />
+        android:showAsAction="always|withText" />
+    <item android:id="@+id/menu_devices"
+        android:title="@string/menu_devices"
+        android:orderInCategory="103"
+        android:showAsAction="never" />
+    <item android:id="@+id/menu_users"
+        android:title="@string/menu_visitors"
+        android:enabled="false"
+        android:orderInCategory="104"
+        android:showAsAction="never" />
 </menu>
