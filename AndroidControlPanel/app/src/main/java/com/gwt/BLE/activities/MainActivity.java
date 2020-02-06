@@ -545,242 +545,242 @@ public class MainActivity extends Activity {
             Log.d(TAG, "onRssiUpdate call");
         }
 
-       @Override
+        @Override
         public void onDataAvailable(UUID uUid, int type, byte[] data) {
-                String typeString;
-                switch (type) {
-                    case ITEM_TYPE_READ:
-                        typeString = "ITEM_TYPE_READ";
+            String typeString;
+            switch (type) {
+                case ITEM_TYPE_READ:
+                    typeString = "ITEM_TYPE_READ";
+                break;
+                case ITEM_TYPE_WRITE:
+                    typeString = "ITEM_TYPE_WRITE";
                     break;
-                    case ITEM_TYPE_WRITE:
-                        typeString = "ITEM_TYPE_WRITE";
-                        break;
-                    case ITEM_TYPE_NOTIFICATION:
-                        typeString = "ITEM_TYPE_NOTIFICATION";
-                        break;
-                    default:
-                        typeString = "UNKNOWN";
-                }
-                Log.d(TAG, "onDataAvailable call: Data type " + typeString + " with size " + data.length + " is available!");
+                case ITEM_TYPE_NOTIFICATION:
+                    typeString = "ITEM_TYPE_NOTIFICATION";
+                    break;
+                default:
+                    typeString = "UNKNOWN";
+            }
+            Log.d(TAG, "onDataAvailable call: Data type " + typeString + " with size " + data.length + " is available!");
 
-                if(type == ITEM_TYPE_NOTIFICATION) {
-                    Log.d(TAG, "BLE request was " + currentBleRequest);
+            if(type == ITEM_TYPE_NOTIFICATION) {
+                Log.d(TAG, "BLE request was " + currentBleRequest);
 
-                    switch (currentBleRequest) {
-                        case BLE_READ_STRANGER:
-                            Log.d(TAG, "currentBleRequest == BLE_READ_STRANGER");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK) {
-                                Log.d(TAG, "Sending stranger name request");
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_NAME});
-                                currentBleRequest = BLE_GET_STRANGER_NAME;
-                            } else if (data[0] == 0) {
-                                mConnectionState = ConnectionState.CONNECTED;
-                                runOnUiThread(() -> {
-                                    invalidateOptionsMenu();
-                                    updateStatus();
-                                    rlProgress.setVisibility(View.GONE);
-                                });
-                            }
-                            break;
-                        case BLE_GET_STRANGER_NAME: {
-                            Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_NAME");
-                            String name = CString2String(data);
-                            Log.d(TAG, "Name " + name + " got, sending BLE_GET_STRANGER_PHOTO request");
-                            currentUserToRead.setName(name);
-                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_PHOTO});
-                            currentBleRequest = BLE_GET_STRANGER_PHOTO;
-                            currentUserPhotoRead = 0;
-                            break;
+                switch (currentBleRequest) {
+                    case BLE_READ_STRANGER:
+                        Log.d(TAG, "currentBleRequest == BLE_READ_STRANGER");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            Log.d(TAG, "Sending stranger name request");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_NAME});
+                            currentBleRequest = BLE_GET_STRANGER_NAME;
+                        } else if (data[0] == 0) {
+                            mConnectionState = ConnectionState.CONNECTED;
+                            runOnUiThread(() -> {
+                                invalidateOptionsMenu();
+                                updateStatus();
+                                rlProgress.setVisibility(View.GONE);
+                            });
                         }
-                        case BLE_GET_STRANGER_PHOTO:
-                            Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_PHOTO");
-                            System.arraycopy(data, 0, currentUserPhotoToRead, currentUserPhotoRead, data.length);
-                            currentUserPhotoRead += data.length;
-                            Log.d(TAG, "Received " + currentUserPhotoRead + " bytes from " + currentUserPhotoToRead.length);
-                            if (currentUserPhotoRead >= currentUserPhotoToRead.length) {
-                                currentUserToRead.setPhotoData(currentUserPhotoToRead.clone());
-                                currentUserPhotoRead = 0;
-                                Log.d(TAG, "Photo got, sending BLE_GET_STRANGER_DESCRIPTOR request");
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_DESCRIPTOR});
-                                currentBleRequest = BLE_GET_STRANGER_DESCRIPTOR;
-                            } else {
-                                // data is sent in chunks by 1024 bytes. New request is needed to get the next portion
-                                if(currentUserPhotoRead % 1024 == 0) {
-                                    Log.d(TAG, "Requesting new chunk of data");
-                                    mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_PHOTO});
+                        break;
+                    case BLE_GET_STRANGER_NAME: {
+                        Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_NAME");
+                        String name = CString2String(data);
+                        Log.d(TAG, "Name " + name + " got, sending BLE_GET_STRANGER_PHOTO request");
+                        currentUserToRead.setName(name);
+                        mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_PHOTO});
+                        currentBleRequest = BLE_GET_STRANGER_PHOTO;
+                        currentUserPhotoRead = 0;
+                        break;
+                    }
+                    case BLE_GET_STRANGER_PHOTO:
+                        Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_PHOTO");
+                        System.arraycopy(data, 0, currentUserPhotoToRead, currentUserPhotoRead, data.length);
+                        currentUserPhotoRead += data.length;
+                        Log.d(TAG, "Received " + currentUserPhotoRead + " bytes from " + currentUserPhotoToRead.length);
+                        if (currentUserPhotoRead >= currentUserPhotoToRead.length) {
+                            currentUserToRead.setPhotoData(currentUserPhotoToRead.clone());
+                            currentUserPhotoRead = 0;
+                            Log.d(TAG, "Photo got, sending BLE_GET_STRANGER_DESCRIPTOR request");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_DESCRIPTOR});
+                            currentBleRequest = BLE_GET_STRANGER_DESCRIPTOR;
+                        } else {
+                            // data is sent in chunks by 1024 bytes. New request is needed to get the next portion
+                            if(currentUserPhotoRead % 1024 == 0) {
+                                Log.d(TAG, "Requesting new chunk of data");
+                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_STRANGER_PHOTO});
+                            }
+                        }
+                        break;
+                    case BLE_GET_STRANGER_DESCRIPTOR:
+                        Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_DESCRIPTOR");
+                        System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
+                        currentUserDescriptorRead += data.length;
+                        Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
+                        if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
+                            currentUserToRead.setDescriptor(currentUserDescriptorToRead.clone());
+                            currentUserDescriptorRead = 0;
+                            Log.d(TAG, "Descriptor got, sending BLE_DROP_STRANGER request");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_STRANGER});
+                            currentBleRequest = BLE_DROP_STRANGER;
+                        }
+                        break;
+                    case BLE_DROP_STRANGER:
+                        Log.d(TAG, "currentBleRequest == BLE_DROP_STRANGER");
+                        if (db.createVisitor(currentUserToRead) >= 0) {
+                            visitors.add(currentUserToRead);
+                        }
+
+                        currentUserToRead = new Visitor();
+                        currentUserPhotoToRead = new byte[128*128];
+                        mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_STRANGER});
+                        currentBleRequest = BLE_READ_STRANGER;
+                        runOnUiThread(() -> {
+                            final Adapter a = androidListView.getAdapter();
+                            if (a instanceof BaseAdapter) {
+                                ((BaseAdapter)a).notifyDataSetChanged();
+                            }
+                        });
+                        break;
+                    case BLE_READ_VISITOR:
+                        Log.d(TAG, "currentBleRequest == BLE_READ_VISITOR");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            Log.d(TAG, "Sending visitor name request");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_VISITOR_NAME});
+                            currentBleRequest = BLE_GET_VISITOR_NAME;
+                        } else if (data[0] == 0) {
+                            // All visitors are loaded, continue with strangers
+                            Log.d(TAG, "Sending read stranger request");
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_STRANGER});
+                            currentBleRequest = BLE_READ_STRANGER;
+                        }
+                        break;
+                    case BLE_GET_VISITOR_NAME: {
+                        Log.d(TAG, "currentBleRequest == BLE_GET_VISITOR_NAME");
+                        String name = CString2String(data);
+                        Log.d(TAG, "Name " + name + " got, sending BLE_GET_VISITOR_DESCRIPTOR request");
+                        currentUserToRead.setName(name);
+                        mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_VISITOR_DESCRIPTOR});
+                        currentBleRequest = BLE_GET_VISITOR_DESCRIPTOR;
+                        break;
+                    }
+                    case BLE_GET_VISITOR_DESCRIPTOR:
+                        Log.d(TAG, "currentBleRequest == BLE_GET_VISITOR_DESCRIPTOR");
+                        System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
+                        currentUserDescriptorRead += data.length;
+                        Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
+                        if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
+                            currentUserToRead.setDescriptor(currentUserDescriptorToRead.clone());
+                            currentUserDescriptorRead = 0;
+                            Log.d(TAG, "Descriptor got, adding a visitor");
+
+                            // Try to find visitor in DB visitors
+                            int i;
+                            for (i = 0; i < visitors.size(); i++) {
+                                Visitor v = visitors.get(i);
+                                if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
+                                    visitorsPermitted.add(v.getId());
+                                    break;
                                 }
                             }
-                            break;
-                        case BLE_GET_STRANGER_DESCRIPTOR:
-                            Log.d(TAG, "currentBleRequest == BLE_GET_STRANGER_DESCRIPTOR");
-                            System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
-                            currentUserDescriptorRead += data.length;
-                            Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
-                            if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
-                                currentUserToRead.setDescriptor(currentUserDescriptorToRead.clone());
-                                currentUserDescriptorRead = 0;
-                                Log.d(TAG, "Descriptor got, sending BLE_DROP_STRANGER request");
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_STRANGER});
-                                currentBleRequest = BLE_DROP_STRANGER;
-                            }
-                            break;
-                        case BLE_DROP_STRANGER:
-                            Log.d(TAG, "currentBleRequest == BLE_DROP_STRANGER");
-                            if (db.createVisitor(currentUserToRead) >= 0) {
+
+                            if (i >= visitors.size()) { // visitor is not in DB
+                                db.createVisitor(currentUserToRead);
                                 visitors.add(currentUserToRead);
+                                visitorsPermitted.add(currentUserToRead.getId());
                             }
 
                             currentUserToRead = new Visitor();
                             currentUserPhotoToRead = new byte[128*128];
-                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_STRANGER});
-                            currentBleRequest = BLE_READ_STRANGER;
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_VISITOR});
+                            currentBleRequest = BLE_READ_VISITOR;
                             runOnUiThread(() -> {
                                 final Adapter a = androidListView.getAdapter();
                                 if (a instanceof BaseAdapter) {
                                     ((BaseAdapter)a).notifyDataSetChanged();
                                 }
                             });
-                            break;
-                        case BLE_READ_VISITOR:
-                            Log.d(TAG, "currentBleRequest == BLE_READ_VISITOR");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK) {
-                                Log.d(TAG, "Sending visitor name request");
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_VISITOR_NAME});
-                                currentBleRequest = BLE_GET_VISITOR_NAME;
-                            } else if (data[0] == 0) {
-                                // All visitors are loaded, continue with strangers
-                                Log.d(TAG, "Sending read stranger request");
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_STRANGER});
-                                currentBleRequest = BLE_READ_STRANGER;
-                            }
-                            break;
-                        case BLE_GET_VISITOR_NAME: {
-                            Log.d(TAG, "currentBleRequest == BLE_GET_VISITOR_NAME");
-                            String name = CString2String(data);
-                            Log.d(TAG, "Name " + name + " got, sending BLE_GET_VISITOR_DESCRIPTOR request");
-                            currentUserToRead.setName(name);
-                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_GET_VISITOR_DESCRIPTOR});
-                            currentBleRequest = BLE_GET_VISITOR_DESCRIPTOR;
-                            break;
                         }
-                        case BLE_GET_VISITOR_DESCRIPTOR:
-                            Log.d(TAG, "currentBleRequest == BLE_GET_VISITOR_DESCRIPTOR");
-                            System.arraycopy(data, 0, currentUserDescriptorToRead, currentUserDescriptorRead, data.length);
-                            currentUserDescriptorRead += data.length;
-                            Log.d(TAG, "Received " + currentUserDescriptorRead + " bytes from " + currentUserDescriptorToRead.length);
-                            if (currentUserDescriptorRead >= currentUserDescriptorToRead.length) {
-                                currentUserToRead.setDescriptor(currentUserDescriptorToRead.clone());
-                                currentUserDescriptorRead = 0;
-                                Log.d(TAG, "Descriptor got, adding a visitor");
-
-                                // Try to find visitor in DB visitors
-                                int i;
-                                for (i = 0; i < visitors.size(); i++) {
-                                    Visitor v = visitors.get(i);
-                                    if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
-                                        visitorsPermitted.add(v.getId());
-                                        break;
-                                    }
-                                }
-
-                                if (i >= visitors.size()) { // visitor is not in DB
-                                    db.createVisitor(currentUserToRead);
-                                    visitors.add(currentUserToRead);
-                                    visitorsPermitted.add(currentUserToRead.getId());
-                                }
-
-                                currentUserToRead = new Visitor();
-                                currentUserPhotoToRead = new byte[128*128];
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_READ_VISITOR});
-                                currentBleRequest = BLE_READ_VISITOR;
-                                runOnUiThread(() -> {
-                                    final Adapter a = androidListView.getAdapter();
-                                    if (a instanceof BaseAdapter) {
-                                        ((BaseAdapter)a).notifyDataSetChanged();
-                                    }
-                                });
-                            }
-                            break;
-                        case BLE_DROP_VISITOR:
-                            Log.d(TAG, "currentBleRequest == BLE_DROP_VISITOR");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            break;
-                        case BLE_WRITE:
-                            Log.d(TAG, "currentBleRequest == BLE_WRITE");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK)
+                        break;
+                    case BLE_DROP_VISITOR:
+                        Log.d(TAG, "currentBleRequest == BLE_DROP_VISITOR");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        break;
+                    case BLE_WRITE:
+                        Log.d(TAG, "currentBleRequest == BLE_WRITE");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK)
+                        {
+                            Log.d(TAG, "Sending request to set name");
+                            byte[] name;
+                            if (currentUserToWrite.getName().length() >= 16)
                             {
-                                Log.d(TAG, "Sending request to set name");
-                                byte[] name;
-                                if (currentUserToWrite.getName().length() >= 16)
-                                {
-                                    Log.d(TAG, "Name is longer than 16 symbols, getting 16 first letters");
-                                    name = currentUserToWrite.getName().substring(0, 16).getBytes();
-                                } else {
-                                    Log.d(TAG, "Name is shorter than 16 letters, adding zeros.");
-                                    name = new byte[16];
-                                    System.arraycopy(currentUserToWrite.getName().getBytes(), 0, name, 0, currentUserToWrite.getName().length());
-                                    for (int i = currentUserToWrite.getName().length(); i < 16; i++)
-                                    {
-                                        name[i] = 0;
-                                    }
-                                }
-                                byte[] request = new byte[17];
-                                request[0] = BLE_SET_NAME;
-                                System.arraycopy(name, 0, request, 1, 16);
-                                {
-                                    Log.d(TAG, "Sending request bytes");
-                                    mBluetoothLeService.writeCharacteristic(characteristicFifo, request);
-                                    Log.d(TAG, "Name bytes are sent");
-                                }
-                                currentBleRequest = BLE_SET_NAME;
+                                Log.d(TAG, "Name is longer than 16 symbols, getting 16 first letters");
+                                name = currentUserToWrite.getName().substring(0, 16).getBytes();
                             } else {
-                                Log.d(TAG, "Device responded with non BLE_ACK code: " + data[0]);
-                            }
-                            break;
-                        case BLE_SET_NAME:
-                            Log.d(TAG, "currentBleRequest == SET_NAME");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK) {
-                                mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
-                                int chunkSize = 20;
-                                int packetsToSend = (currentUserToWrite.getDescriptor().length + chunkSize - 1) / chunkSize;
-                                for(int i = 0; i < packetsToSend; i++) {
-                                    byte[] tmp = Arrays.copyOfRange(currentUserToWrite.getDescriptor(), i*chunkSize, min(i*chunkSize + chunkSize, 1024));
-                                    mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
+                                Log.d(TAG, "Name is shorter than 16 letters, adding zeros.");
+                                name = new byte[16];
+                                System.arraycopy(currentUserToWrite.getName().getBytes(), 0, name, 0, currentUserToWrite.getName().length());
+                                for (int i = currentUserToWrite.getName().length(); i < 16; i++)
+                                {
+                                    name[i] = 0;
                                 }
-                                currentBleRequest = BLE_SET_DESCRIPTOR;
                             }
-                            break;
-                        case BLE_SET_DESCRIPTOR:
-                            Log.d(TAG, "currentBleRequest == SET_DESCRIPTOR");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK) {
-                                visitorsPermitted.add(currentUserToWrite.getId());
+                            byte[] request = new byte[17];
+                            request[0] = BLE_SET_NAME;
+                            System.arraycopy(name, 0, request, 1, 16);
+                            {
+                                Log.d(TAG, "Sending request bytes");
+                                mBluetoothLeService.writeCharacteristic(characteristicFifo, request);
+                                Log.d(TAG, "Name bytes are sent");
+                            }
+                            currentBleRequest = BLE_SET_NAME;
+                        } else {
+                            Log.d(TAG, "Device responded with non BLE_ACK code: " + data[0]);
+                        }
+                        break;
+                    case BLE_SET_NAME:
+                        Log.d(TAG, "currentBleRequest == SET_NAME");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            mBluetoothLeService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
+                            int chunkSize = 20;
+                            int packetsToSend = (currentUserToWrite.getDescriptor().length + chunkSize - 1) / chunkSize;
+                            for(int i = 0; i < packetsToSend; i++) {
+                                byte[] tmp = Arrays.copyOfRange(currentUserToWrite.getDescriptor(), i*chunkSize, min(i*chunkSize + chunkSize, 1024));
+                                mBluetoothLeService.writeCharacteristic(characteristicFifo, tmp);
+                            }
+                            currentBleRequest = BLE_SET_DESCRIPTOR;
+                        }
+                        break;
+                    case BLE_SET_DESCRIPTOR:
+                        Log.d(TAG, "currentBleRequest == SET_DESCRIPTOR");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            visitorsPermitted.add(currentUserToWrite.getId());
 
-                                currentUserToWriteIdx = -1;
-                                currentUserToWrite = null;
+                            currentUserToWriteIdx = -1;
+                            currentUserToWrite = null;
 
-                                runOnUiThread(() -> {
-                                    rlProgress.setVisibility(View.GONE);
-                                    final Adapter a = androidListView.getAdapter();
-                                    if (a instanceof BaseAdapter) {
-                                        ((BaseAdapter)a).notifyDataSetChanged();
-                                    }
-                                });
-                            }
-                            break;
-                        case BLE_EXIT:
-                            Log.d(TAG, "currentBleRequest == EXIT");
-                            Log.d(TAG, "Response code: " + data[0]);
-                            if (data[0] == BLE_ACK) {
-                                mBluetoothLeService.disconnect();
-                            }
-                            break;
-                    }
+                            runOnUiThread(() -> {
+                                rlProgress.setVisibility(View.GONE);
+                                final Adapter a = androidListView.getAdapter();
+                                if (a instanceof BaseAdapter) {
+                                    ((BaseAdapter)a).notifyDataSetChanged();
+                                }
+                            });
+                        }
+                        break;
+                    case BLE_EXIT:
+                        Log.d(TAG, "currentBleRequest == EXIT");
+                        Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            mBluetoothLeService.disconnect();
+                        }
+                        break;
                 }
+            }
         }
 
         @Override
