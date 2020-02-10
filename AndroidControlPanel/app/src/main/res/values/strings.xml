@@ -28,9 +28,9 @@
     <string name="status_disconnecting">disconnecting&#8230;</string>
     <string name="status_disconnected">disconnected</string>
     <string name="status_connecting">connecting&#8230;</string>
-    <string name="status_loading">loading data&#8230;</string>
     <string name="status_connected">gatt connected</string>
-    <string name="status_discovered">gatt connected, services discovered</string>
+    <string name="status_loading">loading data&#8230;</string>
+    <string name="status_sending">sending data&#8230;</string>
     <string name="not_available">N/A</string>
     <string name="button_start">Start</string>
     <string name="logs_tittle">Logs</string>

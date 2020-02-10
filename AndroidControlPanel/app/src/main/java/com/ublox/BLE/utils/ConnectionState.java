@@ -5,5 +5,6 @@ public enum ConnectionState {
     CONNECTED,
     DISCONNECTING,
     DISCONNECTED,
-    BLE_EXCHANGE
+    BLE_EXCHANGE_READ,
+    BLE_EXCHANGE_WRITE
 }
