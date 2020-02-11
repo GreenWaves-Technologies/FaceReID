@@ -40,7 +40,7 @@ RUN apt-get update && \
         pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install wheel && pip3 install opencv-python
+RUN pip3 install wheel && pip3 install opencv-python argcomplete
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 

@@ -70,6 +70,7 @@ typedef void (*ConvLayerFunctionType)(
                 short int *,
                 short int *,
                 short int *,
+                unsigned int,
                 unsigned int
                 );
 
@@ -171,7 +172,7 @@ short* layer_process(int layer_idx, int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_weights, weights, weights_size);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias, bias, bias_size);
         PRINTF("Convolution\n");
-        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output, convLayers[layer_idx].norm_data);
+        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output, convLayers[layer_idx].norm_data, 0);
         PRINTF("Convolution done\n");
 
         *activation_size = get_activations_size(layer_idx);

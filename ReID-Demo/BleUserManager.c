@@ -16,7 +16,7 @@
 
 #include "bsp/gapoc_a.h"
 #include "bsp/ram/hyperram.h"
-#include "bsp/ble/nina_b112/nina_b112.h"
+#include "bsp/ble/nina_b112.h"
 
 #include "setup.h"
 #include "BleUserManager.h"

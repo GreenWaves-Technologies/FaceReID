@@ -59,7 +59,7 @@ APP_CFLAGS += $(CONTROL_MACRO) -Os
 
 DATA_FILES = ../../ReID-Demo/quantized_model/*.bin
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
+PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
 
 tiler_models: reid_model extra_model
 

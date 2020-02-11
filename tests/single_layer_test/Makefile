@@ -47,7 +47,7 @@ APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -Os
 
 DATA_FILES = ../../ReID-Demo/quantized_model/*.bin
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
+PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
 
 tiler_models: reid_model
 

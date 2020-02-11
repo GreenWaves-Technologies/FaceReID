@@ -30,6 +30,7 @@ typedef void (*ConvLayerFunctionType)(
                 short int *,
                 short int *,
                 short int *,
+                unsigned int,
                 unsigned int
                 );
 
@@ -115,7 +116,8 @@ short* network_process(int* activation_size)
     //loadLayerFromL3ToL2(&hyper, l3_weights[0], weights, weights_size[0]);
     //loadLayerFromL3ToL2(&HyperRam, l3_bias[0], bias, bias_size[0]);
 
-    ConvLayer0(layer_input, l3_weights[0], l3_bias[0], layer_output, convLayers[0].norm_data);
+    ConvLayer0(layer_input, l3_weights[0], l3_bias[0], layer_output,
+               convLayers[0].norm_data, 0);
 
 #ifdef STOP_AFTER_ConvLayer0
     *activation_size = get_activations_size(0);
@@ -134,7 +136,8 @@ short* network_process(int* activation_size)
     //loadLayerFromL3ToL2(&hyper, l3_weights[1], weights, weights_size[1]);
     //loadLayerFromL3ToL2(&HyperRam, l3_bias[1], bias, bias_size[1]);
 
-    ConvLayer1(layer_input, l3_weights[1], l3_bias[1], layer_output, convLayers[1].norm_data);
+    ConvLayer1(layer_input, l3_weights[1], l3_bias[1], layer_output,
+               convLayers[1].norm_data, 0);
 
 #ifdef STOP_AFTER_ConvLayer1
     *activation_size = get_activations_size(1);
@@ -187,8 +190,9 @@ short* network_process(int* activation_size)
         //bias = weight_base_address;
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+0], bias, bias_size[fire_entry_idx+i+0]);
 
-        ConvLayerArray[fire_entry_idx+i+0](layer_input, l3_weights[fire_entry_idx+i+0], l3_bias[fire_entry_idx+i+0], layer_output,
-                                           convLayers[fire_entry_idx+i+0].norm_data);
+        ConvLayerArray[fire_entry_idx+i+0](layer_input, l3_weights[fire_entry_idx+i+0],
+                                           l3_bias[fire_entry_idx+i+0], layer_output,
+                                           convLayers[fire_entry_idx+i+0].norm_data, 0);
 
         layer_input = layer_output;
         layer_output = memory_pool;
@@ -207,8 +211,9 @@ short* network_process(int* activation_size)
         //loadLayerFromL3ToL2(&hyper, l3_weights[fire_entry_idx+i+1], weights, weights_size[fire_entry_idx+i+1]);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+1], bias, bias_size[fire_entry_idx+i+1]);
 
-        ConvLayerArray[fire_entry_idx+i+1](layer_input, l3_weights[fire_entry_idx+i+1], l3_bias[fire_entry_idx+i+1], layer_output,
-                                           convLayers[fire_entry_idx+i+1].norm_data);
+        ConvLayerArray[fire_entry_idx+i+1](layer_input, l3_weights[fire_entry_idx+i+1],
+                                           l3_bias[fire_entry_idx+i+1], layer_output,
+                                           convLayers[fire_entry_idx+i+1].norm_data, 0);
 
         layer_output = memory_pool + get_activations_size(fire_entry_idx+i+1);
         //weights = weight_base_address;
@@ -225,8 +230,9 @@ short* network_process(int* activation_size)
 
         //loadLayerFromL3ToL2(&hyper, l3_weights[fire_entry_idx+i+2], weights, weights_size[fire_entry_idx+i+2]);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+2], bias, bias_size[fire_entry_idx+i+2]);
-        ConvLayerArray[fire_entry_idx+i+2](layer_input, l3_weights[fire_entry_idx+i+2], l3_bias[fire_entry_idx+i+2], layer_output,
-                                           convLayers[fire_entry_idx+i+2].norm_data);
+        ConvLayerArray[fire_entry_idx+i+2](layer_input, l3_weights[fire_entry_idx+i+2],
+                                           l3_bias[fire_entry_idx+i+2], layer_output,
+                                           convLayers[fire_entry_idx+i+2].norm_data, 0);
 
         previous_activation_size = concated_activation_size;
 

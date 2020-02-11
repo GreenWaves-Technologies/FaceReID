@@ -58,7 +58,7 @@ APP_SRCS = main.c ../../ReID-Demo/reid_pipeline.c ../../ReID-Demo/network_proces
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
+PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
 
 all:: tiler_models
 

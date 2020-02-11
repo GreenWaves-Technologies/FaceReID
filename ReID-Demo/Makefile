@@ -121,16 +121,16 @@ ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
 endif
 
 ifeq ($(ALREADY_FLASHED),1)
-  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO 10
+  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
 else
-  PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) #-fileIO 10
+  PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) #-fileIO
 endif
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
   PLPBRIDGE_FLAGS += -hyper
 else
-  PLPBRIDGE_FLAGS += -fileIO 10
+  PLPBRIDGE_FLAGS += -fileIO
 endif
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
@@ -144,7 +144,7 @@ endif
 
 all:: tiler_models
 
-run:: prepare_debug
+run: prepare_debug
 
 clean::
 	rm -rf BUILD

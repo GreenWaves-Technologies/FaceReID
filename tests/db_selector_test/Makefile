@@ -13,7 +13,11 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-DEVICE_CONNECTION ?= -jtag
+ifeq ($(BOARD_NAME),gapoc_a)
+  DEVICE_CONNECTION = -ftdi
+else
+  DEVICE_CONNECTION = -jtag
+endif
 
 APP_SRCS = main.c ../../ReID-Demo/face_db.c ../../ReID-Demo/dnn_utils.c
 
@@ -24,8 +28,6 @@ DATA_FILES = ../../ReID-Demo/known_faces/index.txt ../../ReID-Demo/known_faces/*
 
 APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
-
-.PHONY: all clean
+PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
 
 include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
