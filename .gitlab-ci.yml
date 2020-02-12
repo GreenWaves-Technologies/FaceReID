@@ -1,65 +1,52 @@
 image: asmorkalov/gap_sdk:3.1
 
 stages:
-  - BuildDemo_GAPOC
-  - BuildDemo_GAPUINO
-  - BuildDemo_DUMP_DESCRIPTORS
-  - BuildDemo_GAPOC_STATIC
-  - BuildDemo_DUMP_DESCRIPTORS
-  - BuildDemo_GAPOC_STATIC_BLE
-  - BuildDemo_GAPOC_STATIC_BLE_SILENT
-  - BuildBleTest
-  - BuildAndroidNotifier
-  - BuildAndroidControlPanel
-  - DbSelectorTest
-  - PreparePipelineTest
-  - InferenceTest
-  - SingleLayerTest
+  - BuildDemo
+  - BuildAndroid
+  - GapuinoTest
 
 BuildDemo_GAPOC:
-  stage: BuildDemo_GAPOC
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_DUMP_DESCRIPTORS:
-  stage: BuildDemo_DUMP_DESCRIPTORS
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a DUMP_SUCCESSFUL_FRAME=1 all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_DUMP_DESCRIPTORS:
-  stage: BuildDemo_DUMP_DESCRIPTORS
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a DUMP_SUCCESSFUL_FRAME=1 all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_GAPOC_STATIC:
-  stage: BuildDemo_GAPOC_STATIC
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 all
 
 BuildDemo_GAPOC_STATIC_BLE:
-  stage: BuildDemo_GAPOC_STATIC_BLE
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 BLE_NOTIFIER=1 all
 
 BuildDemo_GAPOC_STATIC_BLE_SILENT:
-  stage: BuildDemo_GAPOC_STATIC_BLE_SILENT
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapoc_a STATIC_FACE_DB=1 BLE_NOTIFIER=1 SILENT=1 all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_GAPUINO:
-  stage: BuildDemo_GAPUINO
-BuildDemo_GAPUINO:
-  stage: BuildDemo_GAPUINO
+  stage: BuildDemo
   script: source /gap_sdk/sourceme.sh && cd ./ReID-Demo && make BOARD_NAME=gapuino all
 
 SingleLayerTest:
-  stage: SingleLayerTest
+  stage: GapuinoTest
   script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_layers_one_by_one.sh -gapuino
   artifacts:
     when: on_failure
@@ -70,7 +57,7 @@ SingleLayerTest:
     - gapuino
 
 InferenceTest:
-  stage: InferenceTest
+  stage: GapuinoTest
   script: source /gap_sdk/sourceme.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh -gapuino
   artifacts:
     when: on_failure
@@ -81,17 +68,17 @@ InferenceTest:
     - gapuino
 
 DbSelectorTest:
-  stage: DbSelectorTest
+  stage: GapuinoTest
   script: source /gap_sdk/sourceme.sh && cd ./tests/db_selector_test && make run
   tags:
     - gapuino
 
 BuildBleTest:
-  stage: BuildBleTest
+  stage: GapuinoTest
   script: source /gap_sdk/sourceme.sh && cd ./tests/ble_test && make all
 
 PreparePipelineTest:
-  stage: PreparePipelineTest
+  stage: GapuinoTest
   script: source /gap_sdk/sourceme.sh && cd ./tests/ && ./test_prepare_pipeline.sh -gapuino
   artifacts:
     when: on_failure
@@ -101,7 +88,7 @@ PreparePipelineTest:
     - gapuino
 
 BuildAndroidNotifier:
-    stage: BuildAndroidNotifier
+    stage: BuildAndroid
     image: registry.gitlab.com/xperience-ai/gap/facereid
     script: cd AndroidNotifier && gradle assemble
     artifacts:
@@ -109,7 +96,7 @@ BuildAndroidNotifier:
         - AndroidNotifier/app/build/outputs/apk/debug/app-debug.apk
 
 BuildAndroidControlPanel:
-    stage: BuildAndroidControlPanel
+    stage: BuildAndroid
     image: registry.gitlab.com/xperience-ai/gap/facereid
     script: cd AndroidControlPanel && gradle assemble
     artifacts:
