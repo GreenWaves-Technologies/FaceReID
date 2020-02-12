@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/editMain"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingRight="16dp"
+    android:paddingLeft="16dp"
+    android:paddingTop="16dp" >
+
+    <RelativeLayout
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <ImageView
+            android:id="@+id/person_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:contentDescription="@string/visitor_photo"
+            android:src="@drawable/ic_unknown_person" />
+
+        <ImageView
+            android:id="@+id/person_indicator"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_toEndOf="@+id/person_photo"
+            android:layout_alignBottom="@+id/person_photo"
+            android:layout_marginStart="-12dp"
+            android:layout_marginBottom="2dp"
+            android:src="@drawable/circle"
+            android:contentDescription="@string/visitor_indicator"
+            android:visibility="invisible" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:labelFor="@+id/visitorName"
+        android:text="@string/visitor_name" />
+
+    <EditText
+        android:id="@+id/visitorName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="@string/visitor_name_placeholder" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:labelFor="@+id/visitorDescription"
+        android:text="@string/visitor_description" />
+
+    <EditText
+        android:id="@+id/visitorDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textLongMessage"
+        android:text="" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:labelFor="@+id/deviceList"
+        android:text="@string/visitor_access" />
+
+    <ListView
+        android:id="@+id/deviceList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>
