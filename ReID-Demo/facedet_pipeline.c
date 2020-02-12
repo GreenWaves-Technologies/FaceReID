@@ -100,8 +100,6 @@ static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_rep
 
 void detection_cluster_main(ArgCluster_T *ArgC)
 {
-    unsigned int MaxCore = gap_ncore();
-
     #ifdef PERF_COUNT
     gap_cl_starttimer();
     gap_cl_resethwtimer();

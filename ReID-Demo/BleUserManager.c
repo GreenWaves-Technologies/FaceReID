@@ -320,7 +320,6 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     context.current_name = memory_pool + FACE_DESCRIPTOR_SIZE;
     context.l2_strangers = (Stranger*) (memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
 
-    Stranger* current_stranger = context.l2_strangers;
     char* previews = (char*) &context.l2_strangers[context.strangers_tail+1]; // right after the last structure
 
     PRINTF("Getting the first stranger from queue\n");

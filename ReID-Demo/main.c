@@ -351,7 +351,7 @@ void body(void* parameters)
     PRINTF("Init cluster...done\n");
 
 #if !defined(__FREERTOS__)
-    //Setting FC to 250MHz
+    //Setting FC to 200MHz
     rt_freq_set(RT_FREQ_DOMAIN_FC, 200000000);
 
     //Setting Cluster to 150MHz
@@ -547,7 +547,7 @@ void body(void* parameters)
                     int id_l2 = identify_by_db(ClusterDnnCall.output, &person_name);
 
                     //sprintf(string_buffer, "ReID L2: %d\n", id_l2);
-                    sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)((float)(1/(50000000.f/ClusterDnnCall.cycles)) * 16800.f));
+                    sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)(16800.f/(50000000.f/ClusterDnnCall.cycles)));
                     //sprintf(string_buffer, "ReID NN GCycles: %d\n", ClusterDnnCall.cycles/1000000);
                     PRINTF(string_buffer);
                     draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);

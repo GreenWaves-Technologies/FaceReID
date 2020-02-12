@@ -33,7 +33,6 @@ int load_static_db(struct pi_device * fs)
 {
     char buffer[64];
     int descriptors = 0;
-    int names = 0;
 
     PRINTF("Reading face descriptors\n");
     for(int i = 0; i < FACE_DB_SIZE; i++)

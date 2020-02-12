@@ -20,7 +20,7 @@
 #include "pmsis.h"
 
 int initHandler(struct pi_device *gpio_port);
-int prepareStranger(void* preveiw);
+int prepareStranger(void* preview);
 int handleStranger(short* descriptor);
 
 void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t button_pin);
