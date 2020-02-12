@@ -172,30 +172,40 @@ static int open_camera(struct pi_device *device)
 }
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
-static void __gpio_init()
+static int open_gpio(struct pi_device *device)
 {
-    rt_gpio_set_dir(0, 1<<GPIOA0_LED      , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA1          , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA2_NINA_RST , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA3_CIS_EXP  , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA4_1V8_EN   , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA5_CIS_PWRON, RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA18         , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA19         , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA21_NINA17  , RT_GPIO_IS_OUT);
-    rt_gpio_set_pin_value(0, GPIOA0_LED, 0);
-    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 0);
-    rt_gpio_set_pin_value(0, GPIOA3_CIS_EXP, 0);
-    rt_gpio_set_pin_value(0, GPIOA4_1V8_EN, 1);
-    rt_gpio_set_pin_value(0, GPIOA5_CIS_PWRON, 0);
-    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 1);
+    struct pi_gpio_conf gpio_conf;
+
+    pi_gpio_conf_init(&gpio_conf);
+    pi_open_from_conf(device, &gpio_conf);
+
+    if (pi_gpio_open(device))
+        return -1;
+
+    pi_gpio_pin_configure(device, GPIOA0_LED,       PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA1,           PI_GPIO_INPUT);
+    pi_gpio_pin_configure(device, GPIOA2_NINA_RST,  PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA3_CIS_EXP,   PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA4_1V8_EN,    PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA5_CIS_PWRON, PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA18,          PI_GPIO_INPUT);
+    pi_gpio_pin_configure(device, GPIOA19,          PI_GPIO_INPUT);
+    pi_gpio_pin_configure(device, GPIOA21_NINA17,   PI_GPIO_OUTPUT);
+
+    pi_gpio_pin_write(device, GPIOA0_LED,       0);
+    pi_gpio_pin_write(device, GPIOA2_NINA_RST,  0);
+    pi_gpio_pin_write(device, GPIOA3_CIS_EXP,   0);
+    pi_gpio_pin_write(device, GPIOA4_1V8_EN,    1);
+    pi_gpio_pin_write(device, GPIOA5_CIS_PWRON, 0);
+    pi_gpio_pin_write(device, GPIOA21_NINA17,   1);
+
+    return 0;
 }
 
 static void __bsp_init_pads()
 {
     uint32_t pads_value[] = {0x00055500, 0x0f450000, 0x003fffff, 0x00000000};
     pi_pad_init(pads_value);
-    __gpio_init();
 }
 #endif
 
@@ -207,6 +217,7 @@ void body(void* parameters)
     static pi_buffer_t RenderBuffer;
     char* person_name;
     struct pi_device cluster_dev;
+    struct pi_device gpio_port;
     struct pi_device camera;
     struct pi_device display;
     struct pi_cluster_conf cluster_conf;
@@ -233,6 +244,11 @@ void body(void* parameters)
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
     __bsp_init_pads();
+    if (open_gpio(&gpio_port))
+    {
+        PRINTF("Error: cannot open GPIO port\n");
+        pmsis_exit(-4);
+    }
 #endif
 
 #if defined(USE_BLE_USER_MANAGEMENT)
@@ -303,20 +319,6 @@ void body(void* parameters)
 
     PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
-
-#if defined(USE_BLE_USER_MANAGEMENT)
-    struct pi_device gpio_port;
-    struct pi_gpio_conf gpio_conf;
-
-    pi_gpio_conf_init(&gpio_conf);
-    pi_open_from_conf(&gpio_port, &gpio_conf);
-
-    if (pi_gpio_open(&gpio_port))
-    {
-        PRINTF("Error: cannot open GPIO port\n");
-        pmsis_exit(-4);
-    }
-#endif
 
     int status;
 #if defined(STATIC_FACE_DB)
