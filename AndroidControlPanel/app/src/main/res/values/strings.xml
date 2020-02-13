@@ -29,6 +29,7 @@
     <string name="status_disconnected">disconnected</string>
     <string name="status_connecting">connecting&#8230;</string>
     <string name="status_connected">gatt connected</string>
+    <string name="status_connection_failed">connection failed</string>
     <string name="status_loading">loading data&#8230;</string>
     <string name="status_sending">sending data&#8230;</string>
     <string name="not_available">N/A</string>
