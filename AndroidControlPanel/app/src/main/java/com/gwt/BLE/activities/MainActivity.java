@@ -158,6 +158,9 @@ public class MainActivity extends Activity {
         if (mDevice != null) {
             try {
                 mGatt.stopHBTimer();
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.sendBleExit();
+                }
                 mBleService.disconnect();
                 mBleService.close();
                 mConnectionState = ConnectionState.DISCONNECTED;
@@ -173,16 +176,21 @@ public class MainActivity extends Activity {
         invalidateOptionsMenu();
     }
 
-    public void onServiceConnected() {
-        if (!mBleService.initialize(this)) {
-            finish();
+    @Override
+    public void onBackPressed() {
+        if (editMode) {
+            visitorEditActivity.onBackPressed();
+        } else {
+            visitorListActivity.onBackPressed();
         }
     }
 
     private void connectToDevice() {
         // get the information from the device scan
         mBleService = new BluetoothLeService();
-        onServiceConnected();
+        if (!mBleService.initialize(this)) {
+            finish();
+        }
     }
 
     @Override
@@ -256,6 +264,7 @@ public class MainActivity extends Activity {
             setAppTitle(null);
             actionBar.setLogo(R.drawable.logo);
             actionBar.setDisplayUseLogoEnabled(true);
+            actionBar.setHomeButtonEnabled(false);
             actionBar.setDisplayShowCustomEnabled(true);
         }
 
@@ -389,6 +398,22 @@ public class MainActivity extends Activity {
 
         void onStop() {
 
+        }
+
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            if (mDevice != null) {
+                mGatt.stopHBTimer();
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.sendBleExit();
+                    mConnectionState = ConnectionState.DISCONNECTING;
+                    invalidateOptionsMenu();
+                    updateStatus();
+                } else {
+                    mBleService.disconnect();
+                }
+            }
+            MainActivity.super.onBackPressed();
         }
 
         boolean onOptionsItemSelected(MenuItem item) {
@@ -686,6 +711,12 @@ public class MainActivity extends Activity {
 
         }
 
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            editMode = false;
+            switchViews();
+        }
+
         boolean onOptionsItemSelected(MenuItem item) {
             Log.v(TAG, "onOptionsItemSelected(): " + item.getItemId());
             switch (item.getItemId()) {
@@ -754,10 +785,10 @@ public class MainActivity extends Activity {
 
                     currentVisitorIdx = -1;
                     currentVisitor = null;
-                    // TODO: animate and go back correctly
+                    onBackPressed();
+                    return true;
                 case android.R.id.home:
-                    editMode = false;
-                    switchViews();
+                    onBackPressed();
                     return true;
             }
             return false;
