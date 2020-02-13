@@ -103,7 +103,6 @@ public class MainActivity extends Activity {
                 dbDevice.setName(mDevice.getName());
             } else {
                 dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
-                db.createDevice(dbDevice);
             }
         }
 
@@ -743,7 +742,7 @@ public class MainActivity extends Activity {
                     for (String addr : currentAccess.keySet()) {
                         Visitor.Access access = currentAccess.get(addr);
                         if (access.granted) {
-                            db.updateOrInsertAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
+                            db.createOrUpdateAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
                         } else {
                             db.deleteAccess(currentVisitor.getId(), addr);
                         }
@@ -1071,6 +1070,7 @@ public class MainActivity extends Activity {
                                 visitorListActivity.updateStatus();
                                 visitorListActivity.rlProgress.setVisibility(View.GONE);
                             });
+                            db.createOrUpdateDevice(dbDevice);
                             startHBTimer();
                         } else {
                             Log.w(TAG, "Connected device is not a ReID device");
@@ -1181,7 +1181,7 @@ public class MainActivity extends Activity {
                                 if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
                                     visitorsPermitted.add(v.getId());
                                     v.setAccess(mDevice.getAddress(), true);
-                                    db.updateOrInsertAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
+                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
                                     break;
                                 }
                             }
