@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@
 #endif
 
 #include <fcntl.h>
+
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
 
 #include "setup.h"
 #include "display.h"

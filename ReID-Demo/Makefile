@@ -18,11 +18,8 @@
 #BLE_NOTIFIER=0
 
 USE_PMSIS_BSP=1
-ifeq ($(BOARD_NAME),gapoc_a)
-  DEVICE_CONNECTION = -ftdi
-else
-  DEVICE_CONNECTION = -jtag
-endif
+export GAP_USE_OPENOCD=1
+io=host
 
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
@@ -89,7 +86,7 @@ ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB=1
 endif
 
-DATA_FILES = ./quantized_model/*.bin
+DATA_FILES=$(wildcard ./quantized_model/*.bin)
 APP_CFLAGS += -Os -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 
 ifeq ($(STATIC_FACE_DB),1)
@@ -104,7 +101,7 @@ ifeq ($(STATIC_FACE_DB),1)
     APP_SRCS += StaticUserManager.c
   endif
 
-  DATA_FILES += ./known_faces/index.txt ./known_faces/*.bin
+  DATA_FILES += ./known_faces/index.txt $(wildcard ./known_faces/*.bin)
   APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 else
   ifeq ($(BOARD_NAME),gapoc_a)
@@ -123,7 +120,7 @@ endif
 ifeq ($(ALREADY_FLASHED),1)
   PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
 else
-  PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) #-fileIO
+  PLPBRIDGE_FLAGS += -f
 endif
 
 ifeq ($(SILENT),1)
@@ -132,6 +129,8 @@ ifeq ($(SILENT),1)
 else
   PLPBRIDGE_FLAGS += -fileIO
 endif
+
+READFS_FILES+=$(realpath $(DATA_FILES))
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
 prepare_debug:

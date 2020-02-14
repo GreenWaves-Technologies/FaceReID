@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@
 #else
 # include "Gap.h"
 #endif
+
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
 
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
@@ -320,7 +323,17 @@ void body(void* parameters)
     PRINTF("Unmount FS done\n");
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-    rt_bridge_connect(1, NULL);
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-8);
+    }
 #endif
 
     PRINTF("Init cluster...\n");
@@ -496,31 +509,19 @@ void body(void* parameters)
 
 #ifdef DUMP_SUCCESSFUL_FRAME
                     sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
-                    File = rt_bridge_open(string_buffer, O_RDWR | O_CREAT, S_IRWXU, NULL);
-                    if (File == 0)
+
+                    void* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+                    if (!host_file)
                     {
-                        PRINTF("Failed to open file, %s\n", string_buffer);
-                        pmsis_exit(-8);
+                        PRINTF("Failed to open host file, %s\n", string_buffer);
+                        pmsis_exit(-7);
                     }
-                    rt_bridge_write(File,  ClusterDnnCall.output, 512*sizeof(short), NULL);
-                    rt_bridge_close(File, NULL);
+
+                    pi_fs_write(host_file, ClusterDnnCall.output, 512*sizeof(short));
+                    pi_fs_close(host_file);
 
                     //sprintf(string_buffer, "frame_%d.pgm", saved_index);
                     //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
-#endif
-
-
-#ifdef DUMP_SUCCESSFUL_FRAME
-                    sprintf(string_buffer, "embedding_%d.bin", saved_index);
-                    File = rt_bridge_open(string_buffer, O_RDWR | O_CREAT, S_IRWXU, NULL);
-                    if (File == 0)
-                    {
-                        PRINTF("Failed to open file, %s\n", string_buffer);
-                        pmsis_exit(-9);
-                    }
-
-                    rt_bridge_write(File,  ClusterDnnCall.output, 512*sizeof(short), NULL);
-                    rt_bridge_close(File, NULL);
 
                     saved_index++;
 #endif
@@ -599,7 +600,7 @@ void body(void* parameters)
     pi_cluster_close(&cluster_dev);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-    rt_bridge_disconnect(NULL);
+    pi_fs_unmount(&host_fs);
 #endif
 
 #if defined(BLE_NOTIFIER)

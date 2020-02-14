@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@
 
 #include "pmsis.h"
 #include "bsp/fs.h"
+#include "bsp/fs/readfs.h"
+#include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
 #if defined(__FREERTOS__)
@@ -70,9 +72,9 @@ void body(void * parameters)
     PRINTF("Configuring Hyperflash and FS..\n");
     struct pi_device fs;
     struct pi_device flash;
-    struct pi_fs_conf conf;
+    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_fs_conf_init(&conf);
+    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -82,7 +84,7 @@ void body(void * parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.flash = &flash;
+    conf.fs.flash = &flash;
 
     pi_open_from_conf(&fs, &conf);
 
@@ -106,16 +108,30 @@ void body(void * parameters)
 
     char *inputBlob = "../../../input.bin";
 
-    rt_bridge_connect(1, NULL);
+    PRINTF("Reading input from host...\n");
 
-    File = rt_bridge_open(inputBlob, 0, 0, NULL);
-    if (File == 0)
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-5);
+    }
+
+    void* host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
+    if (!host_file)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-6);
     }
+    PRINTF("Host file open done\n");
+
     int input_size = FACE_DESCRIPTOR_SIZE*sizeof(short);
-    int read = rt_bridge_read(File, face_desk, input_size, NULL);
+    int read = pi_fs_read(host_file, face_desk, input_size);
     if(read != input_size)
     {
         PRINTF("Failed to read file %s\n", inputBlob);
@@ -123,8 +139,8 @@ void body(void * parameters)
         pmsis_exit(-7);
     }
 
-    rt_bridge_close(File, NULL);
-    rt_bridge_disconnect(NULL);
+    pi_fs_close(host_file);
+    pi_fs_unmount(&host_fs);
 
     int id_l2 = identify_by_db(face_desk, &person_name);
 

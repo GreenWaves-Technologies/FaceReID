@@ -61,7 +61,7 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
-      source ./sourceme.sh && make all autotiler
+      source ./sourceme.sh && make all autotiler openocd
 
 RUN useradd ci -m -s /bin/bash -G users,dialout
 

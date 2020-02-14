@@ -1,4 +1,4 @@
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-APP = ble_test
-
 USE_PMSIS_BSP=1
-BOARD_NAME = gapoc_a
+export GAP_USE_OPENOCD=1
+io=host
+
+APP = ble_test
 
 APP_SRCS += ble_main.c ../../ReID-Demo/BleUserManager.c ../../ReID-Demo/dnn_utils.c ../../ReID-Demo/strangers_db.c ../../ReID-Demo/face_db.c ../../ReID-Demo/ImgIO.c ../../ReID-Demo/display.c $(PLATFORM_SRCS)
 
 APP_CFLAGS += -DUSE_PMSIS=1 -DUSE_BLE_USER_MANAGEMENT=1 -I$(PWD) -I$(PWD)/../../ReID-Demo
 
-PLPBRIDGE_FLAGS += -ftdi -fileIO
+PLPBRIDGE_FLAGS += -f
 
 include $(RULES_DIR)/pmsis_rules.mk

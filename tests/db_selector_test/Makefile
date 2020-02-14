@@ -1,4 +1,4 @@
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,21 +13,19 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-ifeq ($(BOARD_NAME),gapoc_a)
-  DEVICE_CONNECTION = -ftdi
-else
-  DEVICE_CONNECTION = -jtag
-endif
+export GAP_USE_OPENOCD=1
+io=host
 
 APP_SRCS = main.c ../../ReID-Demo/face_db.c ../../ReID-Demo/dnn_utils.c
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo  -I"$(TILER_PATH)/include" -I"$(CNN_KER_PATH)/include"
 
 FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
-DATA_FILES = ../../ReID-Demo/known_faces/index.txt ../../ReID-Demo/known_faces/*.bin
+DATA_FILES = ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
 
 APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
+PLPBRIDGE_FLAGS += -f
+READFS_FILES+=$(realpath $(DATA_FILES))
 
 include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk

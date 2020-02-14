@@ -154,8 +154,6 @@ void body(void* parameters)
     PRINTF("HyperRAM config done\n");
 
     PRINTF("Reading image from host...\n");
-    rt_bridge_connect(1, NULL);
-    PRINTF("rt_bridge_connect\n");
 
     int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
     unsigned int Wi = CAMERA_WIDTH;
@@ -204,8 +202,6 @@ void body(void* parameters)
     WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
     WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
     PRINTF("Writing output to file..done\n");
-
-    rt_bridge_disconnect(NULL);
 
     pmsis_exit(0);
 }

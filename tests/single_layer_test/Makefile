@@ -1,4 +1,4 @@
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-ifeq ($(BOARD_NAME),gapoc_a)
-  DEVICE_CONNECTION = -ftdi
-else
-  DEVICE_CONNECTION = -jtag
-endif
+export GAP_USE_OPENOCD=1
+io=host
 
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
@@ -45,9 +42,9 @@ APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(TILER_PATH
 
 APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -Os
 
-DATA_FILES = ../../ReID-Demo/quantized_model/*.bin
-
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO
+PLPBRIDGE_FLAGS += -f
+DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)
+READFS_FILES+=$(realpath $(DATA_FILES))
 
 tiler_models: reid_model
 
