@@ -488,6 +488,7 @@ uint32_t preview_hyper;
 int initHandler(struct pi_device * gpio_port)
 {
     PRINTF("Setting button handler..\n");
+    pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
     if(pi_gpio_pin_configure(gpio_port, BUTTON_PIN_ID, PI_GPIO_INPUT))
     {
         PRINTF("Error: cannot configure pin\n");

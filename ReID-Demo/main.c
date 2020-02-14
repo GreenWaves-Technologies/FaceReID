@@ -234,10 +234,6 @@ void body(void* parameters)
     }
 #endif
 
-#if defined(USE_BLE_USER_MANAGEMENT)
-    pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
-#endif
-
 #if defined(HAVE_DISPLAY)
     PRINTF("Initializing display\n");
     if (open_display(&display))
