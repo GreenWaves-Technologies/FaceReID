@@ -101,4 +101,4 @@ BuildAndroidControlPanel:
     script: cd AndroidControlPanel && gradle assemble
     artifacts:
       paths:
-        - BuildAndroidControlPanel/app/build/outputs/apk/debug/app-debug.apk
+        - AndroidControlPanel/app/build/outputs/apk/debug/app-debug.apk
