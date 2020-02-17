@@ -320,7 +320,6 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     context.current_name = memory_pool + FACE_DESCRIPTOR_SIZE;
     context.l2_strangers = (Stranger*) (memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
 
-    Stranger* current_stranger = context.l2_strangers;
     char* previews = (char*) &context.l2_strangers[context.strangers_tail+1]; // right after the last structure
 
     PRINTF("Getting the first stranger from queue\n");
@@ -374,10 +373,10 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     GAPOC_GPIO_Init_HighZ(GPIO_A1_B2);
     #else
     // Init GPIO that will control NINA DSR in deasserted position
-    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 0);
+    pi_gpio_pin_write(gpio_port, GPIOA21_NINA17, 0);
 
     // Enable BLE (release reset)
-    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 1);
+    pi_gpio_pin_write(gpio_port, GPIOA2_NINA_RST, 1);
 
     rt_time_wait_us(1*1000*1000);
     #endif
@@ -466,8 +465,8 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Disabling BLE\n");
     pi_nina_b112_close(&ble);
 
-    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 1);
-    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 0);
+    pi_gpio_pin_write(gpio_port, GPIOA21_NINA17, 1);
+    pi_gpio_pin_write(gpio_port, GPIOA2_NINA_RST, 0);
 
     PRINTF("Switching back to HYPERRAM mode\n");
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_HYPERRAM_DATA6_PAD_FUNC);
