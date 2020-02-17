@@ -28,6 +28,7 @@
 
 uint8_t empty_response = '\0';
 uint8_t ack = BLE_CMD_ACK;
+uint8_t secret_code[4] = { 'R', 'e', 'I', 'D' };
 uint8_t action = 0;
 volatile uint8_t ble_exit = 0;
 rt_timer_t ble_timer;
@@ -57,6 +58,10 @@ void ble_protocol_handler(void* params)
 
     switch(action)
     {
+        case BLE_CMD_ID_REQUEST:
+            PRINTF("BLE ID request got\n");
+            pi_nina_b112_send_data_blocking(context->ble, secret_code, sizeof(secret_code));
+            break;
         case BLE_CMD_READ_STRANGER:
             PRINTF("BLE READ STRANGER request got\n");
             context->strangers_head++;

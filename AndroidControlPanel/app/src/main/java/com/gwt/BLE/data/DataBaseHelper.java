@@ -101,7 +101,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    public long createDevice(Device device) {
+    public long createOrUpdateDevice(Device device) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
@@ -109,7 +109,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         values.put(KEY_DEVICE_MACADDR, device.getAddress());
         values.put(KEY_DEVICE_FAVOURITE, device.isFavourite());
 
-        return db.insert(TABLE_DEVICES, null, values);
+        return db.replace(TABLE_DEVICES, null, values);
     }
 
     public Device getDevice(String address) {
@@ -304,7 +304,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return accesses;
     }
 
-    public long updateOrInsertAccess(int visitorId, String address, Visitor.Access access) {
+    public long createOrUpdateAccess(int visitorId, String address, Visitor.Access access) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();

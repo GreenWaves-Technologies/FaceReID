@@ -103,7 +103,6 @@ public class MainActivity extends Activity {
                 dbDevice.setName(mDevice.getName());
             } else {
                 dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
-                db.createDevice(dbDevice);
             }
         }
 
@@ -158,6 +157,9 @@ public class MainActivity extends Activity {
         if (mDevice != null) {
             try {
                 mGatt.stopHBTimer();
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.sendBleExit();
+                }
                 mBleService.disconnect();
                 mBleService.close();
                 mConnectionState = ConnectionState.DISCONNECTED;
@@ -173,16 +175,21 @@ public class MainActivity extends Activity {
         invalidateOptionsMenu();
     }
 
-    public void onServiceConnected() {
-        if (!mBleService.initialize(this)) {
-            finish();
+    @Override
+    public void onBackPressed() {
+        if (editMode) {
+            visitorEditActivity.onBackPressed();
+        } else {
+            visitorListActivity.onBackPressed();
         }
     }
 
     private void connectToDevice() {
         // get the information from the device scan
         mBleService = new BluetoothLeService();
-        onServiceConnected();
+        if (!mBleService.initialize(this)) {
+            finish();
+        }
     }
 
     @Override
@@ -256,6 +263,7 @@ public class MainActivity extends Activity {
             setAppTitle(null);
             actionBar.setLogo(R.drawable.logo);
             actionBar.setDisplayUseLogoEnabled(true);
+            actionBar.setHomeButtonEnabled(false);
             actionBar.setDisplayShowCustomEnabled(true);
         }
 
@@ -391,6 +399,22 @@ public class MainActivity extends Activity {
 
         }
 
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            if (mDevice != null) {
+                mGatt.stopHBTimer();
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.sendBleExit();
+                    mConnectionState = ConnectionState.DISCONNECTING;
+                    invalidateOptionsMenu();
+                    updateStatus();
+                } else {
+                    mBleService.disconnect();
+                }
+            }
+            MainActivity.super.onBackPressed();
+        }
+
         boolean onOptionsItemSelected(MenuItem item) {
             Log.v(TAG, "onOptionsItemSelected()");
             switch (item.getItemId()) {
@@ -500,6 +524,10 @@ public class MainActivity extends Activity {
             }
 
             return true;
+        }
+
+        private void updateStatus(int resId) {
+            tvStatus.setText(resId);
         }
 
         private void updateStatus() {
@@ -686,6 +714,12 @@ public class MainActivity extends Activity {
 
         }
 
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            editMode = false;
+            switchViews();
+        }
+
         boolean onOptionsItemSelected(MenuItem item) {
             Log.v(TAG, "onOptionsItemSelected(): " + item.getItemId());
             switch (item.getItemId()) {
@@ -708,7 +742,7 @@ public class MainActivity extends Activity {
                     for (String addr : currentAccess.keySet()) {
                         Visitor.Access access = currentAccess.get(addr);
                         if (access.granted) {
-                            db.updateOrInsertAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
+                            db.createOrUpdateAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
                         } else {
                             db.deleteAccess(currentVisitor.getId(), addr);
                         }
@@ -754,10 +788,10 @@ public class MainActivity extends Activity {
 
                     currentVisitorIdx = -1;
                     currentVisitor = null;
-                    // TODO: animate and go back correctly
+                    onBackPressed();
+                    return true;
                 case android.R.id.home:
-                    editMode = false;
-                    switchViews();
+                    onBackPressed();
                     return true;
             }
             return false;
@@ -804,6 +838,8 @@ public class MainActivity extends Activity {
 
         private static final byte BLE_ACK = 0x33;
 
+        private static final byte BLE_ID_REQUEST = 0x0F;
+
         private static final byte BLE_READ_STRANGER = 0x10;
         private static final byte BLE_GET_STRANGER_NAME = 0x11;
         private static final byte BLE_GET_STRANGER_PHOTO = 0x12;
@@ -826,9 +862,52 @@ public class MainActivity extends Activity {
         private static final int hbInterval = 10000; // 10s
         private Timer hbTimer;
 
+        private final byte[] ReID = { 0x52, 0x65, 0x49, 0x44 };
+
+        private static final int connectionTimeout = 10000; // 10s
+        private Timer connectionTimer;
+
+        private void onConnectionFailure() {
+            // Show error message for 2 seconds and go back to device activity
+            runOnUiThread(() -> {
+                visitorListActivity.updateStatus(R.string.status_connection_failed);
+                visitorListActivity.rlProgress.setVisibility(View.GONE);
+            });
+            Timer timer = new Timer();
+            TimerTask timerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(() -> {
+                        editMode = false;
+                        onBackPressed();
+                    });
+                }
+            };
+            timer.schedule(timerTask, 2000);
+        }
+
+        private void startConnectionTimer() {
+            connectionTimer = new Timer();
+            TimerTask connectionTask = new TimerTask() {
+                @Override
+                public void run() {
+                    Log.w(TAG, "No response received from connected device on ID request");
+                    onConnectionFailure();
+                }
+            };
+            connectionTimer.schedule(connectionTask, connectionTimeout);
+        }
+
+        private void stopConnectionTimer() {
+            if (connectionTimer != null) {
+                connectionTimer.cancel();
+            }
+        }
+
         private void startHBTimer() {
             hbTimer = new Timer();
             TimerTask hbTask = new TimerTask() {
+                @Override
                 public void run() {
                     mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_HEART_BEAT});
                 }
@@ -840,6 +919,11 @@ public class MainActivity extends Activity {
             if (hbTimer != null) {
                 hbTimer.cancel();
             }
+        }
+
+        private void sendBleIdentificationRequest() {
+            mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_ID_REQUEST});
+            currentBleRequest = BLE_ID_REQUEST;
         }
 
         private void sendBleReadStranger() {
@@ -949,7 +1033,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onRssiUpdate(int rssi) {
-            Log.d(TAG, "onRssiUpdate call");
+            Log.d(TAG, "onRssiUpdate call " + rssi);
         }
 
         @Override
@@ -974,6 +1058,25 @@ public class MainActivity extends Activity {
                 Log.d(TAG, "BLE request was " + currentBleRequest);
 
                 switch (currentBleRequest) {
+                    case BLE_ID_REQUEST:
+                        Log.d(TAG, "currentBleRequest == BLE_ID_REQUEST");
+                        stopConnectionTimer();
+                        if (data.length == ReID.length && Arrays.equals(data, ReID)) {
+                            Log.i(TAG, "Valid ReID device found");
+                            mConnectionState = ConnectionState.CONNECTED;
+                            visitorsPermitted.clear();
+                            runOnUiThread(() -> {
+                                invalidateOptionsMenu();
+                                visitorListActivity.updateStatus();
+                                visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            });
+                            db.createOrUpdateDevice(dbDevice);
+                            startHBTimer();
+                        } else {
+                            Log.w(TAG, "Connected device is not a ReID device");
+                            onConnectionFailure();
+                        }
+                        break;
                     case BLE_READ_STRANGER:
                         Log.d(TAG, "currentBleRequest == BLE_READ_STRANGER");
                         Log.d(TAG, "Response code: " + data[0]);
@@ -1078,7 +1181,7 @@ public class MainActivity extends Activity {
                                 if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
                                     visitorsPermitted.add(v.getId());
                                     v.setAccess(mDevice.getAddress(), true);
-                                    db.updateOrInsertAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
+                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
                                     break;
                                 }
                             }
@@ -1156,6 +1259,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onServicesDiscovered() {
+            Log.d(TAG, "onServicesDiscovered call");
             runOnUiThread(() -> {
                 visitorListActivity.updateStatus();
                 for (BluetoothGattService service : mBleService.getSupportedGattServices()) {
@@ -1165,6 +1269,9 @@ public class MainActivity extends Activity {
                             Log.d(TAG,"Found FIFO characteristic!\n");
                             characteristicFifo = characteristic;
                             mBleService.setCharacteristicNotification(characteristic, true);
+                            // Ready to send and receive messages
+                            sendBleIdentificationRequest();
+                            startConnectionTimer();
                         } else if (uuid.equals(GattAttributes.UUID_CHARACTERISTIC_CREDITS)) {
                             Log.d(TAG,"Found Credits characteristic!\n");
                             mBleService.setCharacteristicNotification(characteristic, false);
@@ -1188,14 +1295,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onGattConnected() {
-            runOnUiThread(() -> {
-                mConnectionState = ConnectionState.CONNECTED;
-                visitorsPermitted.clear();
-                invalidateOptionsMenu();
-                visitorListActivity.updateStatus();
-                visitorListActivity.rlProgress.setVisibility(View.GONE);
-            });
-            startHBTimer();
+            Log.d(TAG, "onGattConnected call");
         }
 
         private String CString2String(byte[] data) {
