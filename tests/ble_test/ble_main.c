@@ -137,9 +137,9 @@ static void body(void* parameters)
             pmsis_exit(-3);
         }
 
-        bridge_status = rt_bridge_read(descriptor_file, descriptor, 512*sizeof(short), NULL);
+        bridge_status = rt_bridge_read(descriptor_file, descriptor, 512 * sizeof(short), NULL);
 
-        if(bridge_status != descriptor)
+        if(bridge_status != 512 * sizeof(short))
         {
             PRINTF("Face descriptor read failed\n");
             pmsis_exit(-3);
