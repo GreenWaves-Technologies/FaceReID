@@ -30,7 +30,7 @@ Display module is connected to socket `Conn3` of GAPoc A board with the followin
 |   7   |   GND   | GND      |
 |   1   |   PWR   | PWR      |
 
-**NOTE** Gapoc A board does not provide 5V pins to power peripherals. 3.3V is used for display power that makes it a bit darker.
+**NOTE**: Gapoc A board does not provide 5V pins to power peripherals. 3.3V is used for display power that makes it a bit darker.
 
 ## Button Connection
 
@@ -46,7 +46,7 @@ Gapoc pins:
 | Conn3 pin 8 |   GPIO   |
 |   1v8 pad   | 1.8v PWR |
 
-**NOTE**: `Conn3` pin 8 has id 25 for `pi_pad_init` call and id 19 for other `pi_gpio_` calls. The hardware setup cold be changed and the pin can ge replaced by any spare GPIO input pin. The ids should be updated accordingly in `setup.h`
+**NOTE**: `Conn3` pin 8 has id 25 for `pi_pad_init` call and id 19 for other `pi_gpio_` calls. The hardware setup cold be changed and the pin can ge replaced by any spare GPIO input pin. The ids should be updated accordingly in `setup.h`.
 
 # Gapuino
 

@@ -1,6 +1,6 @@
 # Overview
 
-Gapoc A board includes Bluetooth LE module that makes possible smart door bell management with Android-based smartphone remotely. During regular re-id loop thew demo stores all strangers descriptor and photo in L2 and L3 memory accordingly. On button press the board is switched to strangers management mode and activates Bluetooth module for smart phone connection. Strangers management consists of three phases: strangers information download to phone, users management on phone and approved users upload back to device memory. Strangers download to phone and further upload to the device is covered in dedicated sections bellow. At the end of strangers administration step all strangers are dropped from L2 and L3 memory as all known people has been already added to list of users.
+Gapoc A board includes Bluetooth LE module that makes possible smart door bell management with Android-based smartphone remotely. During regular re-id loop the demo stores all stranger's descriptors and photos in L2 and L3 memory accordingly. On button press the board is switched to strangers management mode and activates Bluetooth module for smart phone connection. Strangers management consists of three phases: strangers information download to phone, users management on phone and approved users upload back to device memory. Strangers download to phone and further upload to the device is covered in dedicated sections bellow. At the end of strangers administration step all strangers are dropped from L2 and L3 memory as all known people has been already added to list of users.
 
 # Strangers Download to Android App
 
@@ -12,7 +12,7 @@ Gapoc A board includes Bluetooth LE module that makes possible smart door bell m
 
 # Administration Mode Test
 
-Pre-built Android application package: [link](https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
+Pre-built Android application package: [link](https://drive.google.com/open?id=1DpuVMiOXlWfxC0uMRtksnw5oBQ3RJ_wM)
 
 The demo repository includes simple administration mode test in `tests/ble_test` folder. The test application for Gapoc A board loads photos and descriptors for Lena and Francesco from host to strangers list and invokes full users administration pipeline on push button press. Please do the following steps:
 

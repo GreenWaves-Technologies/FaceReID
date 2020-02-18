@@ -2,13 +2,12 @@
 
 ## Installation and environment setup
 
-1. Clone the repository from Github:
+1. Clone the repository from GitHub:
 
 ```
     $ sudo pip3 install git+https://github.com/xperience-ai/gap_quantization.git
     $ git clone https://github.com/xperience-ai/gap_quantization.git
     $ cd gap_quantization
-
 ```
 
 2. Install the development enviroment:
@@ -18,7 +17,6 @@
     $ virtualenv -p /usr/bin/python3 ./venv
     $ . venv/bin/activate
     $ pip3 install -r ./requirements.txt
-
 ```
 
 ## Quantization
@@ -52,14 +50,14 @@ Copy file `norm_list.h` and put it into `ReID-Demo` folder.
 
 2. Go to directory `tests` and run
 ```
-    $./test_layers_one_by_one.sh <target platform>
+    $ ./test_layers_one_by_one.sh <target platform>
 ```
 Use `-gapoc` as target platform if you're using Gapoc A board and `-gapuino` if you're using Gapuino board.
 You will see results of tests on each layer like this:
+
 ```
     Layer 0: conv1.0/input.json => conv1.0/output.json
     Layer 0: conv1.0/input.json => conv1.0/output.json PASSED
-
 ```
 
 See [Build and test instructions](./build_test.md) for more detailed model testing.

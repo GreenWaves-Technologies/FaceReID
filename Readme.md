@@ -15,7 +15,7 @@ For Gapuino board:
 For Gapoc A board:
 - Adafruit 2.8 TFT display with SPI interface
 - Push button, 10kOm resistor and some wires
-- Android-based smartphone with [pre-built user management application](https://drive.google.com/open?id=1CmCsV_Fs_ND0fCF00pSbLc9hy9yw7cwU)
+- Android-based smartphone with [pre-built user management application](https://drive.google.com/open?id=1DpuVMiOXlWfxC0uMRtksnw5oBQ3RJ_wM)
 
 # Documentation Pages
 
@@ -26,8 +26,6 @@ For Gapoc A board:
 - [ReID network quantization for GAP](./documentation/quantization_instruction.md)
 - [ReID network architecture and inference details](./documentation/network_inference.md)
 - [Bluetooth LE protocol for users management](./documentation/ble_protocol.md)
-- [Train instruction](./documentation/train_instruction.md)
-- [Quantization instruction](./documentation/quantization_instruction.md)
 
 # Papers
 

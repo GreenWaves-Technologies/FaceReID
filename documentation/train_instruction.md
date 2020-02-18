@@ -109,7 +109,7 @@ python train_imgreid.py \
 --landmarks-path data/LFW/landmarks.txt \
 --euclid-loss lifted \ # what euclidean-based loss should be used. Possible options: triplet or lifted
 --train-sampler RandomIdentitySampler \ # sampler for trainloader
---no-normalize
+--no-normalize \
 --convbn # run training with batch normalization
 ```
 
@@ -125,7 +125,7 @@ Then every 10 iteration table with Epoch, Iteration, Time, Data, Loss xent and L
 
 And every 100 iteration of epoch snapshot will be saved in checkpoint directory and Accuracy and Estimated threshold will be displayed:
 ```
-Computing embeddings: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 61/61 [00:11<00:00,  5.24it/s]
+Computing embeddings: 100%|████████████████████████████████████████████████████████████████████| 61/61 [00:11<00:00,  5.24it/s]
 6001
 I1025 10:13:09.084388 20099 train_imgreid.py:282] Saving Snapshot: ../media/data/checkpoints_new/checkpoint_ep1_iter201.pth.tar
 Validation accuracy: 0.7257, 0.7227
