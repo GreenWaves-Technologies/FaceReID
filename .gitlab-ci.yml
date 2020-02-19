@@ -4,6 +4,7 @@ stages:
   - BuildDemo
   - BuildAndroid
   - GapuinoTest
+  - Deploy
 
 BuildDemo_GAPOC:
   stage: BuildDemo
@@ -88,17 +89,43 @@ PreparePipelineTest:
     - gapuino
 
 BuildAndroidNotifier:
-    stage: BuildAndroid
-    image: registry.gitlab.com/xperience-ai/gap/facereid
-    script: cd AndroidNotifier && gradle assemble
-    artifacts:
-      paths:
-        - AndroidNotifier/app/build/outputs/apk/debug/app-debug.apk
+  stage: BuildAndroid
+  image: registry.gitlab.com/xperience-ai/gap/facereid
+  script:
+    - cd AndroidNotifier
+    - gradle assemble
+    - cp app/build/outputs/apk/debug/app-debug.apk ../ReID-Speaker-latest.apk
+  artifacts:
+    paths:
+    - ReID-Speaker-latest.apk
 
 BuildAndroidControlPanel:
-    stage: BuildAndroid
-    image: registry.gitlab.com/xperience-ai/gap/facereid
-    script: cd AndroidControlPanel && gradle assemble
-    artifacts:
-      paths:
-        - AndroidControlPanel/app/build/outputs/apk/debug/app-debug.apk
+  stage: BuildAndroid
+  image: registry.gitlab.com/xperience-ai/gap/facereid
+  script:
+    - cd AndroidControlPanel
+    - gradle assemble
+    - cp app/build/outputs/apk/debug/app-debug.apk ../ReID-Control-App-latest.apk
+  artifacts:
+    paths:
+      - ReID-Control-App-latest.apk
+
+Deploy:
+  stage: Deploy
+  script:
+    - mkdir deploy && cd deploy && rm -rf *
+    - tar -cj --file activations_dump.tar.bz2 /test_data/activations_dump_transposed/*
+    - mv ../ReID-Speaker-latest.apk ./
+    - mv ../ReID-Control-App-latest.apk ./
+    - rclone --config $RCLONE_S3_CONFIG sync -P activations_dump.tar.bz2 reid_s3:"face-reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Speaker-latest.apk reid_s3:"face-reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Control-App-latest.apk reid_s3:"face-reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_GDRIVE_CONFIG sync -P activations_dump.tar.bz2 gdrive:"Xperience.ai/Projects/Greenwaves-public"
+    - rclone --config $RCLONE_GDRIVE_CONFIG sync -P ReID-Speaker-latest.apk gdrive:"Xperience.ai/Projects/Greenwaves-public"
+    - rclone --config $RCLONE_GDRIVE_CONFIG sync -P ReID-Control-App-latest.apk gdrive:"Xperience.ai/Projects/Greenwaves-public"
+  image: registry.gitlab.com/xperience-ai/gap/facereid
+  tags:
+    - gapuino
+  only:
+    refs:
+      - master
