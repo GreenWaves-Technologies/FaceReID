@@ -19,6 +19,9 @@
     <string name="menu_devices">Devices</string>
     <string name="menu_visitors">Users</string>
     <string name="menu_favourites">Add to favourites</string>
+    <string name="menu_load">Load</string>
+    <string name="menu_save">Save</string>
+    <string name="menu_drop">Drop</string>
 
     <string name="bonded_state">bonded</string>
     <string name="bonding_state">bonding</string>
