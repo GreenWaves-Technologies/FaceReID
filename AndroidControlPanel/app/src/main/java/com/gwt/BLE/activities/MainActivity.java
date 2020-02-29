@@ -806,17 +806,17 @@ public class MainActivity extends Activity {
                     (mConnectionState == ConnectionState.BLE_EXCHANGE_WRITE)) {
                     menu.findItem(R.id.menu_save_person).setVisible(false);
                     menu.findItem(R.id.menu_drop_person).setVisible(false);
-                    menu.findItem(R.id.menu_load_person).setVisible(false);
+                    //menu.findItem(R.id.menu_load_person).setVisible(false);
                 } else {
                     menu.findItem(R.id.menu_save_person).setVisible(true);
                     menu.findItem(R.id.menu_drop_person).setVisible(true);
-                    menu.findItem(R.id.menu_load_person).setVisible(true);
+                    //menu.findItem(R.id.menu_load_person).setVisible(true);
                 }
 
             } else {
                 menu.findItem(R.id.menu_save_person).setVisible(true);
                 menu.findItem(R.id.menu_drop_person).setVisible(true);
-                menu.findItem(R.id.menu_load_person).setVisible(false);
+                //menu.findItem(R.id.menu_load_person).setVisible(false);
             }
 
             return true;

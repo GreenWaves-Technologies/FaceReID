@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/menu_drop_person"
-        android:title="Drop"
+        android:title="@string/menu_drop"
         android:showAsAction="always|withText" />
     <item android:id="@+id/menu_load_person"
-        android:title="Load"
-        android:showAsAction="always|withText" />
+        android:title="@string/menu_load"
+        android:showAsAction="always|withText"
+        android:visible="false" />
     <item android:id="@+id/menu_save_person"
-        android:title="Save"
+        android:title="@string/menu_save"
         android:showAsAction="always|withText"/>
 </menu>
