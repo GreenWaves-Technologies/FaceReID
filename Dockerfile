@@ -49,10 +49,6 @@ RUN mkdir -p /tmp/toolchain && cd /tmp/toolchain && \
     ./install.sh && \
     rm -rf /tmp/toolchain
 
-ENV TARGET_CHIP="GAP8"
-ENV TARGET_NAME="gap"
-ENV PULP_CURRENT_CONFIG=gap_rev1@config_file=chips/gap/gap.json
-
 RUN mkdir /gap_sdk && cd /gap_sdk && \
       mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
@@ -61,7 +57,9 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
-      source ./sourceme.sh && make all autotiler openocd
+      source ./configs/gapoc_a_v2.sh && make all autotiler openocd && \
+      echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
+      source ./configs/gapuino_v2.sh && make all autotiler openocd
 
 RUN useradd ci -m -s /bin/bash -G users,dialout
 

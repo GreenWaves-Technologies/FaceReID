@@ -79,6 +79,7 @@ do
     fi
     mv ./delta.csv ../groups_logs/$i.delta.csv
     mv ./output.bin ../groups_logs/$i.output.bin
+
 done
 
 cd ..
