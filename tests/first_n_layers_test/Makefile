@@ -52,7 +52,7 @@ APP_SRCS = main.c ../../ReID-Demo/network_process_manual.c ../../ReID-Demo/param
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 
-APP_CFLAGS += $(CONTROL_MACRO) -Os
+APP_CFLAGS += $(CONTROL_MACRO) -DNORM_ROUND=1 -Os
 
 PLPBRIDGE_FLAGS += -f
 DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)

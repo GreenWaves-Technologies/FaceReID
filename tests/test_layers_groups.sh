@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,14 +47,7 @@ if [ ${#stop_macros[@]} -ne ${#layer_outputs[@]} ]; then
     exit 1
 fi
 
-if [ "$1" = "-gapoc" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapoc_a"
-elif [ "$1" = "-gapuino" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapuino"
-else
-    echo "Target platform is not defined, use -gapoc for Gapoc A board and -gapuino for Gapuino board"
-    exit 2
-fi
+MAKEFILE_NAME="Makefile"
 
 mkdir -p groups_logs
 echo "Generating Model"

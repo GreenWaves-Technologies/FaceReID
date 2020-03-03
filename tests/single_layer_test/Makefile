@@ -40,7 +40,7 @@ APP_SRCS = main.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(TILER_PATH)" -I"$(CNN_KER_PATH)"
 
-APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -Os
+APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -DNORM_ROUND=1 -Os
 
 PLPBRIDGE_FLAGS += -f
 DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)

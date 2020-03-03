@@ -64,7 +64,7 @@ DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)
 
 FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
 DATA_FILES += ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
-APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+APP_CFLAGS += -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
 APP_CFLAGS += -Os
 
