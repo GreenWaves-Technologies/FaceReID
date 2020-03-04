@@ -68,8 +68,6 @@ static void body(void* parameters)
 {
     PRINTF("Starting Re-ID body\n");
 
-    board_init();
-
     pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
 
     struct pi_device gpio_port;

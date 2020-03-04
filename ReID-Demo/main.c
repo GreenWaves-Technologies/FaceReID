@@ -226,7 +226,6 @@ void body(void* parameters)
 
     PRINTF("Start ReID Demo Application\n");
 
-    board_init();
     rt_freq_set(RT_FREQ_DOMAIN_FC, 50000000);
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
