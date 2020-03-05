@@ -76,7 +76,7 @@ void body(void* parameters)
     struct pi_cluster_task cluster_task;
     cluster_task.stack_size = CLUSTER_STACK_SIZE;
     struct pi_hyper_conf hyper_conf;
-    void* host_file = NULL;
+    pi_fs_file_t* host_file = NULL;
 
     PRINTF("main call\n");
 

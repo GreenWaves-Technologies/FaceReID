@@ -298,7 +298,7 @@ void body(void *parameters)
         PRINTF("pi_fs_mount failed\n");
         pmsis_exit(-4);
     }
-    void* host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
+    pi_fs_file_t* host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
     if (!host_file)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);

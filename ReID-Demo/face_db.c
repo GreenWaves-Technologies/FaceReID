@@ -222,7 +222,7 @@ void dump_db()
         sprintf(string_buffer, "../../../%s.bin", PeopleNames[i]);
         PRINTF("Writing descriptor file \"%s\" ..\n", string_buffer);
 
-        void* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+        pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
         if(!descriptor_file)
         {
             PRINTF("Face descriptor open failed\n");

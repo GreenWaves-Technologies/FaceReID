@@ -509,7 +509,7 @@ void body(void* parameters)
 #ifdef DUMP_SUCCESSFUL_FRAME
                     sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
 
-                    void* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+                    pi_fs_file_t* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
                     if (!host_file)
                     {
                         PRINTF("Failed to open host file, %s\n", string_buffer);

@@ -234,7 +234,7 @@ void body(void * parameters)
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall));
     PRINTF("After pi_cluster_send_task_to_cl 2\n");
 
-    void* host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
+    pi_fs_file_t* host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
     if (host_file == 0)
     {
         PRINTF("Failed to open file, %s\n", outputBlob);
