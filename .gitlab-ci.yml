@@ -68,9 +68,26 @@ InferenceTest:
   tags:
     - gapuino_v2
 
+InferenceTest_SILENT:
+  stage: GapuinoTest
+  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh SILENT=1
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/inference_test_summary.csv
+      - tests/inference_logs/*.log
+  tags:
+    - gapuino_v2
+
 DbSelectorTest:
   stage: GapuinoTest
   script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/db_selector_test && make run
+  tags:
+    - gapuino_v2
+
+DbSelectorTest_SILENT:
+  stage: GapuinoTest
+  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/db_selector_test && make SILENT=1 run
   tags:
     - gapuino_v2
 
@@ -80,7 +97,17 @@ BuildBleTest:
 
 PreparePipelineTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ./test_prepare_pipeline.sh -gapuino
+  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ./test_prepare_pipeline.sh
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/prepare_pipeline_logs/*
+  tags:
+    - gapuino_v2
+
+PreparePipelineTest_SILENT:
+  stage: GapuinoTest
+  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ./test_prepare_pipeline.sh SILENT=1
   artifacts:
     when: on_failure
     paths:

@@ -39,8 +39,10 @@ reid_model: $(REID_MODEL_GEN_C)
 APP_SRCS = main.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC)
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(TILER_PATH)" -I"$(CNN_KER_PATH)"
-
 APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -DNORM_ROUND=1 -Os
+ifeq ($(SILENT),1)
+  APP_CFLAGS += -DSILENT=1
+endif
 
 PLPBRIDGE_FLAGS += -f
 DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)
