@@ -16,7 +16,7 @@
 
 # tolerance=5
 
-MAKEFILE_NAME="Makefile"
+MAKEFILE_OPTIONS="-f Makefile $@"
 
 mkdir -p inference_logs
 echo "Generating Model"
@@ -27,9 +27,9 @@ make -j8 -C ../ReID-Demo reid_model >> ./inference_logs/model_generaition.log 2>
 ../scripts/json2bin.py ./activations_dump/conv1/input.json ./first_n_layers_test/input.bin
 cd first_n_layers_test
 
-make -f $MAKEFILE_NAME clean > /dev/null 2>&1
-make -f $MAKEFILE_NAME -j4 tiler_models > ../inference_logs/stdout.log 2>&1
-make -f $MAKEFILE_NAME -j4 run >> ../inference_logs/stdout.log 2>&1
+make $MAKEFILE_OPTIONS clean > /dev/null 2>&1
+make $MAKEFILE_OPTIONS -j4 tiler_models > ../inference_logs/stdout.log 2>&1
+make $MAKEFILE_OPTIONS -j4 run >> ../inference_logs/stdout.log 2>&1
 ../../scripts/compareWithBin.py ../activations_dump/global_avgpool/output.json ./output.bin $tolerance > ../inference_test_summary.csv
 if [ $? -ne 0 ]; then
     echo ";" >> ../inference_test_summary.csv

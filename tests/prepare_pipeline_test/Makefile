@@ -54,6 +54,9 @@ APP_SRCS = main.c ../../ReID-Demo/reid_pipeline.c ../../ReID-Demo/network_proces
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DNORM_ROUND=1 -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
+ifeq ($(SILENT),1)
+  APP_CFLAGS += -DSILENT=1
+endif
 
 PLPBRIDGE_FLAGS += -f $(DATA_FILES)
 
