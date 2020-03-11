@@ -29,9 +29,7 @@
 
 To measure the quality with quantized model: `python post_training.py -a squeezenet1_1 --grayscale --height 128 --width 128 --target-names lfw --load-weights <path to the trained model> --distance l2 --no-normalize --landmarks-path <path to the txt file with landmarks> --convbn --save-dir <directory to save the results>  --quantization --bits 16 --quant-data-dir <directory with images for quantization> --evaluate`
 
-```
-    $PYTHONPATH=. python examples/quantization_re_id.py --trained-model <path to saved checkpoints of last epoch>
-```
+This mode of quantization can also be used for optimal threshold measurement. After running quantization with `--evaluate` key you will see `Optimal threshold: ...` on screen. This number should be squared and pushed in `ReID-Demo/setup.h` file as `REID_L2_THRESHOLD` and `STRANGER_L2_THRESHOLD`.
 
 Eventually new folder `results` will be created with 26 *.json files of quantized model in it and subfolder `activations_dump` inside.
 Directory `results` contains quantized weights and biases.
