@@ -37,6 +37,7 @@ RUN apt-get update && \
         automake \
         texinfo \
         libtool \
+        xxd \
         pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
