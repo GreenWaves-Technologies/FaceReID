@@ -187,9 +187,9 @@ void body(void * parameters)
     unsigned int Hi = CAMERA_HEIGHT;
 
     PRINTF("Before ReadImageFromFile\n");
-    int read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, input_size);
-    PRINTF("After ReadImageFromFile with status: %d\n", read);
-    if(!read)
+    char* read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, input_size);
+    PRINTF("After ReadImageFromFile with status: %x\n", read);
+    if(read != tmp_frame_buffer)
     {
         PRINTF("Failed\n");
         pmsis_exit(-4);
@@ -253,7 +253,7 @@ void body(void * parameters)
 
     char* person_name;
     int id_conf = identify_by_db(ClusterDnnCall.output, &person_name);
-    PRINTF("Hi, %s! Conf: %d\n", person_name, id_conf);
+    printf("Hi, %s! Conf: %d\n", person_name, id_conf);
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;

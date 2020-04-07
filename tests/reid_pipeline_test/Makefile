@@ -34,7 +34,7 @@ REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A=1 -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -64,7 +64,7 @@ DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)
 
 FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
 DATA_FILES += ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
-APP_CFLAGS += -Os -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+APP_CFLAGS += -Os -O3 -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
