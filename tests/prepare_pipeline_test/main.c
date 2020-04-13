@@ -138,7 +138,6 @@ void body(void* parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
 
     PRINTF("Start Prepare Pipeline test\n");
 
@@ -189,7 +188,10 @@ void body(void* parameters)
 
     ExtaKernels_L1_Memory = L1_Memory;
 
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall));
+    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     pi_cluster_close(&cluster_dev);
 
 //     int File = rt_bridge_open("../../../output.values", O_RDWR | O_CREAT, S_IRWXU, NULL);

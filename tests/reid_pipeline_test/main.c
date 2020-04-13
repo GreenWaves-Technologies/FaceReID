@@ -113,7 +113,6 @@ void body(void * parameters)
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
     struct pi_hyper_conf hyper_conf;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
 
     PRINTF("Start ReID Pipeline test\n");
 
@@ -223,7 +222,10 @@ void body(void * parameters)
     unsigned int tm = rt_time_get_us();
 #endif
     PRINTF("Before pi_cluster_send_task_to_cl 1\n");
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall));
+    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     PRINTF("After pi_cluster_send_task_to_cl 1\n");
 
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
@@ -231,7 +233,10 @@ void body(void * parameters)
     WriteImageToFile(outputImage, 128, 128, tmp_img_face_buffer);
 
     PRINTF("Before pi_cluster_send_task_to_cl 2\n");
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall));
+    pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     PRINTF("After pi_cluster_send_task_to_cl 2\n");
 
     pi_fs_file_t* host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
