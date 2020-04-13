@@ -72,7 +72,6 @@ void body(void* parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
     struct pi_hyper_conf hyper_conf;
     int File = 0;
 
@@ -86,8 +85,6 @@ void body(void* parameters)
         PRINTF("Error: cannot open Hyperram!\n");
         pmsis_exit(-2);
     }
-
-    PRINTF("HyperRAM config done\n");
 
     PRINTF("HyperRAM config done\n");
 
@@ -218,7 +215,10 @@ void body(void* parameters)
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL));
+    pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;

@@ -207,8 +207,6 @@ void body(void* parameters)
     struct pi_cluster_task cluster_task;
     cascade_reponse_t cascade_history[FACE_DETECTOR_STABILIZATION_PERIOD];
     int cascade_history_size = 0;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
-    int display_orientation = PI_ILI_ORIENTATION_270;
 
     unsigned char* ImageRender;
     unsigned char* ImageIn;
@@ -299,7 +297,7 @@ void body(void* parameters)
     PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
-    int status;
+    int status = 1;
 #if defined(STATIC_FACE_DB)
 # if defined(BLE_NOTIFIER)
     status = initHandler(&fs, &display);
@@ -388,7 +386,10 @@ void body(void* parameters)
 #endif
 
     //Cluster Init
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall));
+    pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
     PRINTF("Main cycle\n");
 
@@ -413,8 +414,10 @@ void body(void* parameters)
 #ifdef PERF_COUNT
         unsigned int tm = rt_time_get_us();
 #endif
-
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_main, &ClusterDetectionCall));
+        pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_main, &ClusterDetectionCall);
+        cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+        cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(HAVE_DISPLAY)
         RenderBuffer.data = ImageRender;
@@ -465,7 +468,10 @@ void body(void* parameters)
                     ExtaKernels_L1_Memory = L1_Memory;
                     int File;
 
-                    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall));
+                    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined(USE_BLE_USER_MANAGEMENT)
                     my_copy(ClusterDnnCall.scaled_face, ClusterDnnCall.face, 128, 128);
@@ -487,7 +493,10 @@ void body(void* parameters)
 #ifdef PERF_COUNT
                     unsigned int inftm = rt_time_get_us();
 #endif
-                    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall));
+                    pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
+                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 #ifdef PERF_COUNT
                     inftm = rt_time_get_us() - inftm;
                     PRINTF("DNN inference finished in %d microseconds\n", inftm);
@@ -570,7 +579,10 @@ void body(void* parameters)
 
                     pi_cluster_open(&cluster_dev);
 
-                    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall));
+                    pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
+                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
                 }
                 else
                 {
