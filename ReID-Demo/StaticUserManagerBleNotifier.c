@@ -82,10 +82,10 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
     GAPOC_GPIO_Init_HighZ(GPIO_A1_B2);
     #else
     // Init GPIO that will control NINA DSR in deasserted position
-    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 0);
+    pi_gpio_pin_write(0, GPIOA21_NINA17, 0);
 
     // Enable BLE (release reset)
-    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 1);
+    pi_gpio_pin_write(0, GPIOA2_NINA_RST, 1);
 
     pi_time_wait_us(1*1000*1000);
     #endif
@@ -162,6 +162,9 @@ void closeHandler()
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_UART_RX_PAD_FUNC);
 
     pi_nina_b112_close(&ble);
+
+    pi_gpio_pin_write(0, GPIOA21_NINA17, 1);
+    pi_gpio_pin_write(0, GPIOA2_NINA_RST, 0);
 
     pi_pad_set_function(CONFIG_HYPERBUS_DATA6_PAD, CONFIG_HYPERRAM_DATA6_PAD_FUNC);
 }

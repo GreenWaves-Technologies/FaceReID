@@ -194,10 +194,6 @@ void body(void* parameters)
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     pi_cluster_close(&cluster_dev);
 
-//     int File = rt_bridge_open("../../../output.values", O_RDWR | O_CREAT, S_IRWXU, NULL);
-//     rt_bridge_write(File, ClusterDnnCall.scaled_face, 128*128*sizeof(short), NULL);
-//     rt_bridge_close(File, NULL);
-
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
 
     PRINTF("Writing output to file\n");

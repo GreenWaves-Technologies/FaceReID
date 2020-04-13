@@ -57,11 +57,7 @@ int main(int argc, char **argv)
     SetSymbolDynamics();
     SetKernelOpts(KER_OPT_NONE, KER_OPT_BUFFER_PROMOTE);
 
-#if defined(_FOR_FREERTOS_)
     SetUsedFilesNames(0, 1, "ExtraBasicKernels.h");
-#else
-    SetUsedFilesNames(0, 1, "ExtraBasicKernels.h");
-#endif
     SetGeneratedFilesNames("ExtraKernels.c", "ExtraKernels.h");
 
     SetL1MemorySize(49000);

@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef __IIBASICKERNELS_H__
-#define __IIBASICKERNELS_H__
+#ifndef EXTRABASICKERNELS_H__
+#define EXTRABASICKERNELS_H__
 
 #include "Gap.h"
-
-#define Max(a, b)               (((a)>(b))?(a):(b))
-#define Min(a, b)               (((a)<(b))?(a):(b))
 
 typedef struct {
 	unsigned char * __restrict__ In;
@@ -35,4 +32,4 @@ typedef struct {
 
 void KerResizeBilinearShort(KerResizeBilinearShort_ArgT *Arg);
 
-#endif //__IIBASICKERNELS_H__
+#endif // EXTRABASICKERNELS_H__

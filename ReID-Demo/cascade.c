@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//Permanently Store a scascade stage to L1
+//Permanently Store a cascade stage to L1
 single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
 {
     pi_cl_dma_copy_t DmaR_Evt1;

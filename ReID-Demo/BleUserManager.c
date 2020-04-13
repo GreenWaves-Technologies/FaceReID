@@ -378,7 +378,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     // Enable BLE (release reset)
     pi_gpio_pin_write(gpio_port, GPIOA2_NINA_RST, 1);
 
-    rt_time_wait_us(1*1000*1000);
+    pi_time_wait_us(1000 * 1000);
     #endif
 
     // Initiliaze NINA as BLE Peripheral
@@ -421,11 +421,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     draw_text(display, "Client connected", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
     // 50 ms delay is required after entering data mode
-    #ifdef __FREERTOS__
-    vTaskDelay( 50 / portTICK_PERIOD_MS );
-    #else
-    rt_time_wait_us(50 * 1000);
-    #endif
+    pi_time_wait_us(50 * 1000);
 
     context.ble = &ble;
     ble_exit = 0;
@@ -450,7 +446,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
         {
             rt_timer_start(&ble_timer, BLE_TIMEOUT);
             pi_nina_b112_get_data(&ble, &action, 1, pi_task_callback(&ble_command_task, ble_protocol_handler, &context));
-            rt_event_yield(NULL);
+            pi_yield();
         }
     }
 
@@ -458,9 +454,9 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     rt_timer_destroy(&ble_timer);
 
     // Exit BLE data mode
-    rt_time_wait_us(1000 * 1000);
+    pi_time_wait_us(1000 * 1000);
     pi_nina_b112_exit_data_mode(&ble);
-    rt_time_wait_us(1000 * 1000);
+    pi_time_wait_us(1000 * 1000);
 
     PRINTF("Disabling BLE\n");
     pi_nina_b112_close(&ble);

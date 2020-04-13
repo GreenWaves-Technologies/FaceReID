@@ -262,7 +262,6 @@ void body(void *parameters)
 
     char *inputBlob = "../../../input.bin";
     char *outputBlob = "../../../output.bin";
-    unsigned int Wi, Hi;
 
     PRINTF("Init cluster...\n");
     pi_cluster_conf_init(&cluster_conf);
@@ -272,15 +271,13 @@ void body(void *parameters)
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
-    #if !defined(__FREERTOS__)
     //Setting FC to 250MHz
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 250000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 250000000);
 
-    //Setting Cluster to 150MHz
+    //Setting Cluster to 175MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
-    // and using FC clocks over 150Mhz is dengerous
-    rt_freq_set(RT_FREQ_DOMAIN_CL, 175000000);
-    #endif
+    // and using FC clocks over 150Mhz is dangerous
+    pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
     l2_x = layer_init();
     PRINTF("Network init done\n");

@@ -71,9 +71,6 @@
 #include "facedet_pipeline.h"
 
 cascade_reponse_t responses[MAX_NUM_OUT_WINS];
-#if !defined(__FREERTOS__)
-static rt_perf_t cluster_perf;
-#endif
 
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 {
@@ -224,7 +221,7 @@ void body(void* parameters)
 
     PRINTF("Start ReID Demo Application\n");
 
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 50000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 50000000);
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
     if (open_gpio(&gpio_port))
@@ -341,15 +338,13 @@ void body(void* parameters)
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
-#if !defined(__FREERTOS__)
     //Setting FC to 200MHz
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 200000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 200000000);
 
     //Setting Cluster to 150MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
     // and using FC clocks over 150Mhz is dangerous
-    rt_freq_set(RT_FREQ_DOMAIN_CL, 150000000);
-#endif
+    pi_freq_set(PI_FREQ_DOMAIN_CL, 150000000);
 
     // HACK: Init display for the second time, because
     // SPI API does not handle clocks change correctly for now
@@ -393,9 +388,6 @@ void body(void* parameters)
     ClusterDetectionCall.ImageRender          = ImageRender;
     ClusterDetectionCall.output_map           = output_map;
     ClusterDetectionCall.reponses             = responses;
-#ifdef PERF_COUNT
-    ClusterDetectionCall.perf                 = &cluster_perf;
-#endif
 
     //Cluster Init
     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
