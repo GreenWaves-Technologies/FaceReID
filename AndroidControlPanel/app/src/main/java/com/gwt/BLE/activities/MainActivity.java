@@ -967,6 +967,7 @@ public class MainActivity extends Activity {
         }
 
         private void sendBleDropVisitor(Visitor visitor) {
+            stopHBTimer();
             currentUserToWrite = visitor;
             byte[] descriptor = visitor.getDescriptor();
             mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_VISITOR});
@@ -977,6 +978,7 @@ public class MainActivity extends Activity {
                 mBleService.writeCharacteristic(characteristicFifo, tmp);
             }
             currentBleRequest = BLE_DROP_VISITOR;
+            startHBTimer();
         }
 
         private void sendBleAddVisitor(Visitor visitor) {
@@ -986,6 +988,7 @@ public class MainActivity extends Activity {
         }
 
         private void sendBleSetVisitorName(String name) {
+            stopHBTimer();
             byte[] nameBytes = name.getBytes();
             byte[] request = new byte[17];
             request[0] = BLE_SET_NAME;
@@ -998,9 +1001,11 @@ public class MainActivity extends Activity {
             }
             mBleService.writeCharacteristic(characteristicFifo, request);
             currentBleRequest = BLE_SET_NAME;
+            startHBTimer();
         }
 
         private void sendBleSetVisitorDescriptor(byte[] descriptor) {
+            stopHBTimer();
             mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
             int chunkSize = 20;
             int packetsToSend = (descriptor.length + chunkSize - 1) / chunkSize;
@@ -1009,6 +1014,7 @@ public class MainActivity extends Activity {
                 mBleService.writeCharacteristic(characteristicFifo, tmp);
             }
             currentBleRequest = BLE_SET_DESCRIPTOR;
+            startHBTimer();
         }
 
         private void sendBleExit() {
