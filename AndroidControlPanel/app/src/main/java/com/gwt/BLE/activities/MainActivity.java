@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -565,7 +564,7 @@ public class MainActivity extends Activity {
 
         private static final String TAG = "VisitorEdit";
 
-        private Map<String, Device> reidDevices;
+        private ArrayList<Device> reidDevices;
         private Visitor currentVisitor;
         private HashMap<String, Visitor.Access> currentAccess;
 
@@ -576,10 +575,10 @@ public class MainActivity extends Activity {
             Context context;
             LayoutInflater inflater;
 
-            Map<String, Device> devices;
+            ArrayList<Device> devices;
             Map<String, Visitor.Access> access;
 
-            private AccessListAdapter(Context context, Map<String, Device> devices, Map<String, Visitor.Access> access) {
+            private AccessListAdapter(Context context, ArrayList<Device> devices, Map<String, Visitor.Access> access) {
                 this.context = context;
                 this.devices = devices;
                 this.access = access;
@@ -601,9 +600,7 @@ public class MainActivity extends Activity {
                     return null;
                 }
 
-                Set<String> keySet = devices.keySet();
-                Object[] keys = keySet.toArray();
-                return devices.get(keys[position]);
+                return devices.get(position);
             }
 
             @Override
@@ -636,7 +633,7 @@ public class MainActivity extends Activity {
         }
 
         void onCreate() {
-            reidDevices = new HashMap<>();
+            reidDevices = new ArrayList<>();
             currentAccess = new HashMap<>();
 
             mainLayout = findViewById(R.id.editMain);
@@ -665,12 +662,17 @@ public class MainActivity extends Activity {
         }
 
         void onStart() {
-            Map<String, Device> dbDevices = db.getAllDevices();
+            ArrayList<Device> dbDevices = db.getAllDevices();
             if (mDevice != null) {
-                Device d = dbDevices.get(mDevice.getAddress());
-                d.setName(mDevice.getName());
+                for (int i = 0; i < dbDevices.size(); i++) {
+                    Device d = dbDevices.get(i);
+                    if (d.getAddress().equals(mDevice.getAddress())) {
+                        d.setName(mDevice.getName());
+                        break;
+                    }
+                }
             }
-            reidDevices.putAll(dbDevices);
+            reidDevices.addAll(dbDevices);
         }
 
         void onResume() {

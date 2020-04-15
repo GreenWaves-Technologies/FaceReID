@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
 
@@ -174,11 +173,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return d;
     }
 
-    public Map<String, Device> getAllDevices() {
+    public ArrayList<Device> getAllDevices() {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.query(TABLE_DEVICES, null, null, null, null, null, KEY_DEVICE_LAST_ACCESS + " DESC");
 
-        Map<String, Device> devices = new HashMap<>();
+        ArrayList<Device> devices = new ArrayList<>();
         if (!c.moveToFirst()) {
             return devices;
         }
@@ -189,7 +188,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             d.setName(c.getString(c.getColumnIndex(KEY_DEVICE_NAME)));
             d.setFavourite(c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0);
 
-            devices.put(d.getAddress(), d);
+            devices.add(d);
         } while(c.moveToNext());
 
         c.close();
