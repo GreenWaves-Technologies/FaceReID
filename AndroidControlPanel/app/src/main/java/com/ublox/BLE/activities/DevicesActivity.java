@@ -66,6 +66,8 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         setContentView(R.layout.activity_devices);
 
+        reidDevices = new HashMap<>();
+
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
@@ -139,7 +141,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         db = new DataBaseHelper(getApplicationContext());
 
         // Reload known devices list
-        reidDevices = db.getAllDevices();
+        ArrayList<Device> dbDevices = db.getAllDevices();
+        for (int i = 0; i < dbDevices.size(); i++) {
+            Device d = dbDevices.get(i);
+            reidDevices.put(d.getAddress(), d);
+        }
     }
 
     private void setListAdapter(BaseAdapter baseAdapter) {

@@ -7,16 +7,17 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DBHelper";
 
     private static final String DATABASE_NAME = "reid.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     private static final String TABLE_DEVICES = "devices";
     private static final String TABLE_VISITORS = "visitors";
@@ -25,6 +26,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     // TABLE_DEVICES
     private static final String KEY_DEVICE_NAME = "name";
     private static final String KEY_DEVICE_MACADDR = "mac";
+    private static final String KEY_DEVICE_LAST_ACCESS = "last_access";
     private static final String KEY_DEVICE_FAVOURITE = "favourite";
     // TABLE_VISITORS
     private static final String KEY_VISITOR_ID = "id";
@@ -41,10 +43,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
     public DataBaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
-
-        Log.i(TAG, "Open DB: " + DATABASE_NAME);
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.setForeignKeyConstraintsEnabled(true);
     }
 
 
@@ -56,7 +54,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             "CREATE TABLE " + TABLE_DEVICES + " (" +
                 KEY_DEVICE_NAME + " text, " +
                 KEY_DEVICE_MACADDR + "  NOT NULL PRIMARY KEY CHECK (length(" + KEY_DEVICE_MACADDR + ") >= 12), " +
-                KEY_DEVICE_FAVOURITE + " boolean" +
+                KEY_DEVICE_LAST_ACCESS + " datetime DEFAULT CURRENT_TIMESTAMP, " +
+                KEY_DEVICE_FAVOURITE + " boolean NOT NULL DEFAULT 0" +
             ")"
         );
 
@@ -86,11 +85,55 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.i(TAG, "Upgrade DB " + DATABASE_NAME + " from v" + oldVersion + " to v" + newVersion);
 
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACCESS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_VISITORS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
+        if (newVersion == 2) {
+            // ALTER TABLE has multiple limitations, so let's go another way
 
-        onCreate(db);
+            // Create "NEW_devices" table
+            db.execSQL(
+                "CREATE TABLE " + "NEW_" + TABLE_DEVICES + " (" +
+                    KEY_DEVICE_NAME + " text, " +
+                    KEY_DEVICE_MACADDR + "  NOT NULL PRIMARY KEY CHECK (length(" + KEY_DEVICE_MACADDR + ") >= 12), " +
+                    KEY_DEVICE_LAST_ACCESS + " datetime DEFAULT CURRENT_TIMESTAMP, " +
+                    KEY_DEVICE_FAVOURITE + " boolean NOT NULL DEFAULT 0" +
+                ")"
+            );
+
+            // Copy data from "devices" to "NEW_devices"
+            db.execSQL(
+                "INSERT INTO " + "NEW_" + TABLE_DEVICES + " (" +
+                    KEY_DEVICE_NAME + ", " +
+                    KEY_DEVICE_MACADDR + ", " +
+                    KEY_DEVICE_FAVOURITE +
+                ") " +
+                "SELECT " +
+                    KEY_DEVICE_NAME + ", " +
+                    KEY_DEVICE_MACADDR + ", " +
+                    KEY_DEVICE_FAVOURITE +
+                " FROM " + TABLE_DEVICES
+            );
+
+            // Drop table "devices"
+            db.execSQL("DROP TABLE " + TABLE_DEVICES);
+
+            // Rename "NEW_devices" to "devices"
+            db.execSQL("ALTER TABLE " + "NEW_" + TABLE_DEVICES + " RENAME TO " + TABLE_DEVICES);
+        }
+        else {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACCESS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_VISITORS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
+
+            onCreate(db);
+        }
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        Log.i(TAG, "Open DB: " + DATABASE_NAME);
+        if (!db.isReadOnly()) {
+            db.setForeignKeyConstraintsEnabled(true);
+        }
     }
 
     public void closeDB() {
@@ -107,6 +150,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(KEY_DEVICE_NAME, device.getName());
         values.put(KEY_DEVICE_MACADDR, device.getAddress());
+        values.put(KEY_DEVICE_LAST_ACCESS, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         values.put(KEY_DEVICE_FAVOURITE, device.isFavourite());
 
         return db.replace(TABLE_DEVICES, null, values);
@@ -129,11 +173,11 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return d;
     }
 
-    public Map<String, Device> getAllDevices() {
+    public ArrayList<Device> getAllDevices() {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(TABLE_DEVICES, null, null, null, null, null, null);
+        Cursor c = db.query(TABLE_DEVICES, null, null, null, null, null, KEY_DEVICE_LAST_ACCESS + " DESC");
 
-        Map<String, Device> devices = new HashMap<>();
+        ArrayList<Device> devices = new ArrayList<>();
         if (!c.moveToFirst()) {
             return devices;
         }
@@ -144,7 +188,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             d.setName(c.getString(c.getColumnIndex(KEY_DEVICE_NAME)));
             d.setFavourite(c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0);
 
-            devices.put(d.getAddress(), d);
+            devices.add(d);
         } while(c.moveToNext());
 
         c.close();
@@ -157,6 +201,7 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         ContentValues values = new ContentValues();
         values.put(KEY_DEVICE_NAME, device.getName());
+        values.put(KEY_DEVICE_LAST_ACCESS, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         values.put(KEY_DEVICE_FAVOURITE, device.isFavourite());
 
         return db.update(TABLE_DEVICES, values, KEY_DEVICE_MACADDR + " = ?", new String[] { device.getAddress() });
