@@ -21,10 +21,6 @@
 #include "hyperbus_cl_internal.h"
 #endif
 
-#ifdef __EMUL__
-# include "extra_emul_stubs.h"
-#endif
-
 #include "pmsis.h"
 #include "param_layer_struct.h"
 #include "dnn_utils.h"

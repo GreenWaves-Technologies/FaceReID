@@ -32,8 +32,6 @@
 # include "pmsis_os.h"
 # include "drivers/hyperbus.h"
 # include "hyperbus_cl_internal.h"
-#else
-# include "extra_emul_stubs.h"
 #endif
 
 #include "dnn_utils.h"

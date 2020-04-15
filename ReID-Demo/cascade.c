@@ -23,7 +23,6 @@
 # include "pmsis_tiling.h"
 #else
 # include "Gap.h"
-# include "extra_emul_stubs.h"
 #endif
 
 #include "cascade.h"
