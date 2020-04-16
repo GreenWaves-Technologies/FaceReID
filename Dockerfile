@@ -40,20 +40,20 @@ RUN apt-get update && \
         pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install wheel && pip3 install opencv-python argcomplete
+RUN pip3 install wheel && pip3 install opencv-python argcomplete six
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 RUN mkdir -p /tmp/toolchain && cd /tmp/toolchain && \
     git clone https://github.com/GreenWaves-Technologies/gap_riscv_toolchain_ubuntu_18.git . && \
-    ./install.sh && \
+    ./install.sh <<< /usr/lib/gap_riscv_toolchain && \
     rm -rf /tmp/toolchain
 
 RUN mkdir /gap_sdk && cd /gap_sdk && \
       mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
-      git checkout master && \
+      git checkout release-v3.2.2 && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
