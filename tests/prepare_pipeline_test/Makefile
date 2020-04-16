@@ -28,8 +28,13 @@ REID_MODEL_GEN = CnnKernels
 REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A=1 -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+REID_GEN_SRCS = \
+  ../../ReID-Demo/ReIDModel.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  $(CNN_GEN_PATH)/CNN_Generators.c
+
+GenReidNet: $(REID_GEN_SRCS)
+	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A=1 -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" $(REID_GEN_SRCS) $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -50,7 +55,17 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: reid_model extra_model
 
-APP_SRCS = main.c ../../ReID-Demo/reid_pipeline.c ../../ReID-Demo/network_process_manual.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c ../../ReID-Demo/ExtraBasicKernels.c ../../ReID-Demo/ImgIO.c $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
+APP_SRCS = \
+  main.c \
+  ../../ReID-Demo/reid_pipeline.c \
+  ../../ReID-Demo/network_process_manual.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  ../../ReID-Demo/dnn_utils.c \
+  ../../ReID-Demo/ExtraBasicKernels.c \
+  ../../ReID-Demo/ImgIO.c \
+  $(REID_MODEL_GEN_C) \
+  $(CNN_KERNELS_SRC) \
+  $(EXTRA_MODEL_GEN_C)
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -O3 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
@@ -69,4 +84,4 @@ clean::
 
 .PHONY: reid_model extra_model tiler_models all clean
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk

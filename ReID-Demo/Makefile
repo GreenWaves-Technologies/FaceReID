@@ -27,7 +27,7 @@ TILER_GENERATOR_PATH = $(TILER_PATH)/generators
 CNN_GEN_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KERNELS_SRC = $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC=$(wildcard quantized_model/*.json)
+CNN_LAYERS_SRC = $(wildcard quantized_model/*.json)
 ifeq ($(ALREADY_FLASHED),1)
 	CNN_LAYERS_BIN=
 else
@@ -80,7 +80,24 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model $(CNN_LAYERS_BIN)
 
-APP_SRCS = main.c cascade.c display.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
+APP_SRCS = \
+  main.c \
+  cascade.c \
+  display.c \
+  face_db.c \
+  facedet_pipeline.c \
+  reid_pipeline.c \
+  FaceDetBasicKernels.c \
+  ImageDraw.c \
+  ImgIO.c \
+  network_process_manual.c \
+  param_layer_manual.c \
+  dnn_utils.c \
+  ExtraBasicKernels.c \
+  $(DETECTION_MODEL_GEN_C) \
+  $(REID_MODEL_GEN_C) \
+  $(CNN_KERNELS_SRC) \
+  $(EXTRA_MODEL_GEN_C)
 
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB=1
@@ -154,4 +171,4 @@ clean::
 
 .PHONY: detection_model reid_model extra_model tiler_models all clean
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk
