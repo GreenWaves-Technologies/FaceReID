@@ -750,7 +750,7 @@ public class MainActivity extends Activity {
                         }
                     }
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Visitor.Access access = currentAccess.get(mDevice.getAddress());
                         if (access != null && access.granted) {
                             Log.d(TAG, "Sending request to add new person");
@@ -778,7 +778,7 @@ public class MainActivity extends Activity {
                     visitors.remove(currentVisitorIdx);
                     db.deleteVisitor(currentVisitor);
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Log.d(TAG, "Sending request to drop a person");
                         mGatt.sendBleDropVisitor(currentVisitor);
                         mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
