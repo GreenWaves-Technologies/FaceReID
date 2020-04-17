@@ -730,8 +730,9 @@ public class MainActivity extends Activity {
                     String newName = personName.getText().toString();
                     if (newName.isEmpty()) {
                         personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_warning_black_24dp, 0);
-                        // TODO: Remove warning image on text input
                         return true;
+                    } else {
+                        personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     }
                     currentVisitor.setName(newName);
 
