@@ -8,112 +8,149 @@ stages:
 
 BuildDemo_GAPOC:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapoc_a_v2.sh && cd ./ReID-Demo && make all
+  script:
+    - source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ./ReID-Demo
+    - make all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_DUMP_DESCRIPTORS:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./ReID-Demo && make DUMP_SUCCESSFUL_FRAME=1 all
-  artifacts:
-    paths:
-      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
-
-BuildDemo_DUMP_DESCRIPTORS:
-  stage: BuildDemo
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./ReID-Demo && make DUMP_SUCCESSFUL_FRAME=1 all
+  script:
+    - source /gap_sdk/configs/gapuino_v2.sh
+    - cd ./ReID-Demo
+    - make DUMP_SUCCESSFUL_FRAME=1 all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_GAPOC_STATIC:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./ReID-Demo && make STATIC_FACE_DB=1 all
+  script:
+    - source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ./ReID-Demo
+    - make STATIC_FACE_DB=1 all
 
 BuildDemo_GAPOC_STATIC_BLE:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapoc_a_v2.sh && cd ./ReID-Demo && make STATIC_FACE_DB=1 BLE_NOTIFIER=1 all
+  script:
+    - source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ./ReID-Demo
+    - make STATIC_FACE_DB=1 BLE_NOTIFIER=1 all
 
 BuildDemo_GAPOC_STATIC_BLE_SILENT:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapoc_a_v2.sh && cd ./ReID-Demo && make STATIC_FACE_DB=1 BLE_NOTIFIER=1 SILENT=1 all
+  script:
+    - source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ./ReID-Demo
+    - make STATIC_FACE_DB=1 BLE_NOTIFIER=1 SILENT=1 all
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
 
 BuildDemo_GAPUINO:
   stage: BuildDemo
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./ReID-Demo && make all
+  script:
+    - source /gap_sdk/configs/gapuino_v2.sh
+    - cd ./ReID-Demo
+    - make all
 
 SingleLayerTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_layers_one_by_one.sh
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/
+    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ./test_layers_one_by_one.sh
   artifacts:
     when: on_failure
     paths:
       - tests/single_layer_test_summary.csv
       - tests/single_logs/*.log
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 InferenceTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/
+    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ./test_inference.sh
   artifacts:
     when: on_failure
     paths:
       - tests/inference_test_summary.csv
       - tests/inference_logs/*.log
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 InferenceTest_SILENT:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ln -s /test_data/activations_dump_transposed ./activations_dump && ./test_inference.sh SILENT=1
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/
+    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ./test_inference.sh SILENT=1
   artifacts:
     when: on_failure
     paths:
       - tests/inference_test_summary.csv
       - tests/inference_logs/*.log
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 DbSelectorTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/db_selector_test && make run
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/db_selector_test
+    - make run
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 DbSelectorTest_SILENT:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/db_selector_test && make SILENT=1 run
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/db_selector_test
+    - make SILENT=1 run
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 BuildBleTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapoc_a_v2.sh && cd ./tests/ble_test && make all
+  script: source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ./tests/ble_test
+    - make all
 
 PreparePipelineTest:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ./test_prepare_pipeline.sh
+  script:
+    source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/
+    - ./test_prepare_pipeline.sh
   artifacts:
     when: on_failure
     paths:
       - tests/prepare_pipeline_logs/*
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 PreparePipelineTest_SILENT:
   stage: GapuinoTest
-  script: source /gap_sdk/configs/gapuino_v2.sh && cd ./tests/ && ./test_prepare_pipeline.sh SILENT=1
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./tests/
+    - ./test_prepare_pipeline.sh SILENT=1
   artifacts:
     when: on_failure
     paths:
       - tests/prepare_pipeline_logs/*
   tags:
-    - gapuino_v2
+    - GAP8v2
 
 BuildAndroidNotifier:
   stage: BuildAndroid
@@ -140,7 +177,9 @@ BuildAndroidControlPanel:
 Deploy:
   stage: Deploy
   script:
-    - mkdir deploy && cd deploy && rm -rf *
+    - mkdir deploy
+    - cd deploy
+    - rm -rf *
     - tar -cj --file activations_dump.tar.bz2 /test_data/activations_dump_transposed/*
     - mv ../ReID-Speaker-latest.apk ./
     - mv ../ReID-Control-App-latest.apk ./
