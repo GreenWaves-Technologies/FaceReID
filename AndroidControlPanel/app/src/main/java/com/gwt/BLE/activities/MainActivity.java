@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -215,7 +216,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setAppTitle(String title) {
+    private void setAppTitle(final String title) {
         final ActionBar actionBar = getActionBar();
         if (title != null) {
             actionBar.setTitle(title);
@@ -344,6 +345,16 @@ public class MainActivity extends Activity {
                     accessIndicator.setVisibility(View.INVISIBLE);
                 }
 
+                if (mDevice != null) {
+                    Visitor.Access access = person.getAccess(mDevice.getAddress());
+                    if ((person.getOldName() != null) && !person.getName().equals(person.getOldName()) ||
+                        (access != null && access.granted != access.oldGranted)) {
+                        nameTextView.setTypeface(null, Typeface.BOLD_ITALIC);
+                    } else {
+                        nameTextView.setTypeface(null, Typeface.BOLD);
+                    }
+                }
+
                 return view;
             }
         }
@@ -390,13 +401,9 @@ public class MainActivity extends Activity {
             updateStatus();
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
-
-        void onStop() {
-
-        }
+        void onStop() { }
 
         void onBackPressed() {
             Log.v(TAG, "onBackPressed()");
@@ -719,13 +726,9 @@ public class MainActivity extends Activity {
             personDescription.setText(currentVisitor.getDescription());
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
-
-        void onStop() {
-
-        }
+        void onStop() { }
 
         void onBackPressed() {
             Log.v(TAG, "onBackPressed()");
