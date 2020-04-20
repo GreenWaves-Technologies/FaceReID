@@ -87,7 +87,7 @@ ifneq ($(BOARD_NAME),gapoc_a)
 endif
 
 DATA_FILES=$(wildcard ./quantized_model/*.bin)
-APP_CFLAGS += -DNORM_ROUND=1 -Os -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
+APP_CFLAGS += -DNORM_ROUND=1 -Os -O3 -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 
 ifeq ($(STATIC_FACE_DB),1)
   FACE_DB_SIZE=$(shell wc -l < ./known_faces/index.txt)
