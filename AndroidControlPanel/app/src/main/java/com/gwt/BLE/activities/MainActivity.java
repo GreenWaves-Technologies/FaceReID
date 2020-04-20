@@ -446,6 +446,7 @@ public class MainActivity extends Activity {
                             if (access != null) {
                                 access.oldGranted = false;
                             }
+                            v.setOldName(null);
                         }
 
                         notifyDataChanged();
@@ -1178,6 +1179,7 @@ public class MainActivity extends Activity {
                         String name = CString2String(data);
                         Log.d(TAG, "Name " + name + " got, sending BLE_GET_VISITOR_DESCRIPTOR request");
                         currentUserToRead.setName(name);
+                        currentUserToRead.setOldName(name);
                         sendBleGetVisitorDescriptor();
                         break;
                     }
@@ -1205,6 +1207,8 @@ public class MainActivity extends Activity {
                                     visitorsPermitted.add(v.getId());
                                     v.setAccess(mDevice.getAddress(), access);
                                     db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), access);
+                                    v.setOldName(currentUserToRead.getOldName());
+                                    db.updateVisitor(v);
                                     break;
                                 }
                             }
@@ -1239,8 +1243,9 @@ public class MainActivity extends Activity {
                             } else {
                                 db.deleteAccess(currentUserToWrite.getId(), mDevice.getAddress());
                             }
-
                             visitorsPermitted.remove(Integer.valueOf(currentUserToWrite.getId()));
+                            currentUserToWrite.setOldName(null);
+                            db.updateVisitor(currentUserToWrite);
                         }
                         mConnectionState = ConnectionState.CONNECTED;
                         runOnUiThread(() -> {
@@ -1277,6 +1282,8 @@ public class MainActivity extends Activity {
                             currentUserToWrite.setAccess(mDevice.getAddress(), access);
                             visitorsPermitted.add(currentUserToWrite.getId());
                             db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            currentUserToWrite.setOldName(currentUserToWrite.getName());
+                            db.updateVisitor(currentUserToWrite);
                             currentUserToWrite = null;
                             mConnectionState = ConnectionState.CONNECTED;
                             runOnUiThread(() -> {
