@@ -440,6 +440,14 @@ public class MainActivity extends Activity {
                 case R.id.menu_refresh:
                     if (mBleService != null) {
                         visitorsPermitted.clear();
+                        for (int i = 0; i < visitors.size(); i++) {
+                            Visitor v = visitors.get(i);
+                            Visitor.Access access = v.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                            }
+                        }
+
                         notifyDataChanged();
                         Log.d(TAG, "Starting people enumeration on device");
                         mGatt.sendBleReadVisitor();
@@ -653,6 +661,7 @@ public class MainActivity extends Activity {
                     Visitor.Access access = currentAccess.get(device.getAddress());
                     if (access == null) {
                         access = new Visitor.Access();
+                        access.oldGranted = false;
                     }
                     access.granted = isChecked;
                     currentAccess.put(device.getAddress(), access);
@@ -693,6 +702,7 @@ public class MainActivity extends Activity {
                 accessIndicator.setVisibility(View.INVISIBLE);
             }*/
 
+            currentAccess.clear();
             HashMap<String, Visitor.Access> a = currentVisitor.getAccesses();
             if (a != null) {
                 currentAccess.putAll(a);
@@ -744,7 +754,7 @@ public class MainActivity extends Activity {
                     db.updateVisitor(currentVisitor);
                     for (String addr : currentAccess.keySet()) {
                         Visitor.Access access = currentAccess.get(addr);
-                        if (access.granted) {
+                        if (access != null && (access.granted || access.oldGranted)) {
                             db.createOrUpdateAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
                         } else {
                             db.deleteAccess(currentVisitor.getId(), addr);
@@ -762,7 +772,6 @@ public class MainActivity extends Activity {
                             visitorListActivity.rlProgress.setVisibility(View.VISIBLE);
                         } else {
                             Log.d(TAG, "Sending request to drop a person");
-                            visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                             mGatt.sendBleDropVisitor(currentVisitor);
                             mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
                             invalidateOptionsMenu();
@@ -775,7 +784,6 @@ public class MainActivity extends Activity {
                     // TODO
                     return true;
                 case R.id.menu_drop_person:
-                    visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                     visitors.remove(currentVisitorIdx);
                     db.deleteVisitor(currentVisitor);
 
@@ -1188,17 +1196,26 @@ public class MainActivity extends Activity {
                             for (i = 0; i < visitors.size(); i++) {
                                 Visitor v = visitors.get(i);
                                 if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
+                                    Visitor.Access access = v.getAccess(mDevice.getAddress());
+                                    if (access == null) {
+                                        access = new Visitor.Access();
+                                        access.granted = true;
+                                    }
+                                    access.oldGranted = true;
                                     visitorsPermitted.add(v.getId());
-                                    v.setAccess(mDevice.getAddress(), true);
-                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
+                                    v.setAccess(mDevice.getAddress(), access);
+                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), access);
                                     break;
                                 }
                             }
 
                             if (i >= visitors.size()) { // visitor is not in DB
-                                currentUserToRead.setAccess(mDevice.getAddress(), true);
+                                Visitor.Access access = new Visitor.Access();
+                                access.granted = true;
+                                access.oldGranted = true;
+                                currentUserToRead.setAccess(mDevice.getAddress(), access);
                                 db.createVisitor(currentUserToRead);
-                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), currentUserToRead.getAccess(mDevice.getAddress()));
+                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), access);
                                 visitors.add(currentUserToRead);
                                 visitorsPermitted.add(currentUserToRead.getId());
                             }
@@ -1213,6 +1230,18 @@ public class MainActivity extends Activity {
                     case BLE_DROP_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_DROP_VISITOR");
                         Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                                currentUserToWrite.setAccess(mDevice.getAddress(), access);
+                                db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            } else {
+                                db.deleteAccess(currentUserToWrite.getId(), mDevice.getAddress());
+                            }
+
+                            visitorsPermitted.remove(Integer.valueOf(currentUserToWrite.getId()));
+                        }
                         mConnectionState = ConnectionState.CONNECTED;
                         runOnUiThread(() -> {
                             invalidateOptionsMenu();
@@ -1243,8 +1272,11 @@ public class MainActivity extends Activity {
                         Log.d(TAG, "currentBleRequest == SET_DESCRIPTOR");
                         Log.d(TAG, "Response code: " + data[0]);
                         if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            access.oldGranted = true;
+                            currentUserToWrite.setAccess(mDevice.getAddress(), access);
                             visitorsPermitted.add(currentUserToWrite.getId());
-
+                            db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
                             currentUserToWrite = null;
                             mConnectionState = ConnectionState.CONNECTED;
                             runOnUiThread(() -> {

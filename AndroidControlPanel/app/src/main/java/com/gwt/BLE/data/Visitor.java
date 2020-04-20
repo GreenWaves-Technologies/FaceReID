@@ -68,7 +68,7 @@ public class Visitor {
         this.photoData = photoData;
     }
 
-    public void setAccess(String address, boolean granted) {
+    public void setAccess(String address, Access access) {
         if (address == null) {
             Log.e (TAG, "Error: Unable to set access for null device");
             return;
@@ -77,13 +77,8 @@ public class Visitor {
         if (this.accesses == null) {
             this.accesses = new HashMap<>();
         }
-        Access a = this.accesses.get(address);
-        if (a == null) {
-            a = new Access();
-            a.granted = granted;
-            a.oldGranted = granted;
-        }
-        this.accesses.put(address, a);
+
+        this.accesses.put(address, access);
     }
 
     public void setAccesses(HashMap<String, Access> accesses) {
