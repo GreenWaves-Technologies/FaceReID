@@ -49,7 +49,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private Map<String, Device> reidDevices;
     private int favCnt;
-    private BluetoothAdapter mBluetoothAdapter;
     private BluetoothCentral scanner;
     private DataBaseHelper db;
 
@@ -68,36 +67,26 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         reidDevices = new HashMap<>();
 
+        // Should not be needed
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-
-        // Checks if Bluetooth is supported on the device.
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
-            finish();
-        }
-
-        scanner = new BluetoothScanner(mBluetoothAdapter);
-        scanner.setDelegate(this);
+        scanner = null;
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_devices, menu);
-        if (scanner.getState() != BluetoothScanner.State.SCANNING) {
+        if (scanner == null || scanner.getState() != BluetoothScanner.State.SCANNING) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_progress).setActionView(null);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            menu.findItem(R.id.menu_progress).setActionView(
-                    R.layout.actionbar_indeterminate_progress);
+            menu.findItem(R.id.menu_progress).setActionView(R.layout.actionbar_indeterminate_progress);
         }
         return true;
     }
@@ -106,8 +95,26 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_scan:
-                mLeDeviceListAdapter.clear();
-                scanLeDevice(true);
+                final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+                BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+
+                // Checks if Bluetooth is supported on the device.
+                if (bluetoothAdapter == null) {
+                    Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+                } else if (!bluetoothAdapter.isEnabled()) {
+                    // If Bluetooth is not currently enabled, fire an intent to display a dialog
+                    // asking the user to grant permission to enable it.
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                } else {
+                    if (scanner == null) {
+                        scanner = new BluetoothScanner(bluetoothAdapter);
+                        scanner.setDelegate(this);
+                    }
+
+                    mLeDeviceListAdapter.clear();
+                    scanLeDevice(true);
+                }
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
@@ -123,15 +130,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     @Override
     protected void onResume() {
         super.onResume();
-
-        // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
-        // fire an intent to display a dialog asking the user to grant permission to enable it.
-        if (!mBluetoothAdapter.isEnabled()) {
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
-        }
 
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
@@ -173,6 +171,10 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     }
 
     private void scanLeDevice(final boolean enable) {
+        if (scanner == null) {
+            return;
+        }
+
         if (enable) {
             verifyPermissionAndScan();
         } else {
