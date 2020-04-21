@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -185,11 +186,19 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
     @TargetApi(23)
     private void verifyPermissionAndScan() {
-        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED) {
-            scanner.scan(new ArrayList<>());
-        } else {
-            requestPermissions(new String[] {ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
+            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+            return;
         }
+
+        if (Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF) == Settings.Secure.LOCATION_MODE_OFF) {
+            Toast.makeText(this, R.string.location_permission_toast, Toast.LENGTH_LONG).show();
+            Intent enableLocationIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(enableLocationIntent);
+            return;
+        }
+
+        scanner.scan(new ArrayList<>());
     }
 
     @Override
@@ -197,7 +206,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         if (requestCode != LOCATION_REQUEST) return;
 
         if (grantResults.length > 0 && grantResults[0] == PERMISSION_GRANTED) {
-            scanner.scan(new ArrayList<>());
+            verifyPermissionAndScan();
         } else {
             Toast.makeText(this, R.string.location_permission_toast, Toast.LENGTH_LONG).show();
         }
@@ -212,7 +221,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             scanner.stop();
 
             Intent intent = new Intent(this, MainActivity.class);
-            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + String.valueOf(device == null));
+            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + (device == null));
             intent.putExtra(EXTRA_DEVICE, device);
             startActivity(intent);
         }
