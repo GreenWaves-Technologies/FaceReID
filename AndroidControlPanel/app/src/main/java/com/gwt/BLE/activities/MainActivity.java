@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -215,7 +216,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setAppTitle(String title) {
+    private void setAppTitle(final String title) {
         final ActionBar actionBar = getActionBar();
         if (title != null) {
             actionBar.setTitle(title);
@@ -344,6 +345,16 @@ public class MainActivity extends Activity {
                     accessIndicator.setVisibility(View.INVISIBLE);
                 }
 
+                if (mDevice != null) {
+                    Visitor.Access access = person.getAccess(mDevice.getAddress());
+                    if ((person.getOldName() != null) && !person.getName().equals(person.getOldName()) ||
+                        (access != null && access.granted != access.oldGranted)) {
+                        nameTextView.setTypeface(null, Typeface.BOLD_ITALIC);
+                    } else {
+                        nameTextView.setTypeface(null, Typeface.BOLD);
+                    }
+                }
+
                 return view;
             }
         }
@@ -390,13 +401,9 @@ public class MainActivity extends Activity {
             updateStatus();
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
-
-        void onStop() {
-
-        }
+        void onStop() { }
 
         void onBackPressed() {
             Log.v(TAG, "onBackPressed()");
@@ -440,6 +447,15 @@ public class MainActivity extends Activity {
                 case R.id.menu_refresh:
                     if (mBleService != null) {
                         visitorsPermitted.clear();
+                        for (int i = 0; i < visitors.size(); i++) {
+                            Visitor v = visitors.get(i);
+                            Visitor.Access access = v.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                            }
+                            v.setOldName(null);
+                        }
+
                         notifyDataChanged();
                         Log.d(TAG, "Starting people enumeration on device");
                         mGatt.sendBleReadVisitor();
@@ -653,6 +669,7 @@ public class MainActivity extends Activity {
                     Visitor.Access access = currentAccess.get(device.getAddress());
                     if (access == null) {
                         access = new Visitor.Access();
+                        access.oldGranted = false;
                     }
                     access.granted = isChecked;
                     currentAccess.put(device.getAddress(), access);
@@ -693,6 +710,7 @@ public class MainActivity extends Activity {
                 accessIndicator.setVisibility(View.INVISIBLE);
             }*/
 
+            currentAccess.clear();
             HashMap<String, Visitor.Access> a = currentVisitor.getAccesses();
             if (a != null) {
                 currentAccess.putAll(a);
@@ -708,13 +726,9 @@ public class MainActivity extends Activity {
             personDescription.setText(currentVisitor.getDescription());
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
-
-        void onStop() {
-
-        }
+        void onStop() { }
 
         void onBackPressed() {
             Log.v(TAG, "onBackPressed()");
@@ -730,8 +744,9 @@ public class MainActivity extends Activity {
                     String newName = personName.getText().toString();
                     if (newName.isEmpty()) {
                         personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_warning_black_24dp, 0);
-                        // TODO: Remove warning image on text input
                         return true;
+                    } else {
+                        personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     }
                     currentVisitor.setName(newName);
 
@@ -743,14 +758,14 @@ public class MainActivity extends Activity {
                     db.updateVisitor(currentVisitor);
                     for (String addr : currentAccess.keySet()) {
                         Visitor.Access access = currentAccess.get(addr);
-                        if (access.granted) {
+                        if (access != null && (access.granted || access.oldGranted)) {
                             db.createOrUpdateAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
                         } else {
                             db.deleteAccess(currentVisitor.getId(), addr);
                         }
                     }
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Visitor.Access access = currentAccess.get(mDevice.getAddress());
                         if (access != null && access.granted) {
                             Log.d(TAG, "Sending request to add new person");
@@ -761,7 +776,6 @@ public class MainActivity extends Activity {
                             visitorListActivity.rlProgress.setVisibility(View.VISIBLE);
                         } else {
                             Log.d(TAG, "Sending request to drop a person");
-                            visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                             mGatt.sendBleDropVisitor(currentVisitor);
                             mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
                             invalidateOptionsMenu();
@@ -774,11 +788,10 @@ public class MainActivity extends Activity {
                     // TODO
                     return true;
                 case R.id.menu_drop_person:
-                    visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                     visitors.remove(currentVisitorIdx);
                     db.deleteVisitor(currentVisitor);
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Log.d(TAG, "Sending request to drop a person");
                         mGatt.sendBleDropVisitor(currentVisitor);
                         mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
@@ -1169,6 +1182,7 @@ public class MainActivity extends Activity {
                         String name = CString2String(data);
                         Log.d(TAG, "Name " + name + " got, sending BLE_GET_VISITOR_DESCRIPTOR request");
                         currentUserToRead.setName(name);
+                        currentUserToRead.setOldName(name);
                         sendBleGetVisitorDescriptor();
                         break;
                     }
@@ -1187,17 +1201,28 @@ public class MainActivity extends Activity {
                             for (i = 0; i < visitors.size(); i++) {
                                 Visitor v = visitors.get(i);
                                 if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
+                                    Visitor.Access access = v.getAccess(mDevice.getAddress());
+                                    if (access == null) {
+                                        access = new Visitor.Access();
+                                        access.granted = true;
+                                    }
+                                    access.oldGranted = true;
                                     visitorsPermitted.add(v.getId());
-                                    v.setAccess(mDevice.getAddress(), true);
-                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
+                                    v.setAccess(mDevice.getAddress(), access);
+                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), access);
+                                    v.setOldName(currentUserToRead.getOldName());
+                                    db.updateVisitor(v);
                                     break;
                                 }
                             }
 
                             if (i >= visitors.size()) { // visitor is not in DB
-                                currentUserToRead.setAccess(mDevice.getAddress(), true);
+                                Visitor.Access access = new Visitor.Access();
+                                access.granted = true;
+                                access.oldGranted = true;
+                                currentUserToRead.setAccess(mDevice.getAddress(), access);
                                 db.createVisitor(currentUserToRead);
-                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), currentUserToRead.getAccess(mDevice.getAddress()));
+                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), access);
                                 visitors.add(currentUserToRead);
                                 visitorsPermitted.add(currentUserToRead.getId());
                             }
@@ -1212,6 +1237,19 @@ public class MainActivity extends Activity {
                     case BLE_DROP_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_DROP_VISITOR");
                         Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                                currentUserToWrite.setAccess(mDevice.getAddress(), access);
+                                db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            } else {
+                                db.deleteAccess(currentUserToWrite.getId(), mDevice.getAddress());
+                            }
+                            visitorsPermitted.remove(Integer.valueOf(currentUserToWrite.getId()));
+                            currentUserToWrite.setOldName(null);
+                            db.updateVisitor(currentUserToWrite);
+                        }
                         mConnectionState = ConnectionState.CONNECTED;
                         runOnUiThread(() -> {
                             invalidateOptionsMenu();
@@ -1242,8 +1280,13 @@ public class MainActivity extends Activity {
                         Log.d(TAG, "currentBleRequest == SET_DESCRIPTOR");
                         Log.d(TAG, "Response code: " + data[0]);
                         if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            access.oldGranted = true;
+                            currentUserToWrite.setAccess(mDevice.getAddress(), access);
                             visitorsPermitted.add(currentUserToWrite.getId());
-
+                            db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            currentUserToWrite.setOldName(currentUserToWrite.getName());
+                            db.updateVisitor(currentUserToWrite);
                             currentUserToWrite = null;
                             mConnectionState = ConnectionState.CONNECTED;
                             runOnUiThread(() -> {
