@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,14 +79,7 @@ if [ ${#layer_inputs[@]} -ne ${#layer_outputs[@]} ]; then
     exit 1
 fi
 
-if [ "$1" = "-gapoc" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapoc_a"
-elif [ "$1" = "-gapuino" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapuino"
-else
-    echo "Target platform is not defined, use -gapoc for Gapoc A board and -gapuino for Gapuino board"
-    exit 2
-fi
+MAKEFILE_OPTIONS="-f Makefile $@"
 
 mkdir -p single_logs
 echo "Generating Model"
@@ -102,11 +95,11 @@ status=0
 for i in $(seq 0 $layers_count)
 do
     echo "Layer $i: ${layer_inputs[$i]} => ${layer_outputs[$i]}"
-    make -f $MAKEFILE_NAME clean > /dev/null 2>&1
+    make $MAKEFILE_OPTIONS clean > /dev/null 2>&1
     rm -rf ./input.bin ./output.bin
     ../../scripts/json2bin.py ../activations_dump/${layer_inputs[$i]} ./input.bin
-    make -j4 -f $MAKEFILE_NAME TEST_LAYER_INDEX=$i tiler_models > ../single_logs/$i.stdout.log 2>&1
-    make -j4 -f $MAKEFILE_NAME TEST_LAYER_INDEX=$i run >> ../single_logs/$i.stdout.log 2>&1
+    make -j4 $MAKEFILE_OPTIONS TEST_LAYER_INDEX=$i tiler_models > ../single_logs/$i.stdout.log 2>&1
+    make -j4 $MAKEFILE_OPTIONS TEST_LAYER_INDEX=$i run >> ../single_logs/$i.stdout.log 2>&1
     echo -n "${layer_inputs[$i]}; ${layer_outputs[$i]}; " >> ../single_layer_test_summary.csv
     ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[$i]} ./output.bin >> ../single_layer_test_summary.csv
     if [ $? -ne 0 ]; then

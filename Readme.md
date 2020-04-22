@@ -6,7 +6,8 @@ The project is aimed to create and deploy a smart doorbell application that woul
 
 # Target Platforms
 
-The demo is targeted for two boards Gapoc A and Gapuino and GAP SDK release 3.1. List of extra components is provided bellow.
+The demo is targeted for two boards Gapoc A v2 and Gapuino v2 and GAP SDK release 3.2. GAP8 V1 chips are not supported in SDK any more.
+List of extra components is provided bellow.
 
 For Gapuino board:
 - HIGHMAX camera module
@@ -14,8 +15,8 @@ For Gapuino board:
 
 For Gapoc A board:
 - Adafruit 2.8 TFT display with SPI interface
-- Push button, 10kOm resistor and some wires
-- Android-based smartphone with [pre-built user management application](https://drive.google.com/open?id=1DpuVMiOXlWfxC0uMRtksnw5oBQ3RJ_wM)
+- GAPOC_A Adapter for Adafruit LCD 2.8 version 3 or version 4 or hand-made shield with push button
+- Android-based smartphone with [pre-built user management application](https://face-reid-artifacts.s3.eu-west-3.amazonaws.com/FaceID/ReID-Control-App.apk)
 
 # Documentation Pages
 

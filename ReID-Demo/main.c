@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,9 @@
 # include "Gap.h"
 #endif
 
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
+
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
 #include "bsp/camera/himax.h"
@@ -68,9 +71,6 @@
 #include "facedet_pipeline.h"
 
 cascade_reponse_t responses[MAX_NUM_OUT_WINS];
-#if !defined(__FREERTOS__)
-static rt_perf_t cluster_perf;
-#endif
 
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 {
@@ -221,8 +221,7 @@ void body(void* parameters)
 
     PRINTF("Start ReID Demo Application\n");
 
-    board_init();
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 50000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 50000000);
 
 #if defined(USE_BLE_USER_MANAGEMENT) || defined(BLE_NOTIFIER)
     if (open_gpio(&gpio_port))
@@ -318,7 +317,17 @@ void body(void* parameters)
     PRINTF("Unmount FS done\n");
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-    rt_bridge_connect(1, NULL);
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-8);
+    }
 #endif
 
     PRINTF("Init cluster...\n");
@@ -329,15 +338,13 @@ void body(void* parameters)
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
-#if !defined(__FREERTOS__)
     //Setting FC to 200MHz
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 200000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 200000000);
 
     //Setting Cluster to 150MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
     // and using FC clocks over 150Mhz is dangerous
-    rt_freq_set(RT_FREQ_DOMAIN_CL, 150000000);
-#endif
+    pi_freq_set(PI_FREQ_DOMAIN_CL, 150000000);
 
     // HACK: Init display for the second time, because
     // SPI API does not handle clocks change correctly for now
@@ -381,9 +388,6 @@ void body(void* parameters)
     ClusterDetectionCall.ImageRender          = ImageRender;
     ClusterDetectionCall.output_map           = output_map;
     ClusterDetectionCall.reponses             = responses;
-#ifdef PERF_COUNT
-    ClusterDetectionCall.perf                 = &cluster_perf;
-#endif
 
     //Cluster Init
     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
@@ -466,7 +470,6 @@ void body(void* parameters)
                     }
 
                     ExtaKernels_L1_Memory = L1_Memory;
-                    int File;
 
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
                     cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
@@ -505,31 +508,19 @@ void body(void* parameters)
 
 #ifdef DUMP_SUCCESSFUL_FRAME
                     sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
-                    File = rt_bridge_open(string_buffer, O_RDWR | O_CREAT, S_IRWXU, NULL);
-                    if (File == 0)
+
+                    pi_fs_file_t* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+                    if (!host_file)
                     {
-                        PRINTF("Failed to open file, %s\n", string_buffer);
-                        pmsis_exit(-8);
+                        PRINTF("Failed to open host file, %s\n", string_buffer);
+                        pmsis_exit(-7);
                     }
-                    rt_bridge_write(File,  ClusterDnnCall.output, 512*sizeof(short), NULL);
-                    rt_bridge_close(File, NULL);
+
+                    pi_fs_write(host_file, ClusterDnnCall.output, 512*sizeof(short));
+                    pi_fs_close(host_file);
 
                     //sprintf(string_buffer, "frame_%d.pgm", saved_index);
                     //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
-#endif
-
-
-#ifdef DUMP_SUCCESSFUL_FRAME
-                    sprintf(string_buffer, "embedding_%d.bin", saved_index);
-                    File = rt_bridge_open(string_buffer, O_RDWR | O_CREAT, S_IRWXU, NULL);
-                    if (File == 0)
-                    {
-                        PRINTF("Failed to open file, %s\n", string_buffer);
-                        pmsis_exit(-9);
-                    }
-
-                    rt_bridge_write(File,  ClusterDnnCall.output, 512*sizeof(short), NULL);
-                    rt_bridge_close(File, NULL);
 
                     saved_index++;
 #endif
@@ -611,7 +602,7 @@ void body(void* parameters)
     pi_cluster_close(&cluster_dev);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-    rt_bridge_disconnect(NULL);
+    pi_fs_unmount(&host_fs);
 #endif
 
 #if defined(BLE_NOTIFIER)

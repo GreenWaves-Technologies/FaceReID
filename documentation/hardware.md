@@ -7,7 +7,7 @@ The document covers Gapoc A and Gapuino board and peripherals setup. Other GAP8 
 ## Bill of Materials
 
 - Adafruit 2.8 TFT display with SPI interface
-- Push button, 10 kOm resistor and some wires
+-  GAPOC_A Adapter for Adafruit LCD 2.8 version 3 or version 4 or hand-made shield with push button
 - Android-based smartphone
 
 ## Dip Switches Configuration
@@ -32,7 +32,7 @@ Display module is connected to socket `Conn3` of GAPoc A board with the followin
 
 **NOTE**: Gapoc A board does not provide 5V pins to power peripherals. 3.3V is used for display power that makes it a bit darker.
 
-## Button Connection
+## Hand-made Shield with Button
 
 Gapoc A board does not provide spare 3.3v tolerant GPIO pins and 1.8v test pad should be used to power reid-administration mode switch button. Button connection schema:
 

@@ -153,8 +153,6 @@ void body(void* parameters)
     PRINTF("HyperRAM config done\n");
 
     PRINTF("Reading image from host...\n");
-    rt_bridge_connect(1, NULL);
-    PRINTF("rt_bridge_connect\n");
 
     int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
     unsigned int Wi = CAMERA_WIDTH;
@@ -196,18 +194,12 @@ void body(void* parameters)
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     pi_cluster_close(&cluster_dev);
 
-//     int File = rt_bridge_open("../../../output.values", O_RDWR | O_CREAT, S_IRWXU, NULL);
-//     rt_bridge_write(File, ClusterDnnCall.scaled_face, 128*128*sizeof(short), NULL);
-//     rt_bridge_close(File, NULL);
-
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
 
     PRINTF("Writing output to file\n");
     WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
     WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
     PRINTF("Writing output to file..done\n");
-
-    rt_bridge_disconnect(NULL);
 
     pmsis_exit(0);
 }

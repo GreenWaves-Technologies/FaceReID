@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,14 +47,7 @@ if [ ${#stop_macros[@]} -ne ${#layer_outputs[@]} ]; then
     exit 1
 fi
 
-if [ "$1" = "-gapoc" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapoc_a"
-elif [ "$1" = "-gapuino" ]; then
-    MAKEFILE_NAME="Makefile BOARD_NAME=gapuino"
-else
-    echo "Target platform is not defined, use -gapoc for Gapoc A board and -gapuino for Gapuino board"
-    exit 2
-fi
+MAKEFILE_OPTIONS="-f Makefile $@"
 
 mkdir -p groups_logs
 echo "Generating Model"
@@ -72,9 +65,9 @@ status=0
 for i in $(seq 0 $layers_count)
 do
     echo "Stop word $i: ${stop_macros[$i]} => ${layer_outputs[$i]}"
-    make -f $MAKEFILE_NAME clean > /dev/null 2>&1
-    make -f $MAKEFILE_NAME -j4 CONTROL_MACRO="${stop_macros[$i]}" tiler_models > ../groups_logs/$i.stdout.log 2>&1
-    make -f $MAKEFILE_NAME -j4 CONTROL_MACRO="${stop_macros[$i]}" run >> ../groups_logs/$i.stdout.log 2>&1
+    make $MAKEFILE_OPTIONS clean > /dev/null 2>&1
+    make $MAKEFILE_OPTIONS -j4 CONTROL_MACRO="${stop_macros[$i]}" tiler_models > ../groups_logs/$i.stdout.log 2>&1
+    make $MAKEFILE_OPTIONS -j4 CONTROL_MACRO="${stop_macros[$i]}" run >> ../groups_logs/$i.stdout.log 2>&1
     echo -n "${stop_macros[$i]}; ${layer_outputs[$i]}; " >> ../group_layer_test_summary.csv
     ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[$i]} ./output.bin >> ../group_layer_test_summary.csv
     if [ $? -ne 0 ]; then
@@ -86,6 +79,7 @@ do
     fi
     mv ./delta.csv ../groups_logs/$i.delta.csv
     mv ./output.bin ../groups_logs/$i.output.bin
+
 done
 
 cd ..

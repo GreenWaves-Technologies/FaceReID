@@ -16,16 +16,18 @@
 
 #include <stdio.h>
 #include <math.h>
+#include "pmsis.h"
 #include "ExtraBasicKernels.h"
 
-static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int X)
+#define Min(a, b)               (((a)<(b))?(a):(b))
 
+static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int X)
 {
     unsigned int NCore;
     unsigned int Log2Core;
     unsigned int Chunk;
 
-    NCore = rt_nb_pe();
+    NCore = pi_cl_cluster_nb_cores();
     Log2Core = gap_fl1(NCore);
     Chunk = (X>>Log2Core) + ((X&(NCore-1))!=0);
     return Chunk;

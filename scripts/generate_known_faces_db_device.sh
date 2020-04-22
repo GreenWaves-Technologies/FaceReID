@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,15 +18,7 @@ rm -rf ./known_faces
 mkdir ./known_faces
 
 scripts_dir=$(dirname $0)
-
-if [ "$1" = "-gapoc" ]; then
-    MAKEFILE_NAME="Makefile DEVICE_CONNECTION=-ftdi BOARD_NAME=gapoc_a"
-elif [ "$1" = "-gapuino" ]; then
-    MAKEFILE_NAME="Makefile DEVICE_CONNECTION=-jtag BOARD_NAME=gapuino"
-else
-    echo "Target platform is not defined, use -gapoc for Gapoc A board and -gapuino for Gapuino board"
-    exit 2
-fi
+MAKEFILE_NAME="Makefile"
 
 cd "$scripts_dir/../ReID-Demo"
 make -j4 reid_model

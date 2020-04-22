@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 
 #include <string.h>
 #include <fcntl.h>
+
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
 
 #ifdef STATIC_FACE_DB
 int identified_people = FACE_DB_SIZE;
@@ -201,28 +204,41 @@ void printf_db_descriptors()
 
 void dump_db()
 {
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-4);
+    }
+
     char string_buffer[64];
     for(int i = 0; i < identified_people; i++)
     {
         sprintf(string_buffer, "../../../%s.bin", PeopleNames[i]);
         PRINTF("Writing descriptor file \"%s\" ..\n", string_buffer);
 
-        int descriptor_file = rt_bridge_open(string_buffer, O_RDWR | O_CREAT, S_IRWXU, NULL);
-        if(descriptor_file < 0)
+        pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+        if(!descriptor_file)
         {
             PRINTF("Face descriptor open failed\n");
-            pmsis_exit(0);
+            pmsis_exit(-100);
         }
 
-        int bridge_status = rt_bridge_write(descriptor_file, PeopleDescriptors[i], 512*sizeof(short), NULL);
-
+        int bridge_status = pi_fs_write(descriptor_file, PeopleDescriptors[i], 512*sizeof(short));
         if(bridge_status != 512*sizeof(short))
         {
             PRINTF("Face descriptor read failed\n");
-            pmsis_exit(0);
+            pmsis_exit(-100);
         }
 
-        rt_bridge_close(descriptor_file, NULL);
+        pi_fs_close(descriptor_file);
         PRINTF("Writing descriptor file..done\n");
     }
+
+    pi_fs_unmount(&host_fs);
 }

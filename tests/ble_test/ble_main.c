@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@
 #endif
 
 #include <fcntl.h>
+
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
 
 #include "setup.h"
 #include "display.h"
@@ -64,8 +67,6 @@ static int open_gpio(struct pi_device *device)
 static void body(void* parameters)
 {
     PRINTF("Starting Re-ID body\n");
-
-    board_init();
 
     pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
 
@@ -113,15 +114,25 @@ static void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    rt_bridge_connect(0, NULL);
-    PRINTF("Bridge connect done\n");
+    printf("Reading input from host...\n");
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-4);
+    }
 
     for(int i = 0; i < 2; i++)
     {
         PRINTF("Reading input image...\n");
         sprintf(string_buffer, "../../../%s.pgm", initial_name[i]);
-        int bridge_status = (int) ReadImageFromFile(string_buffer, &width, &height, preview, width*height*sizeof(char));
-        if(bridge_status != preview)
+        void* tmp = ReadImageFromFile(string_buffer, &width, &height, preview, width*height*sizeof(char));
+        if(tmp != preview)
         {
             PRINTF("Face image load failed\n");
             pmsis_exit(-3);
@@ -130,22 +141,25 @@ static void body(void* parameters)
         PRINTF("Reading input image...done\n");
 
         sprintf(string_buffer, "../../../%s.bin", initial_name[i]);
-        int descriptor_file = rt_bridge_open(string_buffer, 0, 0, NULL);
-        if(descriptor_file < 0)
+        pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_READ);
+        if(!descriptor_file)
         {
             PRINTF("Face descriptor open failed\n");
-            pmsis_exit(-3);
+            pmsis_exit(-5);
         }
 
-        bridge_status = rt_bridge_read(descriptor_file, descriptor, 512 * sizeof(short), NULL);
+        PRINTF("Descriptor opened\n");
 
-        if(bridge_status != 512 * sizeof(short))
+        int read = pi_fs_read(descriptor_file, descriptor, 512 * sizeof(short));
+        if(read != 512 * sizeof(short))
         {
             PRINTF("Face descriptor read failed\n");
             pmsis_exit(-3);
         }
 
-        rt_bridge_close(descriptor_file, NULL);
+        PRINTF("Descriptor read\n");
+
+        pi_fs_close(descriptor_file);
 
         PRINTF("Adding stranger to queue\n");
         addStrangerL2(preview, descriptor);
@@ -166,7 +180,8 @@ static void body(void* parameters)
 
     pi_gpio_pin_notif_clear(&gpio_port, BUTTON_PIN_ID);
 
-    rt_bridge_disconnect(NULL);
+    pi_fs_unmount(&host_fs);
+
     pmsis_exit(0);
 }
 

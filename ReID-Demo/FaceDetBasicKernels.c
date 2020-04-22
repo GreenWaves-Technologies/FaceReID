@@ -28,14 +28,15 @@
 # include "Gap.h"
 #endif
 
-static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int X)
+#define Min(a, b)               (((a)<(b))?(a):(b))
 
+static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int X)
 {
 	unsigned int NCore;
 	unsigned int Log2Core;
 	unsigned int Chunk;
 
-	NCore = rt_nb_pe();
+	NCore = pi_cl_cluster_nb_cores();
 	Log2Core = gap_fl1(NCore);
 	Chunk = (X>>Log2Core) + ((X&(NCore-1))!=0);
 	return Chunk;
@@ -92,7 +93,7 @@ void KerIntegralImagePrime(KerPrimeImage_ArgT *KerArg)
 {
         unsigned int W = KerArg->W;
         unsigned int *Buffer = KerArg->KerBuffer;
-        unsigned int Col,CoreId = rt_core_id();
+        unsigned int Col,CoreId = pi_core_id();
 
         unsigned int ChunkBlock = ChunkSize(W);
         unsigned int First = CoreId*ChunkBlock;
@@ -112,7 +113,7 @@ void KerIntegralImageProcess(KerProcessImage_ArgT *KerArg)
         unsigned int* outIntImg = KerArg->IntegralImage;
         unsigned int* buff = KerArg->KerBuffer;
         unsigned int Col,Line;
-        unsigned int CoreId = rt_core_id();
+        unsigned int CoreId = pi_core_id();
 
         unsigned int ChunkBlock = ChunkSize(W);
         unsigned int FirstCol = CoreId*ChunkBlock;
@@ -129,13 +130,13 @@ void KerIntegralImageProcess(KerProcessImage_ArgT *KerArg)
                 }
 
         }
-        rt_team_barrier();
+        pi_cl_team_barrier();
         //Saving to Buff intermediate results
         for (Col=FirstCol; Col<LastCol; Col++){
                 buff[Col] = outIntImg[Col+((H-1)*W)];
         }
 
-        rt_team_barrier();
+        pi_cl_team_barrier();
         for (Line=FirstLine; Line<LastLine; Line++){
                 for (Col=0; Col<W-1; Col++){
                         outIntImg[Col+1 +(Line*W)] = outIntImg[Col+(Line)*W] + outIntImg[Col+1+(Line)*W];
@@ -152,7 +153,7 @@ void KerSquaredIntegralImageProcess(KerProcessImage_ArgT *KerArg)
         unsigned int* outIntImg = KerArg->IntegralImage;
         unsigned int* buff = KerArg->KerBuffer;
         unsigned int Col,Line;
-        unsigned int CoreId = rt_core_id();
+        unsigned int CoreId = pi_core_id();
 
         unsigned int ChunkBlock = ChunkSize(W);
         unsigned int FirstCol = CoreId*ChunkBlock;
@@ -169,13 +170,13 @@ void KerSquaredIntegralImageProcess(KerProcessImage_ArgT *KerArg)
                 }
 
         }
-        rt_team_barrier();
+        pi_cl_team_barrier();
         //Saving to Buff intermediate results
         for (Col=FirstCol; Col<LastCol; Col++){
                 buff[Col] = outIntImg[Col+((H-1)*W)];
         }
 
-        rt_team_barrier();
+        pi_cl_team_barrier();
         for (Line=FirstLine; Line<LastLine; Line++){
                 for (Col=0; Col<W-1; Col++){
                         outIntImg[Col+1 +(Line*W)] = outIntImg[Col+(Line)*W] + outIntImg[Col+1+(Line)*W];
@@ -258,7 +259,7 @@ static void spawn_eval_weak_classifier(eval_weak_classifier_Arg_T* Arg)
 
     single_cascade_t *single_cascade=Arg->cascade_stage;
 
-    unsigned int CoreId = rt_core_id();
+    unsigned int CoreId = pi_core_id();
     unsigned int ChunkBlock = ChunkSize(single_cascade->stage_size);
     unsigned int FirstCol = CoreId*ChunkBlock;
     unsigned int LastCol  = (FirstCol+ChunkBlock > (single_cascade->stage_size)) ? (single_cascade->stage_size) : (FirstCol+ChunkBlock);
@@ -285,32 +286,32 @@ void async_cascade_stage_to_l1(single_cascade_t* cascade_l2, single_cascade_t* c
     cascade_l1->stage_size = cascade_l2->stage_size;
     cascade_l1->rectangles_size = cascade_l2->rectangles_size;
 
-    cascade_l1->thresholds     = (short*)addr;//rt_alloc( RT_ALLOC_CL_DATA, sizeof(short)*cascade_l2->stage_size);
+    cascade_l1->thresholds     = (short*)addr;
     addr+=sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->thresholds, (unsigned int) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->alpha1       = (short*) addr;//(short*)rt_alloc( RT_ALLOC_CL_DATA, sizeof(short)*cascade_l2->stage_size);
+    cascade_l1->alpha1       = (short*) addr;
     addr+=sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->alpha1, (unsigned int) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->alpha2         = (short*) addr;//rt_alloc( RT_ALLOC_CL_DATA, sizeof(short)*cascade_l2->stage_size);
+    cascade_l1->alpha2         = (short*) addr;
     addr+=sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->alpha2, (unsigned int) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->rect_num       = (unsigned  short*) addr;//rt_alloc( RT_ALLOC_CL_DATA, sizeof(unsigned short)*((cascade_l2->stage_size)+1));
+    cascade_l1->rect_num       = (unsigned  short*) addr;
     addr+= sizeof(unsigned short)*((cascade_l1->stage_size)+1);
     pi_cl_dma_cmd((unsigned int) cascade_l2->rect_num, (unsigned int) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->weights    = (signed char*) addr;//rt_alloc( RT_ALLOC_CL_DATA, sizeof(signed char)*(cascade_l2->rectangles_size/4));
+    cascade_l1->weights    = (signed char*) addr;
     addr+=sizeof(signed char)*(cascade_l1->rectangles_size << 2);
     pi_cl_dma_cmd((unsigned int) cascade_l2->weights, (unsigned int) cascade_l1->weights, sizeof(signed char)*(cascade_l2->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->rectangles = (char*) addr;//rt_alloc( RT_ALLOC_CL_DATA, sizeof(char)*cascade_l2->rectangles_size);
+    cascade_l1->rectangles = (char*) addr;
     addr+=sizeof(signed char)*(cascade_l2->rectangles_size<<2);
     pi_cl_dma_cmd((unsigned int) cascade_l2->rectangles, (unsigned int) cascade_l1->rectangles, sizeof(char)*cascade_l2->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
@@ -401,4 +402,3 @@ void KerEvaluateCascade(
 
     return;
 }
-
