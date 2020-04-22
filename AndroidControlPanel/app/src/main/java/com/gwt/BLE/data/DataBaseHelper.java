@@ -164,13 +164,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return null;
         }
 
-        Device d = new Device();
-        d.setAddress(c.getString(c.getColumnIndex(KEY_DEVICE_MACADDR)));
-        d.setName(c.getString(c.getColumnIndex(KEY_DEVICE_NAME)));
-        d.setFavourite(c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0);
+        Device device = new Device(
+            c.getString(c.getColumnIndex(KEY_DEVICE_NAME)),
+            c.getString(c.getColumnIndex(KEY_DEVICE_MACADDR)),
+            c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0
+        );
         c.close();
 
-        return d;
+        return device;
     }
 
     public ArrayList<Device> getAllDevices() {
@@ -183,12 +184,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
 
         do {
-            Device d = new Device();
-            d.setAddress(c.getString(c.getColumnIndex(KEY_DEVICE_MACADDR)));
-            d.setName(c.getString(c.getColumnIndex(KEY_DEVICE_NAME)));
-            d.setFavourite(c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0);
-
-            devices.add(d);
+            Device device = new Device(
+                c.getString(c.getColumnIndex(KEY_DEVICE_NAME)),
+                c.getString(c.getColumnIndex(KEY_DEVICE_MACADDR)),
+                c.getInt(c.getColumnIndex(KEY_DEVICE_FAVOURITE)) > 0
+            );
+            devices.add(device);
         } while(c.moveToNext());
 
         c.close();
@@ -251,18 +252,19 @@ public class DataBaseHelper extends SQLiteOpenHelper {
             return null;
         }
 
-        Visitor v = new Visitor();
-        v.setId(c.getInt(c.getColumnIndex(KEY_VISITOR_ID)));
-        v.setName(c.getString(c.getColumnIndex(KEY_VISITOR_NAME)));
-        v.setOldName(c.getString(c.getColumnIndex(KEY_VISITOR_OLD_NAME)));
-        v.setDescription(c.getString(c.getColumnIndex(KEY_VISITOR_DESCRIPTION)));
-        v.setPhotoData(c.getBlob(c.getColumnIndex(KEY_VISITOR_PHOTO)));
-        v.setDescriptor(c.getBlob(c.getColumnIndex(KEY_VISITOR_DESCRIPTOR)));
+        Visitor visitor = new Visitor(
+            c.getInt(c.getColumnIndex(KEY_VISITOR_ID)),
+            c.getString(c.getColumnIndex(KEY_VISITOR_NAME)),
+            c.getString(c.getColumnIndex(KEY_VISITOR_OLD_NAME)),
+            c.getString(c.getColumnIndex(KEY_VISITOR_DESCRIPTION)),
+            c.getBlob(c.getColumnIndex(KEY_VISITOR_PHOTO)),
+            c.getBlob(c.getColumnIndex(KEY_VISITOR_DESCRIPTOR))
+        );
         c.close();
 
-        v.setAccesses(getAccess(v.getId()));
+        visitor.setAccesses(getAccess(visitor.getId()));
 
-        return v;
+        return visitor;
     }
 
     public ArrayList<Visitor> getAllVisitors(/* TODO: currently connected device */) {
@@ -275,16 +277,17 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
 
         do {
-            Visitor v = new Visitor();
-            v.setId(c.getInt(c.getColumnIndex(KEY_VISITOR_ID)));
-            v.setName(c.getString(c.getColumnIndex(KEY_VISITOR_NAME)));
-            v.setOldName(c.getString(c.getColumnIndex(KEY_VISITOR_OLD_NAME)));
-            v.setDescription(c.getString(c.getColumnIndex(KEY_VISITOR_DESCRIPTION)));
-            v.setPhotoData(c.getBlob(c.getColumnIndex(KEY_VISITOR_PHOTO)));
-            v.setDescriptor(c.getBlob(c.getColumnIndex(KEY_VISITOR_DESCRIPTOR)));
-            v.setAccesses(getAccess(v.getId()));
+            Visitor visitor = new Visitor(
+                c.getInt(c.getColumnIndex(KEY_VISITOR_ID)),
+                c.getString(c.getColumnIndex(KEY_VISITOR_NAME)),
+                c.getString(c.getColumnIndex(KEY_VISITOR_OLD_NAME)),
+                c.getString(c.getColumnIndex(KEY_VISITOR_DESCRIPTION)),
+                c.getBlob(c.getColumnIndex(KEY_VISITOR_PHOTO)),
+                c.getBlob(c.getColumnIndex(KEY_VISITOR_DESCRIPTOR))
+            );
+            visitor.setAccesses(getAccess(visitor.getId()));
 
-            visitors.add(v);
+            visitors.add(visitor);
         } while(c.moveToNext());
 
         c.close();

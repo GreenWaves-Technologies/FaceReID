@@ -5,12 +5,10 @@ public class Device {
     private String address;
     private boolean favourite;
 
-    public Device() { }
-
-    public Device(String name, String address) {
+    public Device(String name, String address, boolean favourite) {
         this.name = name;
         this.address = address;
-        this.favourite = false;
+        this.favourite = favourite;
     }
 
     // Setters

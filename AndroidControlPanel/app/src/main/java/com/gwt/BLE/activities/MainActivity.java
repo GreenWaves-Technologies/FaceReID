@@ -102,7 +102,7 @@ public class MainActivity extends Activity {
             if (dbDevice != null) {
                 dbDevice.setName(mDevice.getName());
             } else {
-                dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
+                dbDevice = new Device(mDevice.getName(), mDevice.getAddress(), false);
             }
         }
 
