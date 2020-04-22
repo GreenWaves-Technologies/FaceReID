@@ -276,7 +276,7 @@ public class MainActivity extends Activity {
 
         private TextView tvStatus;
         private RelativeLayout rlProgress;
-        private ListView androidListView;
+        private PeopleListAdapter peopleAdapter;
 
         class PeopleListAdapter extends BaseAdapter {
             Context context;
@@ -363,11 +363,11 @@ public class MainActivity extends Activity {
             tvStatus = findViewById(R.id.tvStatus);
             rlProgress = findViewById(R.id.rlProgress);
 
-            PeopleListAdapter adapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
-            androidListView = findViewById(R.id.person_list);
-            androidListView.setAdapter(adapter);
+            peopleAdapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
+            ListView peopleListView = findViewById(R.id.person_list);
+            peopleListView.setAdapter(peopleAdapter);
 
-            androidListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            peopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     currentVisitorIdx = position;
@@ -456,7 +456,7 @@ public class MainActivity extends Activity {
                             v.setOldName(null);
                         }
 
-                        notifyDataChanged();
+                        peopleAdapter.notifyDataSetChanged();
                         Log.d(TAG, "Starting people enumeration on device");
                         mGatt.sendBleReadVisitor();
                         mConnectionState = ConnectionState.BLE_EXCHANGE_READ;
@@ -565,13 +565,6 @@ public class MainActivity extends Activity {
                 case BLE_EXCHANGE_WRITE:
                     tvStatus.setText(R.string.status_sending);
                     break;
-            }
-        }
-
-        private void notifyDataChanged() {
-            final Adapter a = androidListView.getAdapter();
-            if (a instanceof BaseAdapter) {
-                ((BaseAdapter) a).notifyDataSetChanged();
             }
         }
     }
@@ -782,7 +775,7 @@ public class MainActivity extends Activity {
                             visitorListActivity.updateStatus();
                         }
                     }
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
                     return true;
                 case R.id.menu_load_person:
                     // TODO
@@ -799,7 +792,7 @@ public class MainActivity extends Activity {
                         visitorListActivity.updateStatus();
                     }
 
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
 
                     currentVisitorIdx = -1;
                     currentVisitor = null;
@@ -1162,7 +1155,7 @@ public class MainActivity extends Activity {
                         currentUserToRead = new Visitor();
                         sendBleReadStranger();
                         runOnUiThread(() -> {
-                            visitorListActivity.notifyDataChanged();
+                            visitorListActivity.peopleAdapter.notifyDataSetChanged();
                         });
                         break;
                     case BLE_READ_VISITOR:
@@ -1230,7 +1223,7 @@ public class MainActivity extends Activity {
                             currentUserToRead = new Visitor();
                             sendBleReadVisitor();
                             runOnUiThread(() -> {
-                                visitorListActivity.notifyDataChanged();
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
                             });
                         }
                         break;
@@ -1293,7 +1286,7 @@ public class MainActivity extends Activity {
                                 invalidateOptionsMenu();
                                 visitorListActivity.updateStatus();
                                 visitorListActivity.rlProgress.setVisibility(View.GONE);
-                                visitorListActivity.notifyDataChanged();
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
                             });
                         }
                         break;
