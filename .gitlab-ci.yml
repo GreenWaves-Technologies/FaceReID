@@ -152,6 +152,31 @@ PreparePipelineTest_SILENT:
   tags:
     - GAP8v2
 
+ReIDPipelineTest:
+  stage: GapuinoTest
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./ReID-Demo
+    - make clean reid_model
+    - cd ../tests/reid_pipeline_test
+    - make run | tee test.log
+    - "grep 'Hi, Lena! Conf: 150' test.log"
+  tags:
+    - GAP8v2
+
+ReIDPipelineTest_SILENT:
+  stage: GapuinoTest
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd ./ReID-Demo
+    - make clean reid_model
+    - cd ../tests/reid_pipeline_test
+    - make SILENT=1 run | tee test.log
+    - "grep 'Hi, Lena! Conf: 150' test.log"
+  tags:
+    - GAP8v2
+
+
 BuildAndroidNotifier:
   stage: BuildAndroid
   image: registry.gitlab.com/xperience-ai/gap/facereid
