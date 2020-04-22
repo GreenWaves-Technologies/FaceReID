@@ -367,13 +367,10 @@ public class MainActivity extends Activity {
             ListView peopleListView = findViewById(R.id.person_list);
             peopleListView.setAdapter(peopleAdapter);
 
-            peopleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    currentVisitorIdx = position;
-                    editMode = true;
-                    switchViews();
-                 }
+            peopleListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                currentVisitorIdx = position;
+                editMode = true;
+                switchViews();
             });
         }
 
@@ -651,22 +648,19 @@ public class MainActivity extends Activity {
             accessListView = mainLayout.findViewById(R.id.deviceList);
             accessListView.setAdapter(accessAdapter);
 
-            accessListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    CheckBox checkBox = view.findViewById(R.id.devSelected);
-                    boolean isChecked = ! checkBox.isChecked();
-                    checkBox.setChecked(isChecked);
-                    AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
-                    Device device = (Device)a.getItem(position);
-                    Visitor.Access access = currentAccess.get(device.getAddress());
-                    if (access == null) {
-                        access = new Visitor.Access();
-                        access.oldGranted = false;
-                    }
-                    access.granted = isChecked;
-                    currentAccess.put(device.getAddress(), access);
+            accessListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                CheckBox checkBox = view.findViewById(R.id.devSelected);
+                boolean isChecked = ! checkBox.isChecked();
+                checkBox.setChecked(isChecked);
+                AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
+                Device device = (Device)a.getItem(position);
+                Visitor.Access access = currentAccess.get(device.getAddress());
+                if (access == null) {
+                    access = new Visitor.Access();
+                    access.oldGranted = false;
                 }
+                access.granted = isChecked;
+                currentAccess.put(device.getAddress(), access);
             });
 
         }
@@ -1154,9 +1148,7 @@ public class MainActivity extends Activity {
 
                         currentUserToRead = new Visitor();
                         sendBleReadStranger();
-                        runOnUiThread(() -> {
-                            visitorListActivity.peopleAdapter.notifyDataSetChanged();
-                        });
+                        runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         break;
                     case BLE_READ_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_READ_VISITOR");
@@ -1222,9 +1214,7 @@ public class MainActivity extends Activity {
 
                             currentUserToRead = new Visitor();
                             sendBleReadVisitor();
-                            runOnUiThread(() -> {
-                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
-                            });
+                            runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         }
                         break;
                     case BLE_DROP_VISITOR:
