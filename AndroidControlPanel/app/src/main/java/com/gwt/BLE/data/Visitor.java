@@ -19,27 +19,21 @@ public class Visitor {
     private byte[] photoData;
     private byte[] descriptor;
 
-    //private Bitmap photoPreview;
+    private HashMap<String, Access> accesses;
 
     public static class Access {
         public boolean granted;
         public boolean oldGranted;
     }
 
-    private HashMap<String, Access> accesses;
-
     public Visitor() { }
 
-    public Visitor(String name, String description, byte[] descriptor) {
-        this.name = name;
-        this.description = description;
-        this.descriptor = descriptor;
-    }
-
-    public Visitor(int id, String name, String description, byte[] descriptor) {
+    public Visitor(int id, String name, String oldName, String description, byte[] photoData, byte[] descriptor) {
         this.id = id;
         this.name = name;
+        this.oldName = oldName;
         this.description = description;
+        this.photoData = photoData;
         this.descriptor = descriptor;
     }
 

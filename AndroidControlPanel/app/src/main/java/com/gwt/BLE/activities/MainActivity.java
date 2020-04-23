@@ -102,7 +102,7 @@ public class MainActivity extends Activity {
             if (dbDevice != null) {
                 dbDevice.setName(mDevice.getName());
             } else {
-                dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
+                dbDevice = new Device(mDevice.getName(), mDevice.getAddress(), false);
             }
         }
 
@@ -276,7 +276,7 @@ public class MainActivity extends Activity {
 
         private TextView tvStatus;
         private RelativeLayout rlProgress;
-        private ListView androidListView;
+        private PeopleListAdapter peopleAdapter;
 
         class PeopleListAdapter extends BaseAdapter {
             Context context;
@@ -363,17 +363,14 @@ public class MainActivity extends Activity {
             tvStatus = findViewById(R.id.tvStatus);
             rlProgress = findViewById(R.id.rlProgress);
 
-            PeopleListAdapter adapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
-            androidListView = findViewById(R.id.person_list);
-            androidListView.setAdapter(adapter);
+            peopleAdapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
+            ListView peopleListView = findViewById(R.id.person_list);
+            peopleListView.setAdapter(peopleAdapter);
 
-            androidListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    currentVisitorIdx = position;
-                    editMode = true;
-                    switchViews();
-                 }
+            peopleListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                currentVisitorIdx = position;
+                editMode = true;
+                switchViews();
             });
         }
 
@@ -456,7 +453,7 @@ public class MainActivity extends Activity {
                             v.setOldName(null);
                         }
 
-                        notifyDataChanged();
+                        peopleAdapter.notifyDataSetChanged();
                         Log.d(TAG, "Starting people enumeration on device");
                         mGatt.sendBleReadVisitor();
                         mConnectionState = ConnectionState.BLE_EXCHANGE_READ;
@@ -567,13 +564,6 @@ public class MainActivity extends Activity {
                     break;
             }
         }
-
-        private void notifyDataChanged() {
-            final Adapter a = androidListView.getAdapter();
-            if (a instanceof BaseAdapter) {
-                ((BaseAdapter) a).notifyDataSetChanged();
-            }
-        }
     }
 
     private class VisitorEditActivity {
@@ -658,22 +648,19 @@ public class MainActivity extends Activity {
             accessListView = mainLayout.findViewById(R.id.deviceList);
             accessListView.setAdapter(accessAdapter);
 
-            accessListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    CheckBox checkBox = view.findViewById(R.id.devSelected);
-                    boolean isChecked = ! checkBox.isChecked();
-                    checkBox.setChecked(isChecked);
-                    AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
-                    Device device = (Device)a.getItem(position);
-                    Visitor.Access access = currentAccess.get(device.getAddress());
-                    if (access == null) {
-                        access = new Visitor.Access();
-                        access.oldGranted = false;
-                    }
-                    access.granted = isChecked;
-                    currentAccess.put(device.getAddress(), access);
+            accessListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                CheckBox checkBox = view.findViewById(R.id.devSelected);
+                boolean isChecked = ! checkBox.isChecked();
+                checkBox.setChecked(isChecked);
+                AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
+                Device device = (Device)a.getItem(position);
+                Visitor.Access access = currentAccess.get(device.getAddress());
+                if (access == null) {
+                    access = new Visitor.Access();
+                    access.oldGranted = false;
                 }
+                access.granted = isChecked;
+                currentAccess.put(device.getAddress(), access);
             });
 
         }
@@ -782,7 +769,7 @@ public class MainActivity extends Activity {
                             visitorListActivity.updateStatus();
                         }
                     }
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
                     return true;
                 case R.id.menu_load_person:
                     // TODO
@@ -799,7 +786,7 @@ public class MainActivity extends Activity {
                         visitorListActivity.updateStatus();
                     }
 
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
 
                     currentVisitorIdx = -1;
                     currentVisitor = null;
@@ -1161,9 +1148,7 @@ public class MainActivity extends Activity {
 
                         currentUserToRead = new Visitor();
                         sendBleReadStranger();
-                        runOnUiThread(() -> {
-                            visitorListActivity.notifyDataChanged();
-                        });
+                        runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         break;
                     case BLE_READ_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_READ_VISITOR");
@@ -1229,9 +1214,7 @@ public class MainActivity extends Activity {
 
                             currentUserToRead = new Visitor();
                             sendBleReadVisitor();
-                            runOnUiThread(() -> {
-                                visitorListActivity.notifyDataChanged();
-                            });
+                            runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         }
                         break;
                     case BLE_DROP_VISITOR:
@@ -1293,7 +1276,7 @@ public class MainActivity extends Activity {
                                 invalidateOptionsMenu();
                                 visitorListActivity.updateStatus();
                                 visitorListActivity.rlProgress.setVisibility(View.GONE);
-                                visitorListActivity.notifyDataChanged();
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
                             });
                         }
                         break;
