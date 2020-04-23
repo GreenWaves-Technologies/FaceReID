@@ -160,7 +160,7 @@ ReIDPipelineTest:
     - make clean reid_model
     - cd ../tests/reid_pipeline_test
     - make run | tee test.log
-    - "grep 'Hi, Lena! Conf: 150' test.log"
+    - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
 
@@ -172,7 +172,7 @@ ReIDPipelineTest_SILENT:
     - make clean reid_model
     - cd ../tests/reid_pipeline_test
     - make SILENT=1 run | tee test.log
-    - "grep 'Hi, Lena! Conf: 150' test.log"
+    - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
 

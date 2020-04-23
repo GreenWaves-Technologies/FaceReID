@@ -25,7 +25,7 @@ make -j4 reid_model
 cd -
 
 idx=0
-for face in $2/*;
+for face in $1/*;
 do
     rm -f $scripts_dir/../tests/first_n_layers_test/input.pgm
     rm -f $scripts_dir/../tests/first_n_layers_test/output.bin
