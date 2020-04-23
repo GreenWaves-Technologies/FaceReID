@@ -29,6 +29,6 @@ ifeq ($(SILENT),1)
 endif
 
 PLPBRIDGE_FLAGS += -f
-READFS_FILES+=$(realpath $(DATA_FILES))
+READFS_FILES += $(realpath $(DATA_FILES))
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk

@@ -22,14 +22,18 @@ TILER_GENERATOR_PATH = $(TILER_PATH)/generators
 CNN_GEN_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KERNELS_SRC = $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC=$(wildcard quantized_model/*.json)
 
 REID_MODEL_GEN = CnnKernels
 REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet -DCONFIG_GAPOC_A -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+REID_GEN_SRCS = \
+  ../../ReID-Demo/ReIDModel.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  $(CNN_GEN_PATH)/CNN_Generators.c
+
+GenReidNet: $(REID_GEN_SRCS)
+	gcc -no-pie -o GenReidNet -DCONFIG_GAPOC_A -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" $(REID_GEN_SRCS) $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -45,8 +49,8 @@ ifeq ($(SILENT),1)
 endif
 
 PLPBRIDGE_FLAGS += -f
-DATA_FILES=$(wildcard ../../ReID-Demo/quantized_model/*.bin)
-READFS_FILES+=$(realpath $(DATA_FILES))
+DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
+READFS_FILES += $(realpath $(DATA_FILES))
 
 tiler_models: reid_model
 
@@ -59,4 +63,4 @@ clean::
 
 .PHONY: reid_model tiler_models all clean
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk
