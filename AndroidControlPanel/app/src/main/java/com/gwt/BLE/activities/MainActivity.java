@@ -16,7 +16,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
@@ -26,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.gwt.BLE.R;
 import com.gwt.BLE.data.DataBaseHelper;
@@ -1232,12 +1232,17 @@ public class MainActivity extends Activity {
                             visitorsPermitted.remove(Integer.valueOf(currentUserToWrite.getId()));
                             currentUserToWrite.setOldName(null);
                             db.updateVisitor(currentUserToWrite);
+                        } else if (data[0] == 0) {
+                            Log.d(TAG, "Failed to drop visitor: No such visitor");
                         }
                         mConnectionState = ConnectionState.CONNECTED;
                         runOnUiThread(() -> {
                             invalidateOptionsMenu();
                             visitorListActivity.updateStatus();
                             visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            if (data[0] == BLE_ACK) {
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
+                            }
                         });
                         break;
                     case BLE_WRITE:
@@ -1271,14 +1276,19 @@ public class MainActivity extends Activity {
                             currentUserToWrite.setOldName(currentUserToWrite.getName());
                             db.updateVisitor(currentUserToWrite);
                             currentUserToWrite = null;
-                            mConnectionState = ConnectionState.CONNECTED;
-                            runOnUiThread(() -> {
-                                invalidateOptionsMenu();
-                                visitorListActivity.updateStatus();
-                                visitorListActivity.rlProgress.setVisibility(View.GONE);
-                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
-                            });
+                        } else if (data[0] == 0) {
+                            Log.d(TAG, "Failed to add visitor: DB is full");
+                            runOnUiThread(() -> Toast.makeText(MainActivity.this, R.string.maximum_visitors_toast, Toast.LENGTH_SHORT).show());
                         }
+                        mConnectionState = ConnectionState.CONNECTED;
+                        runOnUiThread(() -> {
+                            invalidateOptionsMenu();
+                            visitorListActivity.updateStatus();
+                            visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            if (data[0] == BLE_ACK) {
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
+                            }
+                        });
                         break;
                     case BLE_EXIT:
                         Log.d(TAG, "currentBleRequest == EXIT");

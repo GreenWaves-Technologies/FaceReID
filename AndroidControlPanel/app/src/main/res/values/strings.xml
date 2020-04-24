@@ -41,5 +41,6 @@
     <string name="visitor_access">Access granted to:</string>
 
     <string name="location_permission_toast">Location required to scan for BLE devices!</string>
+    <string name="maximum_visitors_toast">The maximum number of visitors is reached</string>
 
 </resources>
