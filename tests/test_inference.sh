@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# tolerance=5
+tolerance=5
 
 MAKEFILE_OPTIONS="-f Makefile $@"
 
@@ -24,7 +24,7 @@ echo "Generating Model"
 make -C ../ReID-Demo clean > ./inference_logs/model_generaition.log 2>&1
 make -j8 -C ../ReID-Demo reid_model >> ./inference_logs/model_generaition.log 2>&1 # to generate layers blobs for GAP
 
-../scripts/json2bin.py ./activations_dump/conv1/input.json ./first_n_layers_test/input.bin
+../scripts/json2bin.py ./activations_dump/conv1.0/input.json ./first_n_layers_test/input.bin
 cd first_n_layers_test
 
 make $MAKEFILE_OPTIONS clean > /dev/null 2>&1

@@ -53,9 +53,9 @@
 
 #define FACE_DESCRIPTOR_SIZE 512
 
-#define REID_L2_THRESHOLD 1000000 // L2 metric threshold for users identification.
+#define REID_L2_THRESHOLD 175000000 // L2 metric threshold for users identification.
 
-#define STRANGER_L2_THRESHOLD 1000000 // L2 metric threshold for strangers de-duplication.
+#define STRANGER_L2_THRESHOLD 150000000 // L2 metric threshold for strangers de-duplication.
 
 //Instructions for REID_L2_THRESHOLD and STRANGER_L2_THRESHOLD changing are in documentation/quantization_instruction.md
 

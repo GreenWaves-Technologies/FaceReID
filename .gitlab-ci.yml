@@ -62,7 +62,7 @@ SingleLayerTest:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd ./tests/
-    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ln -s /test_data/activations_dump_bn ./activations_dump
     - ./test_layers_one_by_one.sh
   artifacts:
     when: on_failure
@@ -77,7 +77,7 @@ InferenceTest:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd ./tests/
-    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ln -s /test_data/activations_dump_bn ./activations_dump
     - ./test_inference.sh
   artifacts:
     when: on_failure
@@ -92,7 +92,7 @@ InferenceTest_SILENT:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd ./tests/
-    - ln -s /test_data/activations_dump_transposed ./activations_dump
+    - ln -s /test_data/activations_dump_bn ./activations_dump
     - ./test_inference.sh SILENT=1
   artifacts:
     when: on_failure
@@ -160,7 +160,7 @@ ReIDPipelineTest:
     - make clean reid_model
     - cd ../tests/reid_pipeline_test
     - make run | tee test.log
-    - "grep 'Hi, Lena! Conf: 150' test.log"
+    - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
 
@@ -172,7 +172,7 @@ ReIDPipelineTest_SILENT:
     - make clean reid_model
     - cd ../tests/reid_pipeline_test
     - make SILENT=1 run | tee test.log
-    - "grep 'Hi, Lena! Conf: 150' test.log"
+    - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
 
@@ -205,7 +205,7 @@ Deploy:
     - mkdir deploy
     - cd deploy
     - rm -rf *
-    - tar -cj --file activations_dump.tar.bz2 /test_data/activations_dump_transposed/*
+    - tar -cj --file activations_dump.tar.bz2 /test_data/activations_dump_bn/*
     - mv ../ReID-Speaker-latest.apk ./
     - mv ../ReID-Control-App-latest.apk ./
     - rclone --config $RCLONE_S3_CONFIG sync -P activations_dump.tar.bz2 reid_s3:"face-reid-artifacts/FaceID/"
