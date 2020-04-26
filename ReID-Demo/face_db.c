@@ -136,22 +136,32 @@ static int find_in_db(short *descriptor)
 
 int add_to_db(short* descriptor, char* name)
 {
-    if(identified_people >= FACE_DB_SIZE)
+    int i = find_in_db(descriptor);
+    if (i >= 0) // Only update name if the descriptor is already set
+    {
+        int j;
+        for (j = 0; (j < 16) && (name[j] != '\0'); j++)
+            PeopleNames[i][j] = name[j];
+        if (j == 16)
+            j--;
+        PeopleNames[i][j] = '\0';
+
+        return i;
+    }
+
+    if (identified_people >= FACE_DB_SIZE)
     {
         PRINTF("Error: Descriptor DB is full\n");
         return -1;
     }
 
     memcpy(PeopleDescriptors[identified_people], descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
-    int i;
-    for(i = 0; (i < 16) && (name[i] != '\0'); i++)
-    {
-        PeopleNames[identified_people][i] = name[i];
-    }
-
-    if(i == 16) i--;
-
-    PeopleNames[identified_people][i] = '\0';
+    int j;
+    for (j = 0; (j < 16) && (name[j] != '\0'); j++)
+        PeopleNames[identified_people][j] = name[j];
+    if (j == 16)
+        j--;
+    PeopleNames[identified_people][j] = '\0';
 
     return identified_people++;
 }

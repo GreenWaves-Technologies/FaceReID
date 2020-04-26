@@ -282,7 +282,7 @@ void ble_protocol_handler(void* params)
             ble_exit = 1;
             break;
         case BLE_CMD_HB:
-            PRINTF("BLE HB got\n");
+            //PRINTF("BLE HB got\n");
             break;
         default:
             PRINTF("Error: invalid request %d\n", action);
