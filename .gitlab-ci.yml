@@ -14,7 +14,7 @@ BuildDemo_GAPOC:
     - make all
   artifacts:
     paths:
-      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+      - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
 BuildDemo_DUMP_DESCRIPTORS:
   stage: BuildDemo
@@ -48,7 +48,7 @@ BuildDemo_GAPOC_STATIC_BLE_SILENT:
     - make STATIC_FACE_DB=1 BLE_NOTIFIER=1 SILENT=1 all
   artifacts:
     paths:
-      - ReID-Demo/BUILD/GAP8/GCC_RISCV/test
+      - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
 BuildDemo_GAPUINO:
   stage: BuildDemo
