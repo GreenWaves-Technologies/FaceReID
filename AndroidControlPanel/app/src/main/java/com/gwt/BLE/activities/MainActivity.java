@@ -157,6 +157,7 @@ public class MainActivity extends Activity {
         if (mDevice != null) {
             try {
                 mGatt.stopHBTimer();
+                mGatt.stopConnectionTimer();
                 if (mConnectionState == ConnectionState.CONNECTED) {
                     mGatt.sendBleExit();
                 }
@@ -405,14 +406,13 @@ public class MainActivity extends Activity {
         void onBackPressed() {
             Log.v(TAG, "onBackPressed()");
             if (mDevice != null) {
-                mGatt.stopHBTimer();
                 if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.stopHBTimer();
+                    mGatt.stopConnectionTimer();
                     mGatt.sendBleExit();
                     mConnectionState = ConnectionState.DISCONNECTING;
                     invalidateOptionsMenu();
                     updateStatus();
-                } else {
-                    mBleService.disconnect();
                 }
             }
             MainActivity.super.onBackPressed();
@@ -862,12 +862,13 @@ public class MainActivity extends Activity {
         private static final byte BLE_HEART_BEAT = 0x56;
 
         private static final int hbInterval = 10000; // 10s
-        private Timer hbTimer;
+        private Timer hbTimer = null;
 
         private final byte[] ReID = { 0x52, 0x65, 0x49, 0x44 };
 
         private static final int connectionTimeout = 10000; // 10s
-        private Timer connectionTimer;
+        private Timer connectionTimer = null;
+        private Timer backTimer = null;
 
         private void onConnectionFailure() {
             // Show error message for 2 seconds and go back to device activity
@@ -875,7 +876,7 @@ public class MainActivity extends Activity {
                 visitorListActivity.updateStatus(R.string.status_connection_failed);
                 visitorListActivity.rlProgress.setVisibility(View.GONE);
             });
-            Timer timer = new Timer();
+            backTimer = new Timer();
             TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
@@ -885,7 +886,7 @@ public class MainActivity extends Activity {
                     });
                 }
             };
-            timer.schedule(timerTask, 2000);
+            backTimer.schedule(timerTask, 2000);
         }
 
         private void startConnectionTimer() {
@@ -903,6 +904,11 @@ public class MainActivity extends Activity {
         private void stopConnectionTimer() {
             if (connectionTimer != null) {
                 connectionTimer.cancel();
+                connectionTimer = null;
+            }
+            if (backTimer != null) {
+                backTimer.cancel();
+                backTimer = null;
             }
         }
 
@@ -920,6 +926,7 @@ public class MainActivity extends Activity {
         private void stopHBTimer() {
             if (hbTimer != null) {
                 hbTimer.cancel();
+                hbTimer = null;
             }
         }
 
