@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -15,7 +16,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.gwt.BLE.R;
 import com.gwt.BLE.data.DataBaseHelper;
@@ -39,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -102,8 +102,7 @@ public class MainActivity extends Activity {
             if (dbDevice != null) {
                 dbDevice.setName(mDevice.getName());
             } else {
-                dbDevice = new Device(mDevice.getName(), mDevice.getAddress());
-                db.createDevice(dbDevice);
+                dbDevice = new Device(mDevice.getName(), mDevice.getAddress(), false);
             }
         }
 
@@ -158,6 +157,10 @@ public class MainActivity extends Activity {
         if (mDevice != null) {
             try {
                 mGatt.stopHBTimer();
+                mGatt.stopConnectionTimer();
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.sendBleExit();
+                }
                 mBleService.disconnect();
                 mBleService.close();
                 mConnectionState = ConnectionState.DISCONNECTED;
@@ -173,16 +176,21 @@ public class MainActivity extends Activity {
         invalidateOptionsMenu();
     }
 
-    public void onServiceConnected() {
-        if (!mBleService.initialize(this)) {
-            finish();
+    @Override
+    public void onBackPressed() {
+        if (editMode) {
+            visitorEditActivity.onBackPressed();
+        } else {
+            visitorListActivity.onBackPressed();
         }
     }
 
     private void connectToDevice() {
         // get the information from the device scan
         mBleService = new BluetoothLeService();
-        onServiceConnected();
+        if (!mBleService.initialize(this)) {
+            finish();
+        }
     }
 
     @Override
@@ -209,7 +217,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setAppTitle(String title) {
+    private void setAppTitle(final String title) {
         final ActionBar actionBar = getActionBar();
         if (title != null) {
             actionBar.setTitle(title);
@@ -256,6 +264,7 @@ public class MainActivity extends Activity {
             setAppTitle(null);
             actionBar.setLogo(R.drawable.logo);
             actionBar.setDisplayUseLogoEnabled(true);
+            actionBar.setHomeButtonEnabled(false);
             actionBar.setDisplayShowCustomEnabled(true);
         }
 
@@ -268,7 +277,7 @@ public class MainActivity extends Activity {
 
         private TextView tvStatus;
         private RelativeLayout rlProgress;
-        private ListView androidListView;
+        private PeopleListAdapter peopleAdapter;
 
         class PeopleListAdapter extends BaseAdapter {
             Context context;
@@ -337,6 +346,16 @@ public class MainActivity extends Activity {
                     accessIndicator.setVisibility(View.INVISIBLE);
                 }
 
+                if (mDevice != null) {
+                    Visitor.Access access = person.getAccess(mDevice.getAddress());
+                    if ((person.getOldName() != null) && !person.getName().equals(person.getOldName()) ||
+                        (access != null && access.granted != access.oldGranted)) {
+                        nameTextView.setTypeface(null, Typeface.BOLD_ITALIC);
+                    } else {
+                        nameTextView.setTypeface(null, Typeface.BOLD);
+                    }
+                }
+
                 return view;
             }
         }
@@ -345,17 +364,14 @@ public class MainActivity extends Activity {
             tvStatus = findViewById(R.id.tvStatus);
             rlProgress = findViewById(R.id.rlProgress);
 
-            PeopleListAdapter adapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
-            androidListView = findViewById(R.id.person_list);
-            androidListView.setAdapter(adapter);
+            peopleAdapter = new PeopleListAdapter(MainActivity.this, visitors, visitorsPermitted);
+            ListView peopleListView = findViewById(R.id.person_list);
+            peopleListView.setAdapter(peopleAdapter);
 
-            androidListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    currentVisitorIdx = position;
-                    editMode = true;
-                    switchViews();
-                 }
+            peopleListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                currentVisitorIdx = position;
+                editMode = true;
+                switchViews();
             });
         }
 
@@ -383,12 +399,23 @@ public class MainActivity extends Activity {
             updateStatus();
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
+        void onStop() { }
 
-        void onStop() {
-
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            if (mDevice != null) {
+                if (mConnectionState == ConnectionState.CONNECTED) {
+                    mGatt.stopHBTimer();
+                    mGatt.stopConnectionTimer();
+                    mGatt.sendBleExit();
+                    mConnectionState = ConnectionState.DISCONNECTING;
+                    invalidateOptionsMenu();
+                    updateStatus();
+                }
+            }
+            MainActivity.super.onBackPressed();
         }
 
         boolean onOptionsItemSelected(MenuItem item) {
@@ -417,7 +444,16 @@ public class MainActivity extends Activity {
                 case R.id.menu_refresh:
                     if (mBleService != null) {
                         visitorsPermitted.clear();
-                        notifyDataChanged();
+                        for (int i = 0; i < visitors.size(); i++) {
+                            Visitor v = visitors.get(i);
+                            Visitor.Access access = v.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                            }
+                            v.setOldName(null);
+                        }
+
+                        peopleAdapter.notifyDataSetChanged();
                         Log.d(TAG, "Starting people enumeration on device");
                         mGatt.sendBleReadVisitor();
                         mConnectionState = ConnectionState.BLE_EXCHANGE_READ;
@@ -502,6 +538,10 @@ public class MainActivity extends Activity {
             return true;
         }
 
+        private void updateStatus(int resId) {
+            tvStatus.setText(resId);
+        }
+
         private void updateStatus() {
             switch (mConnectionState) {
                 case CONNECTING:
@@ -524,20 +564,13 @@ public class MainActivity extends Activity {
                     break;
             }
         }
-
-        private void notifyDataChanged() {
-            final Adapter a = androidListView.getAdapter();
-            if (a instanceof BaseAdapter) {
-                ((BaseAdapter) a).notifyDataSetChanged();
-            }
-        }
     }
 
     private class VisitorEditActivity {
 
         private static final String TAG = "VisitorEdit";
 
-        private Map<String, Device> reidDevices;
+        private ArrayList<Device> reidDevices;
         private Visitor currentVisitor;
         private HashMap<String, Visitor.Access> currentAccess;
 
@@ -548,10 +581,10 @@ public class MainActivity extends Activity {
             Context context;
             LayoutInflater inflater;
 
-            Map<String, Device> devices;
+            ArrayList<Device> devices;
             Map<String, Visitor.Access> access;
 
-            private AccessListAdapter(Context context, Map<String, Device> devices, Map<String, Visitor.Access> access) {
+            private AccessListAdapter(Context context, ArrayList<Device> devices, Map<String, Visitor.Access> access) {
                 this.context = context;
                 this.devices = devices;
                 this.access = access;
@@ -573,9 +606,7 @@ public class MainActivity extends Activity {
                     return null;
                 }
 
-                Set<String> keySet = devices.keySet();
-                Object[] keys = keySet.toArray();
-                return devices.get(keys[position]);
+                return devices.get(position);
             }
 
             @Override
@@ -608,7 +639,7 @@ public class MainActivity extends Activity {
         }
 
         void onCreate() {
-            reidDevices = new HashMap<>();
+            reidDevices = new ArrayList<>();
             currentAccess = new HashMap<>();
 
             mainLayout = findViewById(R.id.editMain);
@@ -617,32 +648,35 @@ public class MainActivity extends Activity {
             accessListView = mainLayout.findViewById(R.id.deviceList);
             accessListView.setAdapter(accessAdapter);
 
-            accessListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    CheckBox checkBox = view.findViewById(R.id.devSelected);
-                    boolean isChecked = ! checkBox.isChecked();
-                    checkBox.setChecked(isChecked);
-                    AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
-                    Device device = (Device)a.getItem(position);
-                    Visitor.Access access = currentAccess.get(device.getAddress());
-                    if (access == null) {
-                        access = new Visitor.Access();
-                    }
-                    access.granted = isChecked;
-                    currentAccess.put(device.getAddress(), access);
+            accessListView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+                CheckBox checkBox = view.findViewById(R.id.devSelected);
+                boolean isChecked = ! checkBox.isChecked();
+                checkBox.setChecked(isChecked);
+                AccessListAdapter a = (AccessListAdapter)accessListView.getAdapter();
+                Device device = (Device)a.getItem(position);
+                Visitor.Access access = currentAccess.get(device.getAddress());
+                if (access == null) {
+                    access = new Visitor.Access();
+                    access.oldGranted = false;
                 }
+                access.granted = isChecked;
+                currentAccess.put(device.getAddress(), access);
             });
 
         }
 
         void onStart() {
-            Map<String, Device> dbDevices = db.getAllDevices();
+            ArrayList<Device> dbDevices = db.getAllDevices();
             if (mDevice != null) {
-                Device d = dbDevices.get(mDevice.getAddress());
-                d.setName(mDevice.getName());
+                for (int i = 0; i < dbDevices.size(); i++) {
+                    Device d = dbDevices.get(i);
+                    if (d.getAddress().equals(mDevice.getAddress())) {
+                        d.setName(mDevice.getName());
+                        break;
+                    }
+                }
             }
-            reidDevices.putAll(dbDevices);
+            reidDevices.addAll(dbDevices);
         }
 
         void onResume() {
@@ -663,6 +697,7 @@ public class MainActivity extends Activity {
                 accessIndicator.setVisibility(View.INVISIBLE);
             }*/
 
+            currentAccess.clear();
             HashMap<String, Visitor.Access> a = currentVisitor.getAccesses();
             if (a != null) {
                 currentAccess.putAll(a);
@@ -678,12 +713,14 @@ public class MainActivity extends Activity {
             personDescription.setText(currentVisitor.getDescription());
         }
 
-        void onPause() {
+        void onPause() { }
 
-        }
+        void onStop() { }
 
-        void onStop() {
-
+        void onBackPressed() {
+            Log.v(TAG, "onBackPressed()");
+            editMode = false;
+            switchViews();
         }
 
         boolean onOptionsItemSelected(MenuItem item) {
@@ -694,8 +731,9 @@ public class MainActivity extends Activity {
                     String newName = personName.getText().toString();
                     if (newName.isEmpty()) {
                         personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_warning_black_24dp, 0);
-                        // TODO: Remove warning image on text input
                         return true;
+                    } else {
+                        personName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     }
                     currentVisitor.setName(newName);
 
@@ -707,14 +745,14 @@ public class MainActivity extends Activity {
                     db.updateVisitor(currentVisitor);
                     for (String addr : currentAccess.keySet()) {
                         Visitor.Access access = currentAccess.get(addr);
-                        if (access.granted) {
-                            db.updateOrInsertAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
+                        if (access != null && (access.granted || access.oldGranted)) {
+                            db.createOrUpdateAccess(currentVisitor.getId(), addr, currentAccess.get(addr));
                         } else {
                             db.deleteAccess(currentVisitor.getId(), addr);
                         }
                     }
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Visitor.Access access = currentAccess.get(mDevice.getAddress());
                         if (access != null && access.granted) {
                             Log.d(TAG, "Sending request to add new person");
@@ -725,24 +763,22 @@ public class MainActivity extends Activity {
                             visitorListActivity.rlProgress.setVisibility(View.VISIBLE);
                         } else {
                             Log.d(TAG, "Sending request to drop a person");
-                            visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                             mGatt.sendBleDropVisitor(currentVisitor);
                             mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
                             invalidateOptionsMenu();
                             visitorListActivity.updateStatus();
                         }
                     }
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
                     return true;
                 case R.id.menu_load_person:
                     // TODO
                     return true;
                 case R.id.menu_drop_person:
-                    visitorsPermitted.remove(Integer.valueOf(currentVisitor.getId()));
                     visitors.remove(currentVisitorIdx);
                     db.deleteVisitor(currentVisitor);
 
-                    if (mDevice != null) {
+                    if (mDevice != null && mConnectionState != ConnectionState.DISCONNECTED) {
                         Log.d(TAG, "Sending request to drop a person");
                         mGatt.sendBleDropVisitor(currentVisitor);
                         mConnectionState = ConnectionState.BLE_EXCHANGE_WRITE;
@@ -750,14 +786,14 @@ public class MainActivity extends Activity {
                         visitorListActivity.updateStatus();
                     }
 
-                    visitorListActivity.notifyDataChanged();
+                    visitorListActivity.peopleAdapter.notifyDataSetChanged();
 
                     currentVisitorIdx = -1;
                     currentVisitor = null;
-                    // TODO: animate and go back correctly
+                    onBackPressed();
+                    return true;
                 case android.R.id.home:
-                    editMode = false;
-                    switchViews();
+                    onBackPressed();
                     return true;
             }
             return false;
@@ -772,17 +808,17 @@ public class MainActivity extends Activity {
                     (mConnectionState == ConnectionState.BLE_EXCHANGE_WRITE)) {
                     menu.findItem(R.id.menu_save_person).setVisible(false);
                     menu.findItem(R.id.menu_drop_person).setVisible(false);
-                    menu.findItem(R.id.menu_load_person).setVisible(false);
+                    //menu.findItem(R.id.menu_load_person).setVisible(false);
                 } else {
                     menu.findItem(R.id.menu_save_person).setVisible(true);
                     menu.findItem(R.id.menu_drop_person).setVisible(true);
-                    menu.findItem(R.id.menu_load_person).setVisible(true);
+                    //menu.findItem(R.id.menu_load_person).setVisible(true);
                 }
 
             } else {
                 menu.findItem(R.id.menu_save_person).setVisible(true);
                 menu.findItem(R.id.menu_drop_person).setVisible(true);
-                menu.findItem(R.id.menu_load_person).setVisible(false);
+                //menu.findItem(R.id.menu_load_person).setVisible(false);
             }
 
             return true;
@@ -804,6 +840,8 @@ public class MainActivity extends Activity {
 
         private static final byte BLE_ACK = 0x33;
 
+        private static final byte BLE_ID_REQUEST = 0x0F;
+
         private static final byte BLE_READ_STRANGER = 0x10;
         private static final byte BLE_GET_STRANGER_NAME = 0x11;
         private static final byte BLE_GET_STRANGER_PHOTO = 0x12;
@@ -824,11 +862,60 @@ public class MainActivity extends Activity {
         private static final byte BLE_HEART_BEAT = 0x56;
 
         private static final int hbInterval = 10000; // 10s
-        private Timer hbTimer;
+        private Timer hbTimer = null;
+
+        private final byte[] ReID = { 0x52, 0x65, 0x49, 0x44 };
+
+        private static final int connectionTimeout = 10000; // 10s
+        private Timer connectionTimer = null;
+        private Timer backTimer = null;
+
+        private void onConnectionFailure() {
+            // Show error message for 2 seconds and go back to device activity
+            runOnUiThread(() -> {
+                visitorListActivity.updateStatus(R.string.status_connection_failed);
+                visitorListActivity.rlProgress.setVisibility(View.GONE);
+            });
+            backTimer = new Timer();
+            TimerTask timerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(() -> {
+                        editMode = false;
+                        onBackPressed();
+                    });
+                }
+            };
+            backTimer.schedule(timerTask, 2000);
+        }
+
+        private void startConnectionTimer() {
+            connectionTimer = new Timer();
+            TimerTask connectionTask = new TimerTask() {
+                @Override
+                public void run() {
+                    Log.w(TAG, "No response received from connected device on ID request");
+                    onConnectionFailure();
+                }
+            };
+            connectionTimer.schedule(connectionTask, connectionTimeout);
+        }
+
+        private void stopConnectionTimer() {
+            if (connectionTimer != null) {
+                connectionTimer.cancel();
+                connectionTimer = null;
+            }
+            if (backTimer != null) {
+                backTimer.cancel();
+                backTimer = null;
+            }
+        }
 
         private void startHBTimer() {
             hbTimer = new Timer();
             TimerTask hbTask = new TimerTask() {
+                @Override
                 public void run() {
                     mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_HEART_BEAT});
                 }
@@ -839,7 +926,13 @@ public class MainActivity extends Activity {
         private void stopHBTimer() {
             if (hbTimer != null) {
                 hbTimer.cancel();
+                hbTimer = null;
             }
+        }
+
+        private void sendBleIdentificationRequest() {
+            mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_ID_REQUEST});
+            currentBleRequest = BLE_ID_REQUEST;
         }
 
         private void sendBleReadStranger() {
@@ -883,6 +976,7 @@ public class MainActivity extends Activity {
         }
 
         private void sendBleDropVisitor(Visitor visitor) {
+            stopHBTimer();
             currentUserToWrite = visitor;
             byte[] descriptor = visitor.getDescriptor();
             mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_DROP_VISITOR});
@@ -893,6 +987,7 @@ public class MainActivity extends Activity {
                 mBleService.writeCharacteristic(characteristicFifo, tmp);
             }
             currentBleRequest = BLE_DROP_VISITOR;
+            startHBTimer();
         }
 
         private void sendBleAddVisitor(Visitor visitor) {
@@ -902,6 +997,7 @@ public class MainActivity extends Activity {
         }
 
         private void sendBleSetVisitorName(String name) {
+            stopHBTimer();
             byte[] nameBytes = name.getBytes();
             byte[] request = new byte[17];
             request[0] = BLE_SET_NAME;
@@ -914,9 +1010,11 @@ public class MainActivity extends Activity {
             }
             mBleService.writeCharacteristic(characteristicFifo, request);
             currentBleRequest = BLE_SET_NAME;
+            startHBTimer();
         }
 
         private void sendBleSetVisitorDescriptor(byte[] descriptor) {
+            stopHBTimer();
             mBleService.writeCharacteristic(characteristicFifo, new byte[]{BLE_SET_DESCRIPTOR});
             int chunkSize = 20;
             int packetsToSend = (descriptor.length + chunkSize - 1) / chunkSize;
@@ -925,6 +1023,7 @@ public class MainActivity extends Activity {
                 mBleService.writeCharacteristic(characteristicFifo, tmp);
             }
             currentBleRequest = BLE_SET_DESCRIPTOR;
+            startHBTimer();
         }
 
         private void sendBleExit() {
@@ -949,7 +1048,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onRssiUpdate(int rssi) {
-            Log.d(TAG, "onRssiUpdate call");
+            Log.d(TAG, "onRssiUpdate call " + rssi);
         }
 
         @Override
@@ -974,6 +1073,25 @@ public class MainActivity extends Activity {
                 Log.d(TAG, "BLE request was " + currentBleRequest);
 
                 switch (currentBleRequest) {
+                    case BLE_ID_REQUEST:
+                        Log.d(TAG, "currentBleRequest == BLE_ID_REQUEST");
+                        stopConnectionTimer();
+                        if (data.length == ReID.length && Arrays.equals(data, ReID)) {
+                            Log.i(TAG, "Valid ReID device found");
+                            mConnectionState = ConnectionState.CONNECTED;
+                            visitorsPermitted.clear();
+                            runOnUiThread(() -> {
+                                invalidateOptionsMenu();
+                                visitorListActivity.updateStatus();
+                                visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            });
+                            db.createOrUpdateDevice(dbDevice);
+                            startHBTimer();
+                        } else {
+                            Log.w(TAG, "Connected device is not a ReID device");
+                            onConnectionFailure();
+                        }
+                        break;
                     case BLE_READ_STRANGER:
                         Log.d(TAG, "currentBleRequest == BLE_READ_STRANGER");
                         Log.d(TAG, "Response code: " + data[0]);
@@ -1037,9 +1155,7 @@ public class MainActivity extends Activity {
 
                         currentUserToRead = new Visitor();
                         sendBleReadStranger();
-                        runOnUiThread(() -> {
-                            visitorListActivity.notifyDataChanged();
-                        });
+                        runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         break;
                     case BLE_READ_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_READ_VISITOR");
@@ -1058,6 +1174,7 @@ public class MainActivity extends Activity {
                         String name = CString2String(data);
                         Log.d(TAG, "Name " + name + " got, sending BLE_GET_VISITOR_DESCRIPTOR request");
                         currentUserToRead.setName(name);
+                        currentUserToRead.setOldName(name);
                         sendBleGetVisitorDescriptor();
                         break;
                     }
@@ -1076,36 +1193,63 @@ public class MainActivity extends Activity {
                             for (i = 0; i < visitors.size(); i++) {
                                 Visitor v = visitors.get(i);
                                 if (Arrays.equals(currentUserToRead.getDescriptor(), v.getDescriptor())) {
+                                    Visitor.Access access = v.getAccess(mDevice.getAddress());
+                                    if (access == null) {
+                                        access = new Visitor.Access();
+                                        access.granted = true;
+                                    }
+                                    access.oldGranted = true;
                                     visitorsPermitted.add(v.getId());
-                                    v.setAccess(mDevice.getAddress(), true);
-                                    db.updateOrInsertAccess(v.getId(), mDevice.getAddress(), v.getAccess(mDevice.getAddress()));
+                                    v.setAccess(mDevice.getAddress(), access);
+                                    db.createOrUpdateAccess(v.getId(), mDevice.getAddress(), access);
+                                    v.setOldName(currentUserToRead.getOldName());
+                                    db.updateVisitor(v);
                                     break;
                                 }
                             }
 
                             if (i >= visitors.size()) { // visitor is not in DB
-                                currentUserToRead.setAccess(mDevice.getAddress(), true);
+                                Visitor.Access access = new Visitor.Access();
+                                access.granted = true;
+                                access.oldGranted = true;
+                                currentUserToRead.setAccess(mDevice.getAddress(), access);
                                 db.createVisitor(currentUserToRead);
-                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), currentUserToRead.getAccess(mDevice.getAddress()));
+                                db.createAccess(currentUserToRead.getId(), mDevice.getAddress(), access);
                                 visitors.add(currentUserToRead);
                                 visitorsPermitted.add(currentUserToRead.getId());
                             }
 
                             currentUserToRead = new Visitor();
                             sendBleReadVisitor();
-                            runOnUiThread(() -> {
-                                visitorListActivity.notifyDataChanged();
-                            });
+                            runOnUiThread(() -> visitorListActivity.peopleAdapter.notifyDataSetChanged());
                         }
                         break;
                     case BLE_DROP_VISITOR:
                         Log.d(TAG, "currentBleRequest == BLE_DROP_VISITOR");
                         Log.d(TAG, "Response code: " + data[0]);
+                        if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            if (access != null) {
+                                access.oldGranted = false;
+                                currentUserToWrite.setAccess(mDevice.getAddress(), access);
+                                db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            } else {
+                                db.deleteAccess(currentUserToWrite.getId(), mDevice.getAddress());
+                            }
+                            visitorsPermitted.remove(Integer.valueOf(currentUserToWrite.getId()));
+                            currentUserToWrite.setOldName(null);
+                            db.updateVisitor(currentUserToWrite);
+                        } else if (data[0] == 0) {
+                            Log.d(TAG, "Failed to drop visitor: No such visitor");
+                        }
                         mConnectionState = ConnectionState.CONNECTED;
                         runOnUiThread(() -> {
                             invalidateOptionsMenu();
                             visitorListActivity.updateStatus();
                             visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            if (data[0] == BLE_ACK) {
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
+                            }
                         });
                         break;
                     case BLE_WRITE:
@@ -1131,17 +1275,27 @@ public class MainActivity extends Activity {
                         Log.d(TAG, "currentBleRequest == SET_DESCRIPTOR");
                         Log.d(TAG, "Response code: " + data[0]);
                         if (data[0] == BLE_ACK) {
+                            Visitor.Access access = currentUserToWrite.getAccess(mDevice.getAddress());
+                            access.oldGranted = true;
+                            currentUserToWrite.setAccess(mDevice.getAddress(), access);
                             visitorsPermitted.add(currentUserToWrite.getId());
-
+                            db.createOrUpdateAccess(currentUserToWrite.getId(), mDevice.getAddress(), access);
+                            currentUserToWrite.setOldName(currentUserToWrite.getName());
+                            db.updateVisitor(currentUserToWrite);
                             currentUserToWrite = null;
-                            mConnectionState = ConnectionState.CONNECTED;
-                            runOnUiThread(() -> {
-                                invalidateOptionsMenu();
-                                visitorListActivity.updateStatus();
-                                visitorListActivity.rlProgress.setVisibility(View.GONE);
-                                visitorListActivity.notifyDataChanged();
-                            });
+                        } else if (data[0] == 0) {
+                            Log.d(TAG, "Failed to add visitor: DB is full");
+                            runOnUiThread(() -> Toast.makeText(MainActivity.this, R.string.maximum_visitors_toast, Toast.LENGTH_SHORT).show());
                         }
+                        mConnectionState = ConnectionState.CONNECTED;
+                        runOnUiThread(() -> {
+                            invalidateOptionsMenu();
+                            visitorListActivity.updateStatus();
+                            visitorListActivity.rlProgress.setVisibility(View.GONE);
+                            if (data[0] == BLE_ACK) {
+                                visitorListActivity.peopleAdapter.notifyDataSetChanged();
+                            }
+                        });
                         break;
                     case BLE_EXIT:
                         Log.d(TAG, "currentBleRequest == EXIT");
@@ -1156,6 +1310,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onServicesDiscovered() {
+            Log.d(TAG, "onServicesDiscovered call");
             runOnUiThread(() -> {
                 visitorListActivity.updateStatus();
                 for (BluetoothGattService service : mBleService.getSupportedGattServices()) {
@@ -1165,6 +1320,9 @@ public class MainActivity extends Activity {
                             Log.d(TAG,"Found FIFO characteristic!\n");
                             characteristicFifo = characteristic;
                             mBleService.setCharacteristicNotification(characteristic, true);
+                            // Ready to send and receive messages
+                            sendBleIdentificationRequest();
+                            startConnectionTimer();
                         } else if (uuid.equals(GattAttributes.UUID_CHARACTERISTIC_CREDITS)) {
                             Log.d(TAG,"Found Credits characteristic!\n");
                             mBleService.setCharacteristicNotification(characteristic, false);
@@ -1188,14 +1346,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onGattConnected() {
-            runOnUiThread(() -> {
-                mConnectionState = ConnectionState.CONNECTED;
-                visitorsPermitted.clear();
-                invalidateOptionsMenu();
-                visitorListActivity.updateStatus();
-                visitorListActivity.rlProgress.setVisibility(View.GONE);
-            });
-            startHBTimer();
+            Log.d(TAG, "onGattConnected call");
         }
 
         private String CString2String(byte[] data) {

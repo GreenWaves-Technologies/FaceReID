@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@
 
 #include <fcntl.h>
 
+#include "bsp/fs.h"
+#include "bsp/fs/hostfs.h"
+
 #include "setup.h"
-
-#if defined(HAVE_DISPLAY)
-# include "bsp/display/ili9341.h"
-#endif
-
+#include "display.h"
 #include "BleUserManager.h"
 #include "strangers_db.h"
 #include "face_db.h"
@@ -44,39 +43,44 @@ short descriptor[512];
 
 unsigned int width = 128, height = 128;
 
-static void __gpio_init()
+static int open_gpio(struct pi_device *device)
 {
-    rt_gpio_set_dir(0, 1<<GPIOA0_LED      , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA1          , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA2_NINA_RST , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA3_CIS_EXP  , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA4_1V8_EN   , RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA5_CIS_PWRON, RT_GPIO_IS_OUT);
-    rt_gpio_set_dir(0, 1<<GPIOA18         , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA19         , RT_GPIO_IS_IN);
-    rt_gpio_set_dir(0, 1<<GPIOA21_NINA17  , RT_GPIO_IS_OUT);
-    rt_gpio_set_pin_value(0, GPIOA0_LED, 0);
-    rt_gpio_set_pin_value(0, GPIOA2_NINA_RST, 0);
-    rt_gpio_set_pin_value(0, GPIOA3_CIS_EXP, 0);
-    rt_gpio_set_pin_value(0, GPIOA4_1V8_EN, 1);
-    rt_gpio_set_pin_value(0, GPIOA5_CIS_PWRON, 0);
-    rt_gpio_set_pin_value(0, GPIOA21_NINA17, 1);
-}
+    struct pi_gpio_conf gpio_conf;
 
-static void __bsp_init_pads()
-{
-        uint32_t pads_value[] = {0x00055500, 0x0f450000, 0x003fffff, 0x00000000};
-        pi_pad_init(pads_value);
-        __gpio_init();
+    pi_gpio_conf_init(&gpio_conf);
+    pi_open_from_conf(device, &gpio_conf);
+
+    if (pi_gpio_open(device))
+        return -1;
+
+    pi_gpio_pin_configure(device, BUTTON_PIN_ID,    PI_GPIO_INPUT);
+    pi_gpio_pin_configure(device, GPIOA2_NINA_RST,  PI_GPIO_OUTPUT);
+    pi_gpio_pin_configure(device, GPIOA21_NINA17,   PI_GPIO_OUTPUT);
+
+    pi_gpio_pin_notif_configure(device, BUTTON_PIN_ID, PI_GPIO_NOTIF_FALL);
+    pi_gpio_pin_write(device, GPIOA2_NINA_RST,  0);
+    pi_gpio_pin_write(device, GPIOA21_NINA17,   1);
+
+    return 0;
 }
 
 static void body(void* parameters)
 {
     PRINTF("Starting Re-ID body\n");
 
-    __bsp_init_pads();
-
     pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
+
+    struct pi_device gpio_port;
+    struct pi_gpio_conf gpio_conf;
+
+    pi_gpio_conf_init(&gpio_conf);
+    pi_open_from_conf(&gpio_port, &gpio_conf);
+
+    if (open_gpio(&gpio_port))
+    {
+        PRINTF("Error: cannot open GPIO port\n");
+        pmsis_exit(-4);
+    }
 
 #if defined(HAVE_DISPLAY)
     PRINTF("Initializing display\n");
@@ -93,6 +97,7 @@ static void body(void* parameters)
 
     pi_display_ioctl(&display, PI_ILI_IOCTL_ORIENTATION, (void *)PI_ILI_ORIENTATION_270);
     writeFillRect(&display, 0, 0, 320, 240, 0xFFFF);
+    draw_gwt_logo(&display);
 #endif
 
     PRINTF("NINA BLE module test body\n");
@@ -109,15 +114,25 @@ static void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    rt_bridge_connect(0, NULL);
-    PRINTF("Bridge connect done\n");
+    printf("Reading input from host...\n");
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-4);
+    }
 
     for(int i = 0; i < 2; i++)
     {
         PRINTF("Reading input image...\n");
         sprintf(string_buffer, "../../../%s.pgm", initial_name[i]);
-        int bridge_status = (int) ReadImageFromFile(string_buffer, &width, &height, preview, width*height*sizeof(char));
-        if(bridge_status != preview)
+        void* tmp = ReadImageFromFile(string_buffer, &width, &height, preview, width*height*sizeof(char));
+        if(tmp != preview)
         {
             PRINTF("Face image load failed\n");
             pmsis_exit(-3);
@@ -126,50 +141,29 @@ static void body(void* parameters)
         PRINTF("Reading input image...done\n");
 
         sprintf(string_buffer, "../../../%s.bin", initial_name[i]);
-        int descriptor_file = rt_bridge_open(string_buffer, 0, 0, NULL);
-        if(descriptor_file < 0)
+        pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_READ);
+        if(!descriptor_file)
         {
             PRINTF("Face descriptor open failed\n");
-            pmsis_exit(-3);
+            pmsis_exit(-5);
         }
 
-        bridge_status = rt_bridge_read(descriptor_file, descriptor, 512*sizeof(short), NULL);
+        PRINTF("Descriptor opened\n");
 
-        if(bridge_status != descriptor)
+        int read = pi_fs_read(descriptor_file, descriptor, 512 * sizeof(short));
+        if(read != 512 * sizeof(short))
         {
             PRINTF("Face descriptor read failed\n");
             pmsis_exit(-3);
         }
 
-        rt_bridge_close(descriptor_file, NULL);
+        PRINTF("Descriptor read\n");
+
+        pi_fs_close(descriptor_file);
 
         PRINTF("Adding stranger to queue\n");
         addStrangerL2(preview, descriptor);
     }
-
-    PRINTF("Setting button handler..\n");
-
-    struct pi_device gpio_port;
-    struct pi_gpio_conf gpio_conf;
-
-    pi_gpio_conf_init(&gpio_conf);
-    pi_open_from_conf(&gpio_port, &gpio_conf);
-
-    if (pi_gpio_open(&gpio_port))
-    {
-        PRINTF("Error: cannot open GPIO port\n");
-        pmsis_exit(-4);
-    }
-
-    if(pi_gpio_pin_configure(&gpio_port, BUTTON_PIN_ID, PI_GPIO_INPUT))
-    {
-        PRINTF("Error: cannot configure pin\n");
-        pmsis_exit(-4);
-    }
-
-    pi_gpio_pin_notif_configure(&gpio_port, BUTTON_PIN_ID, PI_GPIO_NOTIF_FALL);
-
-    PRINTF("Setting button handler..done\n");
 
     PRINTF("Waiting for button press event\n");
     while(pi_gpio_pin_notif_get(&gpio_port, BUTTON_PIN_ID) == 0)
@@ -186,7 +180,8 @@ static void body(void* parameters)
 
     pi_gpio_pin_notif_clear(&gpio_port, BUTTON_PIN_ID);
 
-    rt_bridge_disconnect(NULL);
+    pi_fs_unmount(&host_fs);
+
     pmsis_exit(0);
 }
 

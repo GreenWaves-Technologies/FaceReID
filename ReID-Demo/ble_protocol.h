@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef __BLE_PROTOCAL_H__
-#define __BLE_PROTOCAL_H__
+#ifndef __BLE_PROTOCOL_H__
+#define __BLE_PROTOCOL_H__
+
+#define BLE_CMD_ID_REQUEST              0x0F
 
 #define BLE_CMD_READ_STRANGER           0x10
 #define BLE_CMD_GET_STRANGER_NAME       0x11

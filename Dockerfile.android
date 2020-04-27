@@ -1,5 +1,8 @@
 FROM gradle:5.4.1-jdk8
 
+RUN curl -o /tmp/rclone.deb https://downloads.rclone.org/v1.51.0/rclone-v1.51.0-linux-amd64.deb && \
+    dpkg -i /tmp/rclone.deb && rm -f /tmp/rclone.deb
+
 ENV SDK_URL="https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
     ANDROID_VERSION=28 \

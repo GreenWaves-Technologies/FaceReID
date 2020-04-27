@@ -26,6 +26,8 @@
 
 #include "pmsis.h"
 #include "bsp/fs.h"
+#include "bsp/fs/readfs.h"
+#include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
 
@@ -72,9 +74,8 @@ void body(void* parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
     struct pi_hyper_conf hyper_conf;
-    int File = 0;
+    pi_fs_file_t* host_file = NULL;
 
     PRINTF("main call\n");
 
@@ -89,8 +90,6 @@ void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    PRINTF("HyperRAM config done\n");
-
     // The hyper chip need to wait a bit.
     // TODO: find out need to wait how many times.
     pi_time_wait_us(1*1000*1000);
@@ -98,9 +97,9 @@ void body(void* parameters)
     PRINTF("Configuring Hyperflash and FS..\n");
     struct pi_device fs;
     struct pi_device flash;
-    struct pi_fs_conf conf;
+    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_fs_conf_init(&conf);
+    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -110,7 +109,7 @@ void body(void* parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.flash = &flash;
+    conf.fs.flash = &flash;
 
     pi_open_from_conf(&fs, &conf);
 
@@ -137,12 +136,6 @@ void body(void* parameters)
 #endif
     char *outputBlob = "../../../output.bin";
 
-#if !defined(__FREERTOS__)
-    rt_event_sched_t sched;
-    rt_event_sched_init(&sched);
-    if (rt_event_alloc(&sched, 4)) pmsis_exit(-4);
-#endif
-
     PRINTF("Init cluster...\n");
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
@@ -152,22 +145,29 @@ void body(void* parameters)
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
-#if !defined(__FREERTOS__)
     //Setting FC to 250MHz
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 250000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 250000000);
 
-    //Setting Cluster to 150MHz
+    //Setting Cluster to 175MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
-    // and using FC clocks over 150Mhz is dengerous
-    rt_freq_set(RT_FREQ_DOMAIN_CL, 175000000);
-#endif
+    // and using FC clocks over 150Mhz is dangerous
+    pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
     l2_x = network_init();
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
-    rt_bridge_connect(1, NULL);
-    PRINTF("rt_bridge_connect done\n");
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
+
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-4);
+    }
 
 #ifdef PGM_INPUT
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT;
@@ -187,38 +187,46 @@ void body(void* parameters)
     }
 
     PRINTF("Writing input.bin\n");
-    File = rt_bridge_open("../../../input.bin", O_RDWR | O_CREAT, S_IRWXU, NULL);
-    if (File == 0)
+
+    host_file = pi_fs_open(&host_fs, "../../../input.bin", PI_FS_FLAGS_WRITE);
+    if (host_file == 0)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-6);
     }
 
-    rt_bridge_write(File, l2_x, input_size*sizeof(short), NULL);
-    rt_bridge_close(File, NULL);
+    pi_fs_write(host_file, l2_x, input_size*sizeof(short));
+    pi_fs_close(host_file);
 #else
-    File = rt_bridge_open(inputBlob, 0, 0, NULL);
-    if (File == 0)
+    host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
+    if (!host_file)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-7);
     }
+    PRINTF("Host file open done\n");
+
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(short);
-    int read = rt_bridge_read(File, l2_x, input_size, NULL);
+    int read = pi_fs_read(host_file, l2_x, input_size);
     if(read != input_size)
     {
         PRINTF("Failed to read file %s\n", inputBlob);
         PRINTF("Expected input size %d, but read %d\n", input_size, read);
         pmsis_exit(-8);
     }
-    rt_bridge_close(File, NULL);
+    pi_fs_close(host_file);
+
+    PRINTF("Reading input from host...done\n");
 #endif
 
     PRINTF("DNN inference\n");
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL));
+    pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
@@ -228,16 +236,17 @@ void body(void* parameters)
 
     pi_cluster_close(&cluster_dev);
 
-    File = rt_bridge_open(outputBlob, O_RDWR | O_CREAT, S_IRWXU, NULL);
-    if (File == 0)
+    host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
+    if (host_file == 0)
     {
-        PRINTF("Failed to open file, %s\n", inputBlob);
+        PRINTF("Failed to open file, %s\n", outputBlob);
         pmsis_exit(-9);
     }
 
-    rt_bridge_write(File, infer_result, activation_size*sizeof(short), NULL);
-    rt_bridge_close(File, NULL);
-    rt_bridge_disconnect(NULL);
+    pi_fs_write(host_file, infer_result, activation_size*sizeof(short));
+    pi_fs_close(host_file);
+
+    pi_fs_unmount(&host_fs);
 
     network_free();
 

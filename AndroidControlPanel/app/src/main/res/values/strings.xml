@@ -6,10 +6,6 @@
     <string name="disconnected">Disconnected</string>
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
 
-    <string name="unknown_device">Unknown device</string>
-    <string name="unknown_characteristic">Unknown characteristic</string>
-    <string name="unknown_service">Unknown service</string>
-
     <!-- Menu items -->
     <string name="menu_connect">Connect</string>
     <string name="menu_disconnect">Disconnect</string>
@@ -19,6 +15,9 @@
     <string name="menu_devices">Devices</string>
     <string name="menu_visitors">Users</string>
     <string name="menu_favourites">Add to favourites</string>
+    <string name="menu_load">Load</string>
+    <string name="menu_save">Save</string>
+    <string name="menu_drop">Drop</string>
 
     <string name="bonded_state">bonded</string>
     <string name="bonding_state">bonding</string>
@@ -29,16 +28,10 @@
     <string name="status_disconnected">disconnected</string>
     <string name="status_connecting">connecting&#8230;</string>
     <string name="status_connected">gatt connected</string>
+    <string name="status_connection_failed">connection failed</string>
     <string name="status_loading">loading data&#8230;</string>
     <string name="status_sending">sending data&#8230;</string>
-    <string name="not_available">N/A</string>
-    <string name="button_start">Start</string>
-    <string name="logs_tittle">Logs</string>
-    <string name="ip_address_tittle">IP Address</string>
-    <string name="port_tittle">Port</string>
-    <string name="port_hint">servers port</string>
-    <string name="remote_start_button">Stop</string>
-    <string name="remote_stop_button">Start</string>
+
     <string name="visitor_name">Visitor\'s name</string>
     <string name="visitor_name_placeholder">Name Surname</string>
     <string name="visitor_description_placeholder">Very\nlong\ndescription</string>
@@ -47,12 +40,7 @@
     <string name="visitor_description">Description (optional)</string>
     <string name="visitor_access">Access granted to:</string>
 
-    <string-array name="conn_prio">
-        <item>BALANCED</item>
-        <item>HIGH</item>
-        <item>LOW POWER</item>
-    </string-array>
-    <string name="location_permission_toast">Location required to scan for low energy devices!</string>
-    <string name="send_with_cr">Send CR</string>
+    <string name="location_permission_toast">Location required to scan for BLE devices!</string>
+    <string name="maximum_visitors_toast">The maximum number of visitors is reached</string>
 
 </resources>

@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef __IIBASICKERNELS_H__
-#define __IIBASICKERNELS_H__
+#ifndef FDBASICKERNELS_H__
+#define FDBASICKERNELS_H__
 
 #include "Gap.h"
 #include "cascade.h"
-
-#define Max(a, b)               (((a)>(b))?(a):(b))
-#define Min(a, b)               (((a)<(b))?(a):(b))
 
 typedef struct {
 	unsigned char * __restrict__ In;
@@ -69,7 +66,7 @@ typedef struct {
 
 
 
-typedef struct{
+typedef struct {
     int stage_index;
     int* stage_sum;
     unsigned int *integralImage;
@@ -91,4 +88,4 @@ void KerEvaluateCascade(
 	unsigned char WinH,
 	int * __restrict__ CascadeReponse);
 
-#endif //__IIBASICKERNELS_H__
+#endif // FDBASICKERNELS_H__

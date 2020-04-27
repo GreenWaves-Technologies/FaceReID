@@ -2,13 +2,12 @@
 
 ## Installation and environment setup
 
-1. Clone the repository from Github:
+1. Clone the repository from GitHub:
 
 ```
     $ sudo pip3 install git+https://github.com/xperience-ai/gap_quantization.git
     $ git clone https://github.com/xperience-ai/gap_quantization.git
     $ cd gap_quantization
-
 ```
 
 2. Install the development enviroment:
@@ -18,7 +17,6 @@
     $ virtualenv -p /usr/bin/python3 ./venv
     $ . venv/bin/activate
     $ pip3 install -r ./requirements.txt
-
 ```
 
 ## Quantization
@@ -31,9 +29,7 @@
 
 To measure the quality with quantized model: `python post_training.py -a squeezenet1_1 --grayscale --height 128 --width 128 --target-names lfw --load-weights <path to the trained model> --distance l2 --no-normalize --landmarks-path <path to the txt file with landmarks> --convbn --save-dir <directory to save the results>  --quantization --bits 16 --quant-data-dir <directory with images for quantization> --evaluate`
 
-```
-    $PYTHONPATH=. python examples/quantization_re_id.py --trained-model <path to saved checkpoints of last epoch>
-```
+This mode of quantization can also be used for optimal threshold measurement. After running quantization with `--evaluate` key you will see `Optimal threshold: ...` on screen. This number should be squared and pushed in `ReID-Demo/setup.h` file as `REID_L2_THRESHOLD` and `STRANGER_L2_THRESHOLD`.
 
 Eventually new folder `results` will be created with 26 *.json files of quantized model in it and subfolder `activations_dump` inside.
 Directory `results` contains quantized weights and biases.
@@ -52,14 +48,14 @@ Copy file `norm_list.h` and put it into `ReID-Demo` folder.
 
 2. Go to directory `tests` and run
 ```
-    $./test_layers_one_by_one.sh <target platform>
+    $ ./test_layers_one_by_one.sh <target platform>
 ```
 Use `-gapoc` as target platform if you're using Gapoc A board and `-gapuino` if you're using Gapuino board.
 You will see results of tests on each layer like this:
+
 ```
     Layer 0: conv1.0/input.json => conv1.0/output.json
     Layer 0: conv1.0/input.json => conv1.0/output.json PASSED
-
 ```
 
 See [Build and test instructions](./build_test.md) for more detailed model testing.

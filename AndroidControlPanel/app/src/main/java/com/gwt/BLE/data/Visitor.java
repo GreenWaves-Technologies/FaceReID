@@ -19,27 +19,21 @@ public class Visitor {
     private byte[] photoData;
     private byte[] descriptor;
 
-    //private Bitmap photoPreview;
+    private HashMap<String, Access> accesses;
 
     public static class Access {
         public boolean granted;
         public boolean oldGranted;
     }
 
-    private HashMap<String, Access> accesses;
-
     public Visitor() { }
 
-    public Visitor(String name, String description, byte[] descriptor) {
-        this.name = name;
-        this.description = description;
-        this.descriptor = descriptor;
-    }
-
-    public Visitor(int id, String name, String description, byte[] descriptor) {
+    public Visitor(int id, String name, String oldName, String description, byte[] photoData, byte[] descriptor) {
         this.id = id;
         this.name = name;
+        this.oldName = oldName;
         this.description = description;
+        this.photoData = photoData;
         this.descriptor = descriptor;
     }
 
@@ -68,7 +62,7 @@ public class Visitor {
         this.photoData = photoData;
     }
 
-    public void setAccess(String address, boolean granted) {
+    public void setAccess(String address, Access access) {
         if (address == null) {
             Log.e (TAG, "Error: Unable to set access for null device");
             return;
@@ -77,13 +71,8 @@ public class Visitor {
         if (this.accesses == null) {
             this.accesses = new HashMap<>();
         }
-        Access a = this.accesses.get(address);
-        if (a == null) {
-            a = new Access();
-            a.granted = granted;
-            a.oldGranted = granted;
-        }
-        this.accesses.put(address, a);
+
+        this.accesses.put(address, access);
     }
 
     public void setAccesses(HashMap<String, Access> accesses) {

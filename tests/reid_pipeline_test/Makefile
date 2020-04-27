@@ -1,4 +1,4 @@
-# Copyright 2019 GreenWaves Technologies, SAS
+# Copyright 2019-2020 GreenWaves Technologies, SAS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
 
 STATIC_FACE_DB=1
 USE_PMSIS_BSP=1
-ifeq ($(BOARD_NAME),gapoc_a)
-  DEVICE_CONNECTION = -ftdi
-else
-  DEVICE_CONNECTION = -jtag
-endif
+export GAP_USE_OPENOCD=1
+io=host
 
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
@@ -36,8 +33,13 @@ REID_MODEL_GEN = CnnKernels
 REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-GenReidNet: ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c
-	gcc -no-pie -o GenReidNet  -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ../../ReID-Demo/ReIDModel.c ../../ReID-Demo/param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+REID_GEN_SRCS = \
+  ../../ReID-Demo/ReIDModel.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  $(CNN_GEN_PATH)/CNN_Generators.c
+
+GenReidNet: $(REID_GEN_SRCS)
+	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A=1 -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" $(REID_GEN_SRCS) $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -58,19 +60,32 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: reid_model extra_model
 
-APP_SRCS = main.c ../../ReID-Demo/reid_pipeline.c ../../ReID-Demo/network_process_manual.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c ../../ReID-Demo/face_db.c ../../ReID-Demo/ExtraBasicKernels.c ../../ReID-Demo/ImgIO.c $(REID_MODEL_GEN_C) $(EXTRA_MODEL_GEN_C) $(CNN_KERNELS_SRC)
+APP_SRCS = \
+  main.c \
+  ../../ReID-Demo/reid_pipeline.c \
+  ../../ReID-Demo/network_process_manual.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  ../../ReID-Demo/dnn_utils.c \
+  ../../ReID-Demo/face_db.c \
+  ../../ReID-Demo/ExtraBasicKernels.c \
+  ../../ReID-Demo/ImgIO.c \
+  $(REID_MODEL_GEN_C) \
+  $(EXTRA_MODEL_GEN_C) \
+  $(CNN_KERNELS_SRC)
 
 APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 
-DATA_FILES = ../../ReID-Demo/quantized_model/*.bin
+PLPBRIDGE_FLAGS += -f
+DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
 
-FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
-DATA_FILES += ../../ReID-Demo/known_faces/index.txt ../../ReID-Demo/known_faces/*.bin
-APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+FACE_DB_SIZE = $(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
+DATA_FILES += ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
+APP_CFLAGS += -Os -O3 -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+ifeq ($(SILENT),1)
+  APP_CFLAGS += -DSILENT=1
+endif
 
-APP_CFLAGS += -Os
-
-PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) -fileIO 10
+READFS_FILES += $(realpath $(DATA_FILES))
 
 all:: tiler_models $(CNN_LAYERS_BIN)
 
@@ -81,4 +96,4 @@ clean::
 
 .PHONY: reid_model extra_model tiler_models all clean
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk

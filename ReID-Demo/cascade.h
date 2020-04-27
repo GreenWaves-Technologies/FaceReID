@@ -83,9 +83,6 @@ typedef struct ArgCluster
     int* output_map;
     cascade_t* model;
     unsigned int cycles;
-#ifdef PERF_COUNT
-    rt_perf_t *perf;
-#endif
 } ArgCluster_T;
 
 cascade_t *getFaceCascade();

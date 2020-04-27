@@ -21,7 +21,6 @@
 # include "pmsis_tiling.h"
 #else
 # include "Gap.h"
-# include "extra_emul_stubs.h"
 #endif
 
 #include "facedet_pipeline.h"
@@ -56,10 +55,8 @@ void detection_cluster_init(ArgCluster_T *ArgC)
     ArgC->model = getFaceCascade();
 
     #ifdef PERF_COUNT
-    // initialize the performance clock
-    rt_perf_init(ArgC->perf);
     // Configure performance counters for counting the cycles
-    rt_perf_conf(ArgC->perf, (1<<RT_PERF_CYCLES));
+    pi_perf_conf(1<<RT_PERF_CYCLES);
     //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, gap_ncore());
     #endif
 }
@@ -100,8 +97,6 @@ static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_rep
 
 void detection_cluster_main(ArgCluster_T *ArgC)
 {
-    unsigned int MaxCore = gap_ncore();
-
     #ifdef PERF_COUNT
     gap_cl_starttimer();
     gap_cl_resethwtimer();

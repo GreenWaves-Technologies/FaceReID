@@ -18,11 +18,8 @@
 #BLE_NOTIFIER=0
 
 USE_PMSIS_BSP=1
-ifeq ($(BOARD_NAME),gapoc_a)
-  DEVICE_CONNECTION = -ftdi
-else
-  DEVICE_CONNECTION = -jtag
-endif
+export GAP_USE_OPENOCD=1
+io=host
 
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
@@ -30,7 +27,7 @@ TILER_GENERATOR_PATH = $(TILER_PATH)/generators
 CNN_GEN_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH = $(TILER_GENERATOR_PATH)/CNN
 CNN_KERNELS_SRC = $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC=$(wildcard quantized_model/*.json)
+CNN_LAYERS_SRC = $(wildcard quantized_model/*.json)
 ifeq ($(ALREADY_FLASHED),1)
 	CNN_LAYERS_BIN=
 else
@@ -83,14 +80,32 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model $(CNN_LAYERS_BIN)
 
-APP_SRCS = main.c cascade.c display.c facedet_pipeline.c reid_pipeline.c FaceDetBasicKernels.c ImageDraw.c ImgIO.c network_process_manual.c param_layer_manual.c dnn_utils.c face_db.c ExtraBasicKernels.c $(DETECTION_MODEL_GEN_C) $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC) $(EXTRA_MODEL_GEN_C)
+APP_SRCS = \
+  main.c \
+  cascade.c \
+  display.c \
+  face_db.c \
+  facedet_pipeline.c \
+  reid_pipeline.c \
+  FaceDetBasicKernels.c \
+  ImageDraw.c \
+  ImgIO.c \
+  network_process_manual.c \
+  param_layer_manual.c \
+  dnn_utils.c \
+  ExtraBasicKernels.c \
+  $(DETECTION_MODEL_GEN_C) \
+  $(REID_MODEL_GEN_C) \
+  $(CNN_KERNELS_SRC) \
+  $(EXTRA_MODEL_GEN_C)
 
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB=1
 endif
 
-DATA_FILES = ./quantized_model/*.bin
-APP_CFLAGS += -Os -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
+DATA_FILES=$(wildcard ./quantized_model/*.bin)
+APP_CFLAGS += -DNORM_ROUND=1 -Os -flto -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
+APP_LDFLAGS += -flto
 
 ifeq ($(STATIC_FACE_DB),1)
   FACE_DB_SIZE=$(shell wc -l < ./known_faces/index.txt)
@@ -104,7 +119,7 @@ ifeq ($(STATIC_FACE_DB),1)
     APP_SRCS += StaticUserManager.c
   endif
 
-  DATA_FILES += ./known_faces/index.txt ./known_faces/*.bin
+  DATA_FILES += ./known_faces/index.txt $(wildcard ./known_faces/*.bin)
   APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 else
   ifeq ($(BOARD_NAME),gapoc_a)
@@ -121,17 +136,19 @@ ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
 endif
 
 ifeq ($(ALREADY_FLASHED),1)
-  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO 10
+  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
 else
-  PLPBRIDGE_FLAGS += -f $(DATA_FILES) $(DEVICE_CONNECTION) #-fileIO 10
+  PLPBRIDGE_FLAGS += -f
 endif
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
   PLPBRIDGE_FLAGS += -hyper
 else
-  PLPBRIDGE_FLAGS += -fileIO 10
+  PLPBRIDGE_FLAGS += -fileIO
 endif
+
+READFS_FILES+=$(realpath $(DATA_FILES))
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
 prepare_debug:
@@ -144,7 +161,7 @@ endif
 
 all:: tiler_models
 
-run:: prepare_debug
+run: prepare_debug
 
 clean::
 	rm -rf BUILD
@@ -155,4 +172,4 @@ clean::
 
 .PHONY: detection_model reid_model extra_model tiler_models all clean
 
-include $(GAP_SDK_HOME)/tools/rules/pmsis_rules.mk
+include $(RULES_DIR)/pmsis_rules.mk

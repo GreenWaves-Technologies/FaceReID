@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -49,7 +51,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private Map<String, Device> reidDevices;
     private int favCnt;
-    private BluetoothAdapter mBluetoothAdapter;
     private BluetoothCentral scanner;
     private DataBaseHelper db;
 
@@ -66,36 +67,28 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
         setContentView(R.layout.activity_devices);
 
+        reidDevices = new HashMap<>();
+
+        // Should not be needed
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-
-        // Checks if Bluetooth is supported on the device.
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
-            finish();
-        }
-
-        scanner = new BluetoothScanner(mBluetoothAdapter);
-        scanner.setDelegate(this);
+        scanner = null;
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_devices, menu);
-        if (scanner.getState() != BluetoothScanner.State.SCANNING) {
+        if (scanner == null || scanner.getState() != BluetoothScanner.State.SCANNING) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
             menu.findItem(R.id.menu_progress).setActionView(null);
         } else {
             menu.findItem(R.id.menu_stop).setVisible(true);
             menu.findItem(R.id.menu_scan).setVisible(false);
-            menu.findItem(R.id.menu_progress).setActionView(
-                    R.layout.actionbar_indeterminate_progress);
+            menu.findItem(R.id.menu_progress).setActionView(R.layout.actionbar_indeterminate_progress);
         }
         return true;
     }
@@ -104,8 +97,26 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_scan:
-                mLeDeviceListAdapter.clear();
-                scanLeDevice(true);
+                final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+                BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+
+                // Checks if Bluetooth is supported on the device.
+                if (bluetoothAdapter == null) {
+                    Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+                } else if (!bluetoothAdapter.isEnabled()) {
+                    // If Bluetooth is not currently enabled, fire an intent to display a dialog
+                    // asking the user to grant permission to enable it.
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                } else {
+                    if (scanner == null) {
+                        scanner = new BluetoothScanner(bluetoothAdapter);
+                        scanner.setDelegate(this);
+                    }
+
+                    mLeDeviceListAdapter.clear();
+                    scanLeDevice(true);
+                }
                 break;
             case R.id.menu_stop:
                 scanLeDevice(false);
@@ -122,15 +133,6 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     protected void onResume() {
         super.onResume();
 
-        // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
-        // fire an intent to display a dialog asking the user to grant permission to enable it.
-        if (!mBluetoothAdapter.isEnabled()) {
-            if (!mBluetoothAdapter.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
-        }
-
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
@@ -139,7 +141,11 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
         db = new DataBaseHelper(getApplicationContext());
 
         // Reload known devices list
-        reidDevices = db.getAllDevices();
+        ArrayList<Device> dbDevices = db.getAllDevices();
+        for (int i = 0; i < dbDevices.size(); i++) {
+            Device d = dbDevices.get(i);
+            reidDevices.put(d.getAddress(), d);
+        }
     }
 
     private void setListAdapter(BaseAdapter baseAdapter) {
@@ -167,6 +173,10 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
     }
 
     private void scanLeDevice(final boolean enable) {
+        if (scanner == null) {
+            return;
+        }
+
         if (enable) {
             verifyPermissionAndScan();
         } else {
@@ -177,19 +187,27 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
 
     @TargetApi(23)
     private void verifyPermissionAndScan() {
-        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED) {
-            scanner.scan(new ArrayList<>());
-        } else {
-            requestPermissions(new String[] {ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
+            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+            return;
         }
+
+        if (Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF) == Settings.Secure.LOCATION_MODE_OFF) {
+            Toast.makeText(this, R.string.location_permission_toast, Toast.LENGTH_LONG).show();
+            Intent enableLocationIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(enableLocationIntent);
+            return;
+        }
+
+        scanner.scan(new ArrayList<>());
     }
 
     @Override
-    public void onRequestPermissionsResult (int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult (int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode != LOCATION_REQUEST) return;
 
         if (grantResults.length > 0 && grantResults[0] == PERMISSION_GRANTED) {
-            scanner.scan(new ArrayList<>());
+            verifyPermissionAndScan();
         } else {
             Toast.makeText(this, R.string.location_permission_toast, Toast.LENGTH_LONG).show();
         }
@@ -204,7 +222,7 @@ public class DevicesActivity extends Activity implements AdapterView.OnItemClick
             scanner.stop();
 
             Intent intent = new Intent(this, MainActivity.class);
-            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + String.valueOf(device == null));
+            Log.w(TAG, "Putting " + EXTRA_DEVICE + " " + (device == null));
             intent.putExtra(EXTRA_DEVICE, device);
             startActivity(intent);
         }

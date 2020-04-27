@@ -138,7 +138,6 @@ void body(void* parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    cluster_task.stack_size = CLUSTER_STACK_SIZE;
 
     PRINTF("Start Prepare Pipeline test\n");
 
@@ -154,8 +153,6 @@ void body(void* parameters)
     PRINTF("HyperRAM config done\n");
 
     PRINTF("Reading image from host...\n");
-    rt_bridge_connect(1, NULL);
-    PRINTF("rt_bridge_connect\n");
 
     int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
     unsigned int Wi = CAMERA_WIDTH;
@@ -191,12 +188,11 @@ void body(void* parameters)
 
     ExtaKernels_L1_Memory = L1_Memory;
 
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall));
+    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
+    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     pi_cluster_close(&cluster_dev);
-
-//     int File = rt_bridge_open("../../../output.values", O_RDWR | O_CREAT, S_IRWXU, NULL);
-//     rt_bridge_write(File, ClusterDnnCall.scaled_face, 128*128*sizeof(short), NULL);
-//     rt_bridge_close(File, NULL);
 
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
 
@@ -204,8 +200,6 @@ void body(void* parameters)
     WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
     WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
     PRINTF("Writing output to file..done\n");
-
-    rt_bridge_disconnect(NULL);
 
     pmsis_exit(0);
 }

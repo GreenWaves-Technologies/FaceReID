@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 GreenWaves Technologies, SAS
+ * Copyright 2019-2020 GreenWaves Technologies, SAS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,11 @@
 
 #include "pmsis.h"
 #include "bsp/fs.h"
+#include "bsp/fs/readfs.h"
+#include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 #include "bsp/ram/hyperram.h"
+
 
 #include "param_layer_struct.h"
 
@@ -70,6 +73,7 @@ typedef void (*ConvLayerFunctionType)(
                 short int *,
                 short int *,
                 short int *,
+                unsigned int,
                 unsigned int
                 );
 
@@ -171,7 +175,7 @@ short* layer_process(int layer_idx, int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_weights, weights, weights_size);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias, bias, bias_size);
         PRINTF("Convolution\n");
-        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output, convLayers[layer_idx].norm_data);
+        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output, convLayers[layer_idx].norm_data, convLayers[layer_idx].norm_data);
         PRINTF("Convolution done\n");
 
         *activation_size = get_activations_size(layer_idx);
@@ -224,9 +228,9 @@ void body(void *parameters)
     PRINTF("Configuring Hyperflash and FS..");
     struct pi_device fs;
     struct pi_device flash;
-    struct pi_fs_conf conf;
+    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_fs_conf_init(&conf);
+    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -236,7 +240,7 @@ void body(void *parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.flash = &flash;
+    conf.fs.flash = &flash;
 
     pi_open_from_conf(&fs, &conf);
 
@@ -258,7 +262,6 @@ void body(void *parameters)
 
     char *inputBlob = "../../../input.bin";
     char *outputBlob = "../../../output.bin";
-    unsigned int Wi, Hi;
 
     PRINTF("Init cluster...\n");
     pi_cluster_conf_init(&cluster_conf);
@@ -268,31 +271,37 @@ void body(void *parameters)
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
-    #if !defined(__FREERTOS__)
     //Setting FC to 250MHz
-    rt_freq_set(RT_FREQ_DOMAIN_FC, 250000000);
+    pi_freq_set(PI_FREQ_DOMAIN_FC, 250000000);
 
-    //Setting Cluster to 150MHz
+    //Setting Cluster to 175MHz
     // NOTE: Current Gap8 generation does not have clock divider for hyperbus
-    // and using FC clocks over 150Mhz is dengerous
-    rt_freq_set(RT_FREQ_DOMAIN_CL, 175000000);
-    #endif
+    // and using FC clocks over 150Mhz is dangerous
+    pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
     l2_x = layer_init();
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
 
-    rt_bridge_connect(1, NULL);
-    PRINTF("rt_bridge_connect done\n");
+    struct pi_hostfs_conf host_fs_conf;
+    pi_hostfs_conf_init(&host_fs_conf);
+    struct pi_device host_fs;
 
-    int File = rt_bridge_open(inputBlob, 0, 0, NULL);
-    if (File == 0)
+    pi_open_from_conf(&host_fs, &host_fs_conf);
+
+    if (pi_fs_mount(&host_fs))
+    {
+        PRINTF("pi_fs_mount failed\n");
+        pmsis_exit(-4);
+    }
+    pi_fs_file_t* host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
+    if (!host_file)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-5);
     }
-    PRINTF("rt_bridge_open done\n");
+    PRINTF("Host file open done\n");
 
     int input_size = 0;
 
@@ -307,7 +316,7 @@ void body(void *parameters)
 
     PRINTF("input_size: %d\n", input_size);
 
-    int read = rt_bridge_read(File, l2_x, input_size, NULL);
+    int read = pi_fs_read(host_file, l2_x, input_size);
     if(read != input_size)
     {
         PRINTF("Failed to read file\n");
@@ -315,7 +324,7 @@ void body(void *parameters)
         pmsis_exit(-6);
     }
 
-    rt_bridge_close(File, NULL);
+    pi_fs_close(host_file);
 
     PRINTF("Reading input from host...done\n");
 
@@ -334,17 +343,17 @@ void body(void *parameters)
 
     pi_cluster_close(&cluster_dev);
 
-    File = rt_bridge_open(outputBlob, O_RDWR | O_CREAT, S_IRWXU, NULL);
-    if (File == 0)
+    host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
+    if (host_file == 0)
     {
-        PRINTF("Failed to open file, %s\n", outputBlob);
+        PRINTF("Failed to open host file, %s\n", outputBlob);
         pmsis_exit(-7);
     }
 
-    rt_bridge_write(File, infer_result, activation_size*sizeof(short), NULL);
-    rt_bridge_close(File, NULL);
+    pi_fs_write(host_file, infer_result, activation_size*sizeof(short));
+    pi_fs_close(host_file);
 
-    rt_bridge_disconnect(NULL);
+    pi_fs_unmount(&host_fs);
 
     layer_free();
 
