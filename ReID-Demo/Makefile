@@ -21,26 +21,22 @@ USE_PMSIS_BSP=1
 export GAP_USE_OPENOCD=1
 io=host
 
-TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
-TILER_LIB = $(TILER_PATH)/lib/libtile.a
-TILER_GENERATOR_PATH = $(TILER_PATH)/generators
-CNN_GEN_PATH = $(TILER_GENERATOR_PATH)/CNN
-CNN_KER_PATH = $(TILER_GENERATOR_PATH)/CNN
-CNN_KERNELS_SRC = $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC = $(wildcard quantized_model/*.json)
-ifeq ($(ALREADY_FLASHED),1)
-	CNN_LAYERS_BIN=
-else
-	CNN_LAYERS_BIN=$(CNN_LAYERS_SRC:.json=.bin)
-endif
+TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
+TILER_LIB := $(TILER_PATH)/lib/libtile.a
+TILER_GENERATOR_PATH := $(TILER_PATH)/generators
+CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
+CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
+CNN_KERNELS_SRC := $(wildcard $(CNN_KER_PATH)/CNN_*.c)
+CNN_LAYERS_SRC := $(wildcard quantized_model/*.json)
+CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
 
-DETECTION_MODEL_SRC = FaceDetGenerator.c FaceDetModel.c
-DETECTION_MODEL_GEN = FaceDetKernels
-DETECTION_MODEL_GEN_C = $(addsuffix .c, $(DETECTION_MODEL_GEN))
+DETECTION_MODEL_SRC := FaceDetGenerator.c FaceDetModel.c
+DETECTION_MODEL_GEN := FaceDetKernels
+DETECTION_MODEL_GEN_C := $(addsuffix .c, $(DETECTION_MODEL_GEN))
 DETECTION_MODEL_GEN_CLEAN = $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
 
 ifeq ($(BOARD_NAME),gapoc_a)
-  TILER_PLATFORM_FLAGS=-DCONFIG_GAPOC_A
+  TILER_PLATFORM_FLAGS += -DCONFIG_GAPOC_A
 endif
 
 GenDetectionTile: $(DETECTION_MODEL_SRC)
@@ -51,12 +47,12 @@ $(DETECTION_MODEL_GEN_C): GenDetectionTile
 
 detection_model: $(DETECTION_MODEL_GEN_C)
 
-%.bin: %.json
-	../scripts/convert2gap.py $< $(basename $@)
+%.bias.bin %.weights.bin: %.json
+	../scripts/convert2gap.py $< $(basename $<)
 
-REID_MODEL_GEN = CnnKernels
-REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN := CnnKernels
+REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 GenReidNet: ReIDModel.c param_layer_manual.c norm_list.h
 	gcc -no-pie -o GenReidNet -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ReIDModel.c param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
@@ -66,9 +62,9 @@ $(REID_MODEL_GEN_C): GenReidNet
 
 reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
 
-EXTRA_MODEL_GEN = ExtraKernels
-EXTRA_MODEL_GEN_C = $(addsuffix .c, $(EXTRA_MODEL_GEN))
-EXTRA_MODEL_GEN_CLEAN = $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN := ExtraKernels
+EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN_CLEAN := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: ExtraModels.c
 	gcc -no-pie -o GenExtraTile -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
@@ -100,15 +96,14 @@ APP_SRCS = \
   $(EXTRA_MODEL_GEN_C)
 
 ifneq ($(BOARD_NAME),gapoc_a)
-  STATIC_FACE_DB=1
+  STATIC_FACE_DB := 1
 endif
 
-DATA_FILES=$(wildcard ./quantized_model/*.bin)
 APP_CFLAGS += -DNORM_ROUND=1 -Os -flto -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
 APP_LDFLAGS += -flto
 
 ifeq ($(STATIC_FACE_DB),1)
-  FACE_DB_SIZE=$(shell wc -l < ./known_faces/index.txt)
+  FACE_DB_SIZE=$(shell wc -l < known_faces/index.txt)
   ifeq ($(FACE_DB_SIZE),)
     $(error known_faces/index.txt file doesn't exist! Please add people names there)
   endif
@@ -119,7 +114,7 @@ ifeq ($(STATIC_FACE_DB),1)
     APP_SRCS += StaticUserManager.c
   endif
 
-  DATA_FILES += ./known_faces/index.txt $(wildcard ./known_faces/*.bin)
+  READFS_FILES += known_faces/index.txt $(wildcard known_faces/*.bin)
   APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 else
   ifeq ($(BOARD_NAME),gapoc_a)
@@ -139,6 +134,7 @@ ifeq ($(ALREADY_FLASHED),1)
   PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
 else
   PLPBRIDGE_FLAGS += -f
+  READFS_FILES += $(CNN_LAYERS_BIN)
 endif
 
 ifeq ($(SILENT),1)
@@ -147,8 +143,6 @@ ifeq ($(SILENT),1)
 else
   PLPBRIDGE_FLAGS += -fileIO
 endif
-
-READFS_FILES+=$(realpath $(DATA_FILES))
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
 prepare_debug:
