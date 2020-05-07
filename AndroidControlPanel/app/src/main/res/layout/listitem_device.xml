@@ -26,7 +26,7 @@
             android:layout_margin="8dp"
             android:gravity="center"
             android:text="@string/signal_strength_placeholder"
-            android:textColor="@color/ublox_blue_color"
+            android:textColor="@color/gwt_green_color"
             android:textSize="12dp"
             android:textStyle="bold" />
 
