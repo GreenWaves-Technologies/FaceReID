@@ -276,46 +276,42 @@ static void spawn_eval_weak_classifier(eval_weak_classifier_Arg_T* Arg)
 }
 
 //COPY a cascade stage to L1
-static void async_cascade_stage_to_l1(const single_cascade_t* cascade_l2, single_cascade_t* cascade_l1, pi_cl_dma_copy_t* Dma_Evt){
-
+static void async_cascade_stage_to_l1(const single_cascade_t* cascade_l2, single_cascade_t* cascade_l1, pi_cl_dma_copy_t* Dma_Evt)
+{
     unsigned int addr = (unsigned int)cascade_l1;
-    //cascade_l1 = cascade_l1(single_cascade_t*) addr;
-
-    addr+= sizeof(single_cascade_t);
+    addr += sizeof(single_cascade_t);
 
     cascade_l1->stage_size = cascade_l2->stage_size;
     cascade_l1->rectangles_size = cascade_l2->rectangles_size;
 
-    cascade_l1->thresholds     = (short*)addr;
-    addr+=sizeof(short)*cascade_l1->stage_size;
+    cascade_l1->thresholds = (short*)addr;
+    addr += sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->thresholds, (unsigned int) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->alpha1       = (short*) addr;
-    addr+=sizeof(short)*cascade_l1->stage_size;
+    cascade_l1->alpha1     = (short*) addr;
+    addr += sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->alpha1, (unsigned int) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->alpha2         = (short*) addr;
-    addr+=sizeof(short)*cascade_l1->stage_size;
+    cascade_l1->alpha2     = (short*) addr;
+    addr += sizeof(short)*cascade_l1->stage_size;
     pi_cl_dma_cmd((unsigned int) cascade_l2->alpha2, (unsigned int) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
-    cascade_l1->rect_num       = (unsigned  short*) addr;
-    addr+= sizeof(unsigned short)*((cascade_l1->stage_size)+1);
+    cascade_l1->rect_num   = (unsigned  short*) addr;
+    addr += sizeof(unsigned short)*(cascade_l1->stage_size + 1);
     pi_cl_dma_cmd((unsigned int) cascade_l2->rect_num, (unsigned int) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
     cascade_l1->weights    = (signed char*) addr;
-    addr+=sizeof(signed char)*(cascade_l1->rectangles_size << 2);
+    addr += sizeof(signed char)*(cascade_l1->rectangles_size / 4);
     pi_cl_dma_cmd((unsigned int) cascade_l2->weights, (unsigned int) cascade_l1->weights, sizeof(signed char)*(cascade_l2->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
 
     cascade_l1->rectangles = (char*) addr;
-    addr+=sizeof(signed char)*(cascade_l2->rectangles_size<<2);
     pi_cl_dma_cmd((unsigned int) cascade_l2->rectangles, (unsigned int) cascade_l1->rectangles, sizeof(char)*cascade_l2->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, Dma_Evt);
     pi_cl_dma_cmd_wait(Dma_Evt);
-
 }
 
 static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, unsigned int* __restrict__ sqaredIntegralImage, cascade_t * __restrict__ cascade, int win_w, int win_h, int img_w,int off_x, int off_y){
