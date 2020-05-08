@@ -142,7 +142,7 @@ int get_activations_size(int idx)
     return activation_size;
 }
 
-unsigned int l2_distance(short* v1, short* v2)
+unsigned int l2_distance(const short* v1, const short* v2)
 {
     unsigned int sum = 0;
 

@@ -17,24 +17,21 @@
 #ifndef __FACE_DB_H__
 #define __FACE_DB_H__
 
-#include "dnn_utils.h"
+#include "bsp/fs.h"
 #include "setup.h"
 
 int load_static_db(struct pi_device * fs);
-unsigned int l2_distance(short* v1, short* v2);
-int identify_by_db(short* descriptor, char** name);
+int identify_by_db(const short *descriptor, char** name);
 
 #ifndef STATIC_FACE_DB
-int add_to_db(short* descriptor, char* name);
-int drop_from_db(short * descriptor);
+int add_to_db(const short *descriptor, const char *name);
+int drop_from_db(const short * descriptor);
 #endif
 
 char get_identities_count(void);
 char get_identity(int idx, short ** descriptor, char ** name);
 
-int db_free();
-
-void printf_db_descriptors();
-void dump_db();
+void printf_db_descriptors(void);
+void dump_db(void);
 
 #endif

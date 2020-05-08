@@ -79,7 +79,7 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_reponse_t* reponses, int num_reponse)
+static void draw_responses(unsigned char* ImageIn, int Win, int Hin, const cascade_reponse_t* reponses, int num_reponse)
 {
     for(int i = 0; i < num_reponse; i++)
     {
@@ -116,10 +116,10 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     pi_cl_team_fork(__builtin_pulp_CoreCount(), (void *)prepare_to_render, (void *) ArgC);
 }
 
-static int check_intersection(cascade_reponse_t* a, cascade_reponse_t* b)
+static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_t* b)
 {
-    cascade_reponse_t* left;
-    cascade_reponse_t* right;
+    const cascade_reponse_t* left;
+    const cascade_reponse_t* right;
 
     if(a->x > b->x)
     {
@@ -141,7 +141,7 @@ static int check_intersection(cascade_reponse_t* a, cascade_reponse_t* b)
     return status;
 }
 
-int check_detection_stability(cascade_reponse_t* history, int history_size)
+int check_detection_stability(const cascade_reponse_t* history, int history_size)
 {
     int status = 1;
     for(int  i = 0; i < history_size-1; i++)

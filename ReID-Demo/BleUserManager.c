@@ -50,7 +50,7 @@ typedef struct BleContext_T
 
 #define MIN(a, b) (((a)<(b))?(a):(b))
 
-void ble_protocol_handler(void* params)
+static void ble_protocol_handler(void* params)
 {
     BleContext* context = (BleContext*)params;
 

@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static int biggest_cascade_stage(const cascade_t *cascade);
+
 //Permanently Store a cascade stage to L1
 single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
 {
@@ -74,7 +76,7 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     return cascade_l1;
 }
 
-cascade_t *getFaceCascade(){
+cascade_t *getFaceCascade(void){
     cascade_t *face_cascade;
 
     face_cascade = (cascade_t*) pmsis_l1_malloc( sizeof(cascade_t));
@@ -172,7 +174,7 @@ cascade_t *getFaceCascade(){
     return face_cascade;
 }
 
-int biggest_cascade_stage(cascade_t *cascade){
+static int biggest_cascade_stage(const cascade_t *cascade){
 
     //Calculate cascade bigger layer
     int biggest_stage_size=0;
@@ -200,9 +202,10 @@ int biggest_cascade_stage(cascade_t *cascade){
     return biggest_stage_size;
 }
 
-int rect_intersect_area(unsigned short a_x, unsigned short a_y, unsigned short a_w, unsigned short a_h,
-                        unsigned short b_x, unsigned short b_y, unsigned short b_w, unsigned short b_h ){
-
+static int rect_intersect_area(
+        unsigned short a_x, unsigned short a_y, unsigned short a_w, unsigned short a_h,
+        unsigned short b_x, unsigned short b_y, unsigned short b_w, unsigned short b_h)
+{
     #define MIN(a,b) ((a) < (b) ? (a) : (b))
     #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -221,8 +224,8 @@ int rect_intersect_area(unsigned short a_x, unsigned short a_y, unsigned short a
     #undef MIN
 }
 
-void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx){
-
+static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
+{
     int idx,idx_int;
 
     //Non-max supression

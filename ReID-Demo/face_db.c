@@ -92,7 +92,7 @@ int load_static_db(struct pi_device * fs)
     return descriptors;
 }
 
-int identify_by_db(short* descriptor, char** name)
+int identify_by_db(const short* descriptor, char** name)
 {
     if(identified_people == 0)
     {
@@ -119,7 +119,7 @@ int identify_by_db(short* descriptor, char** name)
     return min_l2;
 }
 
-static int find_in_db(short *descriptor)
+static int find_in_db(const short *descriptor)
 {
     int i;
     for (i = 0; i < identified_people; i++)
@@ -134,7 +134,7 @@ static int find_in_db(short *descriptor)
     return -1;
 }
 
-int add_to_db(short* descriptor, char* name)
+int add_to_db(const short* descriptor, const char* name)
 {
     int i = find_in_db(descriptor);
     if (i >= 0) // Only update name if the descriptor is already set
@@ -166,7 +166,7 @@ int add_to_db(short* descriptor, char* name)
     return identified_people++;
 }
 
-int drop_from_db(short * descriptor)
+int drop_from_db(const short * descriptor)
 {
     int i = find_in_db(descriptor);
     if (i < 0)
@@ -204,7 +204,7 @@ char get_identity(int idx, short ** descriptor, char ** name)
     return 0;
 }
 
-void printf_db_descriptors()
+void printf_db_descriptors(void)
 {
     for(int i = 0; i < FACE_DB_SIZE; i++)
     {
@@ -212,7 +212,7 @@ void printf_db_descriptors()
     }
 }
 
-void dump_db()
+void dump_db(void)
 {
     struct pi_hostfs_conf host_fs_conf;
     pi_hostfs_conf_init(&host_fs_conf);

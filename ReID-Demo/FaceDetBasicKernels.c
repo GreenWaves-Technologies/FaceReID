@@ -276,7 +276,7 @@ static void spawn_eval_weak_classifier(eval_weak_classifier_Arg_T* Arg)
 }
 
 //COPY a cascade stage to L1
-void async_cascade_stage_to_l1(single_cascade_t* cascade_l2, single_cascade_t* cascade_l1, pi_cl_dma_copy_t* Dma_Evt){
+static void async_cascade_stage_to_l1(const single_cascade_t* cascade_l2, single_cascade_t* cascade_l1, pi_cl_dma_copy_t* Dma_Evt){
 
     unsigned int addr = (unsigned int)cascade_l1;
     //cascade_l1 = cascade_l1(single_cascade_t*) addr;

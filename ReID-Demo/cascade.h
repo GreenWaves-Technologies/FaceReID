@@ -85,8 +85,7 @@ typedef struct ArgCluster
     unsigned int cycles;
 } ArgCluster_T;
 
-cascade_t *getFaceCascade();
-int biggest_cascade_stage(cascade_t *cascade);
+cascade_t *getFaceCascade(void);
 void cascade_detect(ArgCluster_T *ArgC);
 
 void detection_cluster_init(ArgCluster_T *ArgC);
