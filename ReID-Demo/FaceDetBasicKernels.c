@@ -357,11 +357,10 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
         for (i=0; i<cascade->stages_num; i++) {
                 if(i<CASCADE_STAGES_L1)
                     Arg.cascade_stage=(cascade->stages[i]);
-
-                if(i>=CASCADE_STAGES_L1){
+                else {
                     //cl_dma_wait(&Dma_Evt);
                     Arg.cascade_stage = (cascade->buffers_l1[buffer%2]);
-                if( i<cascade->stages_num-1)
+                    if(i<cascade->stages_num-1)
                         async_cascade_stage_to_l1((cascade->stages[i+1]), (cascade->buffers_l1[(++buffer)%2]), &Dma_Evt);
                 }
                 pi_cl_team_fork(gap_ncore(), (void *) spawn_eval_weak_classifier, (void *) &Arg);
@@ -396,9 +395,7 @@ void KerEvaluateCascade(
             if((Line%DETECT_STRIDE) == 0 && (Col%DETECT_STRIDE) == 0)
                 CascadeReponse[Line*(W-WinW+1) + (Col)] = windows_cascade_classifier(IntegralImage, SquaredIntegralImage, model, WinW, WinH, W, Col, Line);
             else
-            CascadeReponse[Line*(W-WinW+1) + (Col)]=0;
+                CascadeReponse[Line*(W-WinW+1) + (Col)] = 0;
         }
     }
-
-    return;
 }

@@ -226,17 +226,18 @@ static int rect_intersect_area(
 
 static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
 {
-    int idx,idx_int;
+    int idx;
 
     //Non-max supression
-    for(idx=0;idx<reponse_idx;idx++){
+    for(idx = 0; idx < reponse_idx; idx++){
         //check if rect has been removed (-1)
-        if(reponses[idx].x==-1)
+        if(reponses[idx].x == -1)
             continue;
 
-        for(idx_int=0;idx_int<reponse_idx;idx_int++){
+        int idx_int;
+        for(idx_int = idx + 1; idx_int < reponse_idx; idx_int++){
 
-            if(reponses[idx_int].x==-1 || idx_int==idx)
+            if(reponses[idx_int].x == -1)
                 continue;
 
             //check the intersection between rects
