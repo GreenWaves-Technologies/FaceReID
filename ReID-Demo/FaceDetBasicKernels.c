@@ -350,13 +350,13 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
 
         async_cascade_stage_to_l1((cascade->stages[CASCADE_STAGES_L1]), (cascade->buffers_l1[buffer%2]), &Dma_Evt);
 
-        for (i=0; i<cascade->stages_num; i++) {
+        for (i = 0; i < CASCADE_TOTAL_STAGES; i++) {
                 if(i<CASCADE_STAGES_L1)
                     Arg.cascade_stage=(cascade->stages[i]);
                 else {
                     //cl_dma_wait(&Dma_Evt);
                     Arg.cascade_stage = (cascade->buffers_l1[buffer%2]);
-                    if(i<cascade->stages_num-1)
+                    if (i < CASCADE_TOTAL_STAGES - 1)
                         async_cascade_stage_to_l1((cascade->stages[i+1]), (cascade->buffers_l1[(++buffer)%2]), &Dma_Evt);
                 }
                 pi_cl_team_fork(gap_ncore(), (void *) spawn_eval_weak_classifier, (void *) &Arg);

@@ -84,16 +84,14 @@ cascade_t *getFaceCascade(void){
         PRINTF("Error allocatin model thresholds...");
         return 0;
     }
-    single_cascade_t **model_stages = (single_cascade_t**) pmsis_l1_malloc( sizeof(single_cascade_t*)*CASCADE_TOTAL_STAGES);
-
-    face_cascade->stages_num = CASCADE_TOTAL_STAGES;
-    face_cascade->thresholds = (signed short *) pmsis_l1_malloc( sizeof(signed short )*face_cascade->stages_num);
+    single_cascade_t **model_stages = (single_cascade_t**) pmsis_l1_malloc( sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = (signed short *) pmsis_l1_malloc( sizeof(signed short ) * CASCADE_TOTAL_STAGES);
     if(face_cascade->thresholds==0){
         PRINTF("Error allocatin model thresholds...");
         return 0;
     }
 
-    for(int a=0; a<face_cascade->stages_num; a++)
+    for(int a = 0; a < CASCADE_TOTAL_STAGES; a++)
         face_cascade->thresholds[a] = model_thresholds[a];
 
     switch(CASCADE_TOTAL_STAGES){
@@ -179,7 +177,7 @@ static unsigned biggest_cascade_stage(const cascade_t *cascade)
     //Calculate cascade bigger layer
     unsigned max_stage_size = 0;
 
-    for (int i = 0; i < cascade->stages_num; i++)
+    for (int i = 0; i < CASCADE_TOTAL_STAGES; i++)
     {
         single_cascade_t *stage = cascade->stages[i];
         unsigned stage_size;
