@@ -28,10 +28,13 @@ struct param_conv_layer {
   char max_pool;
   char pool_size;
   char pool_stride;
-  char norm_data;
   char conv_padding;
   char conv_stride;
-  char* name;
+  char q_in;
+  char q_out;
+  char q_w;
+  char q_b;
+  const char* name;
 };
 
 #define NB_CONV 26

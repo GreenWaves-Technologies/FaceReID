@@ -44,8 +44,6 @@ Now, when you have quantized your model, you can upload weights to GAP and check
 
 Copy folder `results/activations_dump` and put it into `tests` instead of existed folder.
 
-Copy file `norm_list.h` and put it into `ReID-Demo` folder.
-
 2. Go to directory `tests` and run
 ```
     $ ./test_layers_one_by_one.sh <target platform>

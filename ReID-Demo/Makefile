@@ -54,7 +54,7 @@ REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
 REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-GenReidNet: ReIDModel.c param_layer_manual.c norm_list.h
+GenReidNet: ReIDModel.c param_layer_manual.c
 	gcc -no-pie -o GenReidNet -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ReIDModel.c param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
