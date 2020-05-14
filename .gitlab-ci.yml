@@ -10,8 +10,9 @@ BuildDemo_GAPOC:
   stage: BuildDemo
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
-    - cd ./ReID-Demo
+    - cd ReID-Demo
     - make all
+    - make all | grep 'Nothing to be done'
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
@@ -54,8 +55,9 @@ BuildDemo_GAPUINO:
   stage: BuildDemo
   script:
     - source /gap_sdk/configs/gapuino_v2.sh
-    - cd ./ReID-Demo
+    - cd ReID-Demo
     - make all
+    - make all | grep 'Nothing to be done'
 
 SingleLayerTest:
   stage: GapuinoTest
