@@ -95,11 +95,13 @@ APP_SRCS = \
   $(CNN_KERNELS_SRC) \
   $(EXTRA_MODEL_GEN_C)
 
+APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
+
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB := 1
 endif
 
-APP_CFLAGS += -DNORM_ROUND=1 -Os -flto -I$(PWD) -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
+APP_CFLAGS += -DNORM_ROUND=1 -Os -flto
 APP_LDFLAGS += -flto
 
 ifeq ($(STATIC_FACE_DB),1)
@@ -153,7 +155,7 @@ prepare_debug:
 	true
 endif
 
-all:: tiler_models
+build: tiler_models
 
 run: prepare_debug
 
@@ -164,6 +166,6 @@ clean::
 	rm -rf GenExtraTile
 	rm -rf $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
 
-.PHONY: detection_model reid_model extra_model tiler_models all clean
+.PHONY: detection_model reid_model extra_model tiler_models build clean
 
 include $(RULES_DIR)/pmsis_rules.mk

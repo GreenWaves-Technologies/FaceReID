@@ -29,7 +29,7 @@ cd first_n_layers_test
 
 make $MAKEFILE_OPTIONS clean > /dev/null 2>&1
 make $MAKEFILE_OPTIONS -j4 tiler_models > ../inference_logs/stdout.log 2>&1
-make $MAKEFILE_OPTIONS -j4 run >> ../inference_logs/stdout.log 2>&1
+make $MAKEFILE_OPTIONS all run >> ../inference_logs/stdout.log 2>&1
 ../../scripts/compareWithBin.py ../activations_dump/global_avgpool/output.json ./output.bin $tolerance > ../inference_test_summary.csv
 if [ $? -ne 0 ]; then
     echo ";" >> ../inference_test_summary.csv

@@ -60,8 +60,7 @@ APP_SRCS = \
   ../../ReID-Demo/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(CNN_KERNELS_SRC)
-
-APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
+APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_INC)" "$(CNN_KER_PATH)"
 APP_CFLAGS += $(CONTROL_MACRO) -DNORM_ROUND=1 -Os
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
@@ -73,13 +72,13 @@ READFS_FILES += $(realpath $(DATA_FILES))
 
 tiler_models: reid_model extra_model
 
-all:: tiler_models
+build: tiler_models
 
 clean::
 	rm -rf ./GenReidNet
 	rm -rf ./output.bin
 	rm -rf $(REID_MODEL_GEN_CLEAN)
 
-.PHONY: reid_model tiler_models all clean
+.PHONY: reid_model extra_model tiler_models build clean
 
 include $(RULES_DIR)/pmsis_rules.mk
