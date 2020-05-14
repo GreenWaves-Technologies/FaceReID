@@ -21,7 +21,7 @@ static int global_stranger_idx = 0;
 
 Stranger StrangersDB[STRANGERS_DB_SIZE];
 
-static char findDuplicate(short* descriptor)
+static char findDuplicate(const short* descriptor)
 {
     char found = 0;
     for(int i = 0; i < global_stranger_idx; i++)
@@ -38,7 +38,7 @@ static char findDuplicate(short* descriptor)
     return found;
 }
 
-char addStrangerL2(char* preview, short* descriptor)
+char addStrangerL2(char* preview, const short *descriptor)
 {
     uint32_t preview_hyper;
     pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
@@ -62,7 +62,7 @@ char addStrangerL2(char* preview, short* descriptor)
     return status;
 }
 
-char addStrangerL3(char* preview, short* descriptor)
+char addStrangerL3(char* preview, const short* descriptor)
 {
     if(global_stranger_idx >= STRANGERS_DB_SIZE)
     {
@@ -111,7 +111,7 @@ char getStranger(int idx, Stranger* s)
     return 0;
 }
 
-void dropStrangers()
+void dropStrangers(void)
 {
     for(int i = 0; i < global_stranger_idx; i++)
     {
@@ -125,7 +125,7 @@ void dropStrangers()
     global_stranger_idx = 0;
 }
 
-char getStrangersCount()
+char getStrangersCount(void)
 {
     return global_stranger_idx;
 }

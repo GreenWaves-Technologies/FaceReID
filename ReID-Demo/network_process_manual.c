@@ -64,11 +64,13 @@ ConvLayerFunctionType ConvLayerArray[NB_CONV] =
     ConvLayer25
 };
 
+#define MAX(a, b) (((a)>(b))?(a):(b))
+
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort
-short* network_init()
+short* network_init(void)
 {
-    L1_Memory =  pmsis_l1_malloc((_L1_Memory_SIZE>_ExtaKernels_L1_Memory_SIZE?_L1_Memory_SIZE:_ExtaKernels_L1_Memory_SIZE));
+    L1_Memory =  pmsis_l1_malloc(MAX(_L1_Memory_SIZE, _ExtaKernels_L1_Memory_SIZE));
     if(L1_Memory == NULL)
     {
         PRINTF("L1 Working area alloc error\n");
@@ -89,14 +91,12 @@ short* network_init()
     return memory_pool;
 }
 
-void network_deinit()
+void network_deinit(void)
 {
     pmsis_l1_malloc_free(L1_Memory, _L1_Memory_SIZE);
-    pmsis_l2_malloc_free(L2_Memory,  _L2_Memory_SIZE);
+    pmsis_l2_malloc_free(L2_Memory, _L2_Memory_SIZE);
     __networ_init_done = 0;
 }
-
-#define MAX(a, b) (((a)>(b))?(a):(b))
 
 short* network_process(int* activation_size)
 {
@@ -268,7 +268,7 @@ void network_load(struct pi_device * fs)
     }
 }
 
-void network_free()
+void network_free(void)
 {
     for (unsigned int i = 0; i < NB_CONV; i++)
     {

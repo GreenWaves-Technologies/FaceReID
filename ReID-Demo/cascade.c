@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static unsigned biggest_cascade_stage(const cascade_t *cascade);
+
 //Permanently Store a cascade stage to L1
 single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
 {
@@ -74,7 +76,7 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     return cascade_l1;
 }
 
-cascade_t *getFaceCascade(){
+cascade_t *getFaceCascade(void){
     cascade_t *face_cascade;
 
     face_cascade = (cascade_t*) pmsis_l1_malloc( sizeof(cascade_t));
@@ -82,16 +84,14 @@ cascade_t *getFaceCascade(){
         PRINTF("Error allocatin model thresholds...");
         return 0;
     }
-    single_cascade_t **model_stages = (single_cascade_t**) pmsis_l1_malloc( sizeof(single_cascade_t*)*CASCADE_TOTAL_STAGES);
-
-    face_cascade->stages_num = CASCADE_TOTAL_STAGES;
-    face_cascade->thresholds = (signed short *) pmsis_l1_malloc( sizeof(signed short )*face_cascade->stages_num);
+    single_cascade_t **model_stages = (single_cascade_t**) pmsis_l1_malloc( sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = (signed short *) pmsis_l1_malloc( sizeof(signed short ) * CASCADE_TOTAL_STAGES);
     if(face_cascade->thresholds==0){
         PRINTF("Error allocatin model thresholds...");
         return 0;
     }
 
-    for(int a=0; a<face_cascade->stages_num; a++)
+    for(int a = 0; a < CASCADE_TOTAL_STAGES; a++)
         face_cascade->thresholds[a] = model_thresholds[a];
 
     switch(CASCADE_TOTAL_STAGES){
@@ -151,8 +151,8 @@ cascade_t *getFaceCascade(){
 
     face_cascade->stages = model_stages;
 
-    int max_cascade_size = biggest_cascade_stage(face_cascade);
-    PRINTF("Max cascade size:%d\n",max_cascade_size);
+    unsigned max_cascade_size = biggest_cascade_stage(face_cascade);
+    PRINTF("Max cascade size:%u\n", max_cascade_size);
 
     for(int i=0; i<CASCADE_STAGES_L1; i++)
         face_cascade->stages[i] = sync_copy_cascade_stage_to_l1((face_cascade->stages[i]));
@@ -172,37 +172,38 @@ cascade_t *getFaceCascade(){
     return face_cascade;
 }
 
-int biggest_cascade_stage(cascade_t *cascade){
-
+static unsigned biggest_cascade_stage(const cascade_t *cascade)
+{
     //Calculate cascade bigger layer
-    int biggest_stage_size=0;
-    int cur_layer;
+    unsigned max_stage_size = 0;
 
-    for (int i=0; i<cascade->stages_num; i++) {
+    for (int i = 0; i < CASCADE_TOTAL_STAGES; i++)
+    {
+        single_cascade_t *stage = cascade->stages[i];
+        unsigned stage_size;
 
-        cur_layer = sizeof(cascade->stages[i]->stage_size) +
-                           sizeof(cascade->stages[i]->rectangles_size) +
-                                (cascade->stages[i]->stage_size*
-                                        (sizeof(cascade->stages[i]->thresholds) +
-                                            sizeof(cascade->stages[i]->alpha1) +
-                                            sizeof(cascade->stages[i]->alpha2) +
-                                            sizeof(cascade->stages[i]->rect_num)
-                                        )
-                                ) +
-                                (cascade->stages[i]->rectangles_size*sizeof(cascade->stages[i]->rectangles)) +
-                                ((cascade->stages[i]->rectangles_size/4)*sizeof(cascade->stages[i]->weights));
+        stage_size = sizeof(*stage) +
+                     stage->stage_size * (
+                         sizeof(*stage->thresholds) +
+                         sizeof(*stage->alpha1) +
+                         sizeof(*stage->alpha2) +
+                         sizeof(*stage->rect_num)
+                     ) + sizeof(*stage->rect_num) +
+                     stage->rectangles_size * sizeof(*stage->rectangles) +
+                     (stage->rectangles_size/4) * sizeof(*stage->weights);
 
-        if(cur_layer>biggest_stage_size)
-                biggest_stage_size=cur_layer;
-        //PRINTF ("Stage size: %d\n",cur_layer);
+        if (stage_size > max_stage_size)
+            max_stage_size = stage_size;
+        //PRINTF ("Stage size: %u\n", stage_size);
     }
 
-    return biggest_stage_size;
+    return max_stage_size;
 }
 
-int rect_intersect_area(unsigned short a_x, unsigned short a_y, unsigned short a_w, unsigned short a_h,
-                        unsigned short b_x, unsigned short b_y, unsigned short b_w, unsigned short b_h ){
-
+static int rect_intersect_area(
+        unsigned short a_x, unsigned short a_y, unsigned short a_w, unsigned short a_h,
+        unsigned short b_x, unsigned short b_y, unsigned short b_w, unsigned short b_h)
+{
     #define MIN(a,b) ((a) < (b) ? (a) : (b))
     #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -221,19 +222,20 @@ int rect_intersect_area(unsigned short a_x, unsigned short a_y, unsigned short a
     #undef MIN
 }
 
-void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx){
-
-    int idx,idx_int;
+static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
+{
+    int idx;
 
     //Non-max supression
-    for(idx=0;idx<reponse_idx;idx++){
+    for(idx = 0; idx < reponse_idx; idx++){
         //check if rect has been removed (-1)
-        if(reponses[idx].x==-1)
+        if(reponses[idx].x == -1)
             continue;
 
-        for(idx_int=0;idx_int<reponse_idx;idx_int++){
+        int idx_int;
+        for(idx_int = idx + 1; idx_int < reponse_idx; idx_int++){
 
-            if(reponses[idx_int].x==-1 || idx_int==idx)
+            if(reponses[idx_int].x == -1)
                 continue;
 
             //check the intersection between rects

@@ -23,7 +23,7 @@
 #include "ExtraKernels.h"
 #include "network_process_manual.h"
 
-static void copy_roi_with_padding(unsigned char* in, int Win, int Hin, int WinStride, short* out, int Wout, int Hout)
+static void copy_roi_with_padding(const unsigned char* in, int Win, int Hin, int WinStride, short* out, int Wout, int Hout)
 {
     // PRINTF("copy_roi_with_padding(Win=%d, Hin=%d, WinStride=%d, Wout=%d, Hout=%d)\n", Win, Hin, WinStride, Wout, Hout);
     int top_padding = (Hout - Hin) / 2;
@@ -56,7 +56,7 @@ static void copy_roi_with_padding(unsigned char* in, int Win, int Hin, int WinSt
     }
 }
 
-static void copy_roi(unsigned char* in, int WinStride, unsigned char* out, int Wout, int Hout)
+static void copy_roi(const unsigned char* in, int WinStride, unsigned char* out, int Wout, int Hout)
 {
     for(int i = 0; i < Hout; i++)
     {

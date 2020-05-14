@@ -50,7 +50,7 @@ typedef struct BleContext_T
 
 #define MIN(a, b) (((a)<(b))?(a):(b))
 
-void ble_protocol_handler(void* params)
+static void ble_protocol_handler(void* params)
 {
     BleContext* context = (BleContext*)params;
 
@@ -70,7 +70,7 @@ void ble_protocol_handler(void* params)
             if (context->strangers_head < context->strangers_tail)
             {
 #if defined(HAVE_DISPLAY)
-                char message[32];
+                char message[16];
                 sprintf(message, "Sending %d/%d", context->strangers_head+1, context->strangers_tail);
                 draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
@@ -158,7 +158,7 @@ void ble_protocol_handler(void* params)
             if (context->visitors_head < context->visitors_tail)
             {
 #if defined(HAVE_DISPLAY)
-                char message[32];
+                char message[16];
                 sprintf(message, "Sending %d/%d", context->visitors_head+1, context->visitors_tail);
                 draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
