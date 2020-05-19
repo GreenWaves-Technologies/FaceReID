@@ -67,18 +67,18 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *reponses, int num_reponse)
+static void draw_responses(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *responses, int num_response)
 {
-    for(int i = 0; i < num_reponse; i++)
+    for (int i = 0; i < num_response; i++)
     {
-        if(reponses[i].x != -1)
+        if (responses[i].x != -1)
         {
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x, reponses[i].y, reponses[i].w, reponses[i].h, 0);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-1, reponses[i].y-1, reponses[i].w+2, reponses[i].h+2, 255);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-2, reponses[i].y-2, reponses[i].w+4, reponses[i].h+4, 255);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-3, reponses[i].y-3, reponses[i].w+6, reponses[i].h+6, 0);
+            DrawRectangle(ImageIn, Win, Hin, responses[i].x, responses[i].y, responses[i].w, responses[i].h, 0);
+            DrawRectangle(ImageIn, Win, Hin, responses[i].x-1, responses[i].y-1, responses[i].w+2, responses[i].h+2, 255);
+            DrawRectangle(ImageIn, Win, Hin, responses[i].x-2, responses[i].y-2, responses[i].w+4, responses[i].h+4, 255);
+            DrawRectangle(ImageIn, Win, Hin, responses[i].x-3, responses[i].y-3, responses[i].w+6, responses[i].h+6, 0);
 
-            PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", reponses[i].x, reponses[i].y, reponses[i].w, reponses[i].h, reponses[i].layer_idx);
+            PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", responses[i].x, responses[i].y, responses[i].w, responses[i].h, responses[i].layer_idx);
         }
     }
 }
