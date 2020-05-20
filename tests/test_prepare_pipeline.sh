@@ -26,7 +26,7 @@ do
     echo "Prepare L$i test"
     make $MAKEFILE_OPTIONS TEST_LEVEL=$i clean > /dev/null 2>&1
     make $MAKEFILE_OPTIONS TEST_LEVEL=$i tiler_models > ../prepare_pipeline_logs/l$i.log 2>&1
-    make $MAKEFILE_OPTIONS TEST_LEVEL=$i run >> ../prepare_pipeline_logs/l$i.log 2>&1
+    make $MAKEFILE_OPTIONS TEST_LEVEL=$i all run >> ../prepare_pipeline_logs/l$i.log 2>&1
     compare expected_output_l$i.pgm output.pgm -metric AE ../prepare_pipeline_logs/diff_l$i.png >> ../prepare_pipeline_logs/l$i.log 2>&1
     mv ./output.pgm ../prepare_pipeline_logs/output_$i.png
     if [ "$?" -eq "0" ];
