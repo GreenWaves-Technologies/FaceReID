@@ -56,12 +56,12 @@ void CnnModel(unsigned int L1Memory)
         printf("%s\n", filename);
 
         CNN_ConvolutionPoolReLU(
-            filename, 0,
+            filename, NULL,
             2,2,2,2,             // All short ints
-            convLayers[i].q_in,  // Input quantization
-            convLayers[i].q_w,   // Weight quantization
-            convLayers[i].q_b,   // Bias quantization
-            convLayers[i].q_out, // Output quantization
+            convLayers[i].q.in,  // Input quantization
+            convLayers[i].q.weights, // Weight quantization
+            convLayers[i].q.bias,// Bias quantization
+            convLayers[i].q.out, // Output quantization
             0,1,1,0,
             convLayers[i].nb_if, // InFeat
             convLayers[i].nb_of, // OutFeat
@@ -85,7 +85,6 @@ void CnnModel(unsigned int L1Memory)
             convLayers[i].pool_stride, // PoolStrideH
             0, // PoolDoPad
 
-
             convLayers[i].relu?KOP_RELU:KOP_NONE      //     convLayers[i].relu
         );
     }
@@ -93,11 +92,11 @@ void CnnModel(unsigned int L1Memory)
 
     CNN_PoolReLU(
         "FinalAvgPool", // Name
-        0,
+        NULL,
         2, // In_DataSize
         2, // Out_DataSize
-        convLayers[NB_CONV-1].q_out,
-        convLayers[NB_CONV-1].q_out,
+        convLayers[NB_CONV-1].q.out,
+        convLayers[NB_CONV-1].q.out,
         0, // In_InL3
         0, // Out_InL3
 
