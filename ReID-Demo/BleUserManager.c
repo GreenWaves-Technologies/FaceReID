@@ -488,6 +488,11 @@ int initHandler(struct pi_device * gpio_port)
     pi_gpio_pin_notif_configure(gpio_port, BUTTON_PIN_ID, PI_GPIO_NOTIF_FALL);
 
     pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
+    if (!preview_hyper)
+    {
+        PRINTF("HyperRAM allocation failed\n");
+        return 0;
+    }
 
     PRINTF("Setting button handler..done\n");
 
@@ -507,10 +512,15 @@ int prepareStranger(void* preview)
 
 int handleStranger(short* descriptor)
 {
-    int status = addStrangerL3(preview_hyper, descriptor);
+    int status = addStrangerL3((char *)preview_hyper, descriptor);
     if (status == 0)
     {
         pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
+        if (!preview_hyper)
+        {
+            PRINTF("HyperRAM allocation failed\n");
+            return 1;
+        }
     }
     return status;
 }

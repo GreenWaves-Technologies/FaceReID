@@ -68,7 +68,7 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
     }
     uint32_t hyper_buff;
     pi_ram_alloc(hyper, &hyper_buff, file->size);
-    if(hyper_buff == NULL)
+    if(!hyper_buff)
     {
         PRINTF("HyperRAM allocation failed\n");
         return NULL;
