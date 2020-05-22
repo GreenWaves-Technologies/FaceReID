@@ -38,57 +38,70 @@ static unsigned biggest_cascade_stage(const cascade_t *cascade);
 //Permanently Store a cascade stage to L1
 single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
 {
-    pi_cl_dma_copy_t DmaR_Evt1;
+    pi_cl_dma_cmd_t DmaR_Evt1;
 
-    single_cascade_t* cascade_l1;
-    cascade_l1 = (single_cascade_t* )pmsis_l1_malloc( sizeof(single_cascade_t));
+    single_cascade_t *cascade_l1 = pmsis_l1_malloc(sizeof(single_cascade_t));
+    if (cascade_l1 == NULL) {
+        PRINTF("Error: Failed to allocate cascade stage\n");
+        return NULL;
+    }
 
     cascade_l1->stage_size = cascade_l2->stage_size;
     cascade_l1->rectangles_size = cascade_l2->rectangles_size;
 
-    cascade_l1->thresholds     = (short*)pmsis_l1_malloc( sizeof(short)*cascade_l2->stage_size);
-    pi_cl_dma_cmd((unsigned int) cascade_l2->thresholds, (unsigned int) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->thresholds = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    pi_cl_dma_cmd((uint32_t) cascade_l2->thresholds, (uint32_t) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha1         = (short*)pmsis_l1_malloc( sizeof(short)*cascade_l2->stage_size);
-    pi_cl_dma_cmd((unsigned int) cascade_l2->alpha1, (unsigned int) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->alpha1     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    pi_cl_dma_cmd((uint32_t) cascade_l2->alpha1, (uint32_t) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha2         = (short*)pmsis_l1_malloc( sizeof(short)*cascade_l2->stage_size);
-    pi_cl_dma_cmd((unsigned int) cascade_l2->alpha2, (unsigned int) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->alpha2     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    pi_cl_dma_cmd((uint32_t) cascade_l2->alpha2, (uint32_t) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rect_num       = (unsigned  short*)pmsis_l1_malloc( sizeof(unsigned short)*((cascade_l2->stage_size)+1));
-    pi_cl_dma_cmd((unsigned int) cascade_l2->rect_num, (unsigned int) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->rect_num   = pmsis_l1_malloc(sizeof(unsigned short) * (cascade_l1->stage_size+1));
+    pi_cl_dma_cmd((uint32_t) cascade_l2->rect_num, (uint32_t) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->weights    = (signed char*)pmsis_l1_malloc( sizeof(signed char)*(cascade_l2->rectangles_size/4));
-    pi_cl_dma_cmd((unsigned int) cascade_l2->weights, (unsigned int) cascade_l1->weights, sizeof(signed char)*(cascade_l2->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->weights    = pmsis_l1_malloc(sizeof(signed char) * (cascade_l1->rectangles_size/4));
+    pi_cl_dma_cmd((uint32_t) cascade_l2->weights, (uint32_t) cascade_l1->weights, sizeof(signed char)*(cascade_l1->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rectangles = (char*)pmsis_l1_malloc( sizeof(char)*cascade_l2->rectangles_size);
-    pi_cl_dma_cmd((unsigned int) cascade_l2->rectangles, (unsigned int) cascade_l1->rectangles, sizeof(char)*cascade_l2->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
+    cascade_l1->rectangles = pmsis_l1_malloc(sizeof(char) * cascade_l1->rectangles_size);
+    pi_cl_dma_cmd((uint32_t) cascade_l2->rectangles, (uint32_t) cascade_l1->rectangles, sizeof(char)*cascade_l1->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    if(cascade_l1->rectangles==0)
-        PRINTF("Allocation Error...\n");
+    if (cascade_l1->thresholds == NULL ||
+        cascade_l1->alpha1 == NULL ||
+        cascade_l1->alpha2 == NULL ||
+        cascade_l1->rect_num == NULL ||
+        cascade_l1->weights == NULL ||
+        cascade_l1->rectangles == NULL)
+    {
+        PRINTF("Error: Failed to allocate cascade stage\n");
+        return NULL;
+    }
 
     return cascade_l1;
 }
 
-cascade_t *getFaceCascade(void){
-    cascade_t *face_cascade;
-
-    face_cascade = (cascade_t*) pmsis_l1_malloc( sizeof(cascade_t));
-    if(face_cascade==0){
-        PRINTF("Error allocatin model thresholds...");
-        return 0;
+cascade_t *getFaceCascade(void)
+{
+    cascade_t *face_cascade = pmsis_l1_malloc(sizeof(cascade_t));
+    if (face_cascade == NULL)
+    {
+        PRINTF("Error: Failed to allocate cascade");
+        return NULL;
     }
-    single_cascade_t **model_stages = (single_cascade_t**) pmsis_l1_malloc( sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
-    face_cascade->thresholds = (signed short *) pmsis_l1_malloc( sizeof(signed short ) * CASCADE_TOTAL_STAGES);
-    if(face_cascade->thresholds==0){
-        PRINTF("Error allocatin model thresholds...");
-        return 0;
+
+    single_cascade_t **model_stages = pmsis_l1_malloc(sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = pmsis_l1_malloc(sizeof(signed short) * CASCADE_TOTAL_STAGES);
+    if (face_cascade->thresholds == NULL)
+    {
+        PRINTF("Error: Failed to allocate cascade");
+        return NULL;
     }
 
     for(int a = 0; a < CASCADE_TOTAL_STAGES; a++)
@@ -154,20 +167,17 @@ cascade_t *getFaceCascade(void){
     unsigned max_cascade_size = biggest_cascade_stage(face_cascade);
     PRINTF("Max cascade size:%u\n", max_cascade_size);
 
-    for(int i=0; i<CASCADE_STAGES_L1; i++)
+    for(int i = 0; i < CASCADE_STAGES_L1; i++)
         face_cascade->stages[i] = sync_copy_cascade_stage_to_l1((face_cascade->stages[i]));
 
     face_cascade->buffers_l1[0] = pmsis_l1_malloc(max_cascade_size);
     face_cascade->buffers_l1[1] = pmsis_l1_malloc(max_cascade_size);
 
-    if(face_cascade->buffers_l1[0]==0 ){
-        PRINTF("Error allocating cascade buffer 0...\n");
+    if(face_cascade->buffers_l1[0] == NULL || face_cascade->buffers_l1[1] == NULL)
+    {
+        PRINTF("Error: Failed to allocate cascade buffers\n");
+        return NULL;
     }
-
-    if(face_cascade->buffers_l1[1] == 0){
-        PRINTF("Error allocating cascade buffer 1...\n");
-    }
-
 
     return face_cascade;
 }
@@ -213,7 +223,7 @@ static int rect_intersect_area(
     int size_x = MIN(a_x+a_w,b_x+b_w) - x;
     int size_y = MIN(a_y+a_h,b_y+b_h) - y;
 
-    if(size_x <=0 || size_y <=0)
+    if(size_x <= 0 || size_y <= 0)
         return 0;
     else
         return size_x*size_y;

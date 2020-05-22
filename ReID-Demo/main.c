@@ -453,10 +453,9 @@ void body(void* parameters)
                     cascade_history_size = 0;
                     PRINTF("Face detection is stable enough, run ReID\n");
 
+                    // Reset cluster (frees all L1 memory after cascades)
                     pi_cluster_close(&cluster_dev);
-
                     pi_time_wait_us(1*1000*10);
-
                     pi_cluster_open(&cluster_dev);
 
                     ClusterDnnCall.roi         = &responses[optimal_detection_id];
@@ -554,14 +553,15 @@ void body(void* parameters)
                         {
                             case 0:
                                 PRINTF("Stranger reported!\n");
-                                //writeText(&display, "Stranger reported!\n", 2);
                                 break;
                             case DB_FULL:
                                 PRINTF("No space for Stranger!\n");
-                                //writeText(&display, "No space for Stranger!\n", 2);
                                 break;
                             case DUPLICATE_DROPPED:
                                 PRINTF("Stranger duplicate, dropped!\n");
+                                break;
+                            default:
+                                PRINTF("Error: code=%d", status);
                                 break;
                         }
                     }

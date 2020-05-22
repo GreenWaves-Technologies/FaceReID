@@ -117,7 +117,7 @@ void dropStrangers(void)
     {
         if(StrangersDB[i].preview != NULL)
         {
-            pi_ram_free(&HyperRam, StrangersDB[i].preview, 128*128);
+            pi_ram_free(&HyperRam, (uint32_t)StrangersDB[i].preview, 128*128);
             StrangersDB[i].preview = NULL;
         }
     }

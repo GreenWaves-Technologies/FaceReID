@@ -44,11 +44,11 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
 void detection_cluster_init(ArgCluster_T *ArgC)
 {
     // PRINTF ("Cluster Init start\n");
-    FaceDet_L1_Memory = (char *) pmsis_l1_malloc(_FaceDet_L1_Memory_SIZE);
-    if (FaceDet_L1_Memory == 0)
+    FaceDet_L1_Memory = pmsis_l1_malloc(_FaceDet_L1_Memory_SIZE);
+    if (FaceDet_L1_Memory == NULL)
     {
         PRINTF("Failed to allocate %d bytes for L1_memory\n", _FaceDet_L1_Memory_SIZE);
-        return ;
+        return;
     }
 
     //Get Cascade Model
