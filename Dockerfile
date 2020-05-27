@@ -54,7 +54,7 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
-      git checkout release-v3.3.3 && \
+      git checkout release-v3.4 && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \

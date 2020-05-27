@@ -1,4 +1,4 @@
-image: asmorkalov/gap_sdk:3.3
+image: asmorkalov/gap_sdk:3.4
 
 stages:
   - BuildDemo
