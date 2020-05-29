@@ -16,6 +16,8 @@ USE_PMSIS_BSP=1
 export GAP_USE_OPENOCD=1
 io=host
 
+TEST_LAYER_INDEX ?= 0
+
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH = $(TILER_PATH)/generators
@@ -61,9 +63,9 @@ tiler_models: reid_model
 build: tiler_models
 
 clean::
-	rm -rf ./GenReidNet
-	rm -rf ./output.bin
-	rm -rf $(REID_MODEL_GEN_CLEAN)
+	rm -f GenReidNet
+	rm -f output.bin
+	rm -f $(REID_MODEL_GEN_CLEAN)
 
 .PHONY: reid_model tiler_models build clean
 

@@ -116,10 +116,6 @@ L2_MEM cascade_reponse_t test_response_l2 =
 #endif
 char *outputBlob = "../../../output.pgm";
 
-// #if !defined(TEST_RESPONSE)
-// # define TEST_RESPONSE test_response_l0
-// #endif
-
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 {
     for(int i = 0; i < Hout; i++)

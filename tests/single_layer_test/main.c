@@ -62,10 +62,6 @@ int weights_size;
 short int* l3_bias;
 int bias_size;
 
-#ifndef TEST_LAYER_INDEX
-# define TEST_LAYER_INDEX 0
-#endif
-
 int test_layer_idx = TEST_LAYER_INDEX;
 
 typedef void (*ConvLayerFunctionType)(short int *, short int *, short int *, short int *);

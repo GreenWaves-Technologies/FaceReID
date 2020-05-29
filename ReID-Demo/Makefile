@@ -160,11 +160,8 @@ build: tiler_models
 run: prepare_debug
 
 clean::
-	rm -rf BUILD
-	rm -rf GenDetectionTile
-	rm -rf GenReidNet
-	rm -rf GenExtraTile
-	rm -rf $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile GenDetectionTile
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
 
 .PHONY: detection_model reid_model extra_model tiler_models build clean
 

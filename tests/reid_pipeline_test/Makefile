@@ -79,7 +79,7 @@ DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
 
 FACE_DB_SIZE = $(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
 DATA_FILES += ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
-APP_CFLAGS += -Os -O3 -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+APP_CFLAGS += -O3 -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
@@ -89,9 +89,8 @@ READFS_FILES += $(realpath $(DATA_FILES))
 build: tiler_models $(CNN_LAYERS_BIN)
 
 clean::
-	rm -rf GenReidNet
-	rm -rf GenExtraTile
-	rm -rf $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
 
 .PHONY: reid_model extra_model tiler_models build clean
 

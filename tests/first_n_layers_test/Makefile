@@ -75,9 +75,9 @@ tiler_models: reid_model extra_model
 build: tiler_models
 
 clean::
-	rm -rf ./GenReidNet
-	rm -rf ./output.bin
-	rm -rf $(REID_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile
+	rm -f output.bin
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
 
 .PHONY: reid_model extra_model tiler_models build clean
 
