@@ -38,7 +38,8 @@ struct param_conv_layer {
   char conv_padding;
   char conv_stride;
   quant_t q;
-  const char* name;
+  const char *name;
+  const char *filename;
 };
 
 #define NB_CONV 26
