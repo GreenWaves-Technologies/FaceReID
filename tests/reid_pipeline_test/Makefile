@@ -74,7 +74,6 @@ APP_SRCS = \
   $(CNN_KERNELS_SRC)
 APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_INC)" "$(CNN_KER_PATH)"
 
-PLPBRIDGE_FLAGS += -f
 DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
 
 FACE_DB_SIZE = $(shell wc -l < ../../ReID-Demo/known_faces/index.txt)

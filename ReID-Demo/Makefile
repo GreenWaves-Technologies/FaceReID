@@ -128,25 +128,15 @@ else
   endif
 endif
 
-ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
-  APP_CFLAGS += -DDUMP_SUCCESSFUL_FRAME=1
-endif
-
-ifeq ($(ALREADY_FLASHED),1)
-  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
-else
-  PLPBRIDGE_FLAGS += -f
-  READFS_FILES += $(CNN_LAYERS_BIN)
-endif
+READFS_FILES += $(CNN_LAYERS_BIN)
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
-  PLPBRIDGE_FLAGS += -hyper
-else
-  PLPBRIDGE_FLAGS += -fileIO
 endif
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
+  APP_CFLAGS += -DDUMP_SUCCESSFUL_FRAME=1
+
 prepare_debug:
 	mkdir -p dumps
 	rm -rf dumps/*

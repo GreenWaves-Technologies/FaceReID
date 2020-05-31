@@ -74,8 +74,6 @@ ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES)
-
 build: tiler_models
 
 clean::

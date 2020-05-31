@@ -32,6 +32,4 @@ ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f
-
 include $(RULES_DIR)/pmsis_rules.mk
