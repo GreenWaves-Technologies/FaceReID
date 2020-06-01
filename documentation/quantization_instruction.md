@@ -34,7 +34,7 @@ This mode of quantization can also be used for optimal threshold measurement. Af
 Eventually new folder `results` will be created with 26 *.json files of quantized model in it and subfolder `activations_dump` inside.
 Directory `results` contains quantized weights and biases.
 Directory `activations_dump` contains input and output of each layer. We'll need it to have a possibility to compare results on GAP with desirable.
-File `norm_list.h` contains norm parameters of all layers in network, which is responsible for separator position in fixed point calculation.
+File ` param_layer_quant.h` contains quantization parameters of all layers in network.
 
 ## Run test on GAP
 
@@ -43,6 +43,9 @@ Now, when you have quantized your model, you can upload weights to GAP and check
 1. Copy *.json files from `results` and put it into `ReID-Demo/quantized_model` instead of pre-trained weights.
 
 Copy folder `results/activations_dump` and put it into `tests` instead of existed folder.
+
+Copy file ` param_layer_quant.h` and put it into `ReID-Demo` folder.
+
 
 2. Go to directory `tests` and run
 ```
