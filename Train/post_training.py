@@ -79,6 +79,7 @@ def main():
 
     if args.quantization or args.save_quantized_model:
         from gap_quantization.quantization import ModelQuantizer
+        from gap_quantization.dump_utils import create_norm_list, remove_extra_dump, remove_cat_files
 
         if args.quant_data_dir is None:
             raise AttributeError('quant-data-dir argument is required.')
@@ -110,7 +111,12 @@ def main():
                 raise AttributeError('Image for inference is required')
 
             quantizer.dump_activations(args.image_path, dm.transform_test,
-                                       save_dir=os.path.join(args.save_dir, 'activation_dump'))
+                                       save_dir=os.path.join(args.save_dir, 'activations_dump'))
+            create_norm_list(args.save_dir, args.convbn)
+            if args.convbn:
+                remove_extra_dump(os.path.join(args.save_dir, 'activations_dump'))
+            remove_cat_files(args.save_dir)
+
 
     if use_gpu:
         model = nn.DataParallel(model).cuda()
