@@ -129,7 +129,7 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 void body(void* parameters)
 {
     (void) parameters;
-    struct pi_hyper_conf hyper_conf;
+    struct pi_hyperram_conf hyper_conf;
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;

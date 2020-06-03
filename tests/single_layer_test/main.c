@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-#ifndef CCN_PULP
-  #include <stdio.h>
-  #include <stdint.h>
-#endif
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,9 +26,6 @@
 #include "bsp/flash/hyperflash.h"
 #include "bsp/ram/hyperram.h"
 
-
-#include "param_layer_struct.h"
-
 #if defined(__FREERTOS__)
 # include "GAPOC_BSP_Board_Init.h"
 # include "pmsis_driver_core_api.h"
@@ -45,6 +37,8 @@
 #else
 # include "Gap.h"
 #endif
+
+#include "param_layer_struct.h"
 
 #include "CNN_BasicKernels.h"
 #include "CnnKernels.h"
@@ -113,8 +107,8 @@ void layer_load(struct pi_device * fs, int idx)
 
 void layer_free()
 {
-    pi_hyperram_free(&HyperRam, l3_weights, weights_size);
-    pi_hyperram_free(&HyperRam, l3_bias, bias_size);
+    pi_ram_free(&HyperRam, (uint32_t)l3_weights, weights_size);
+    pi_ram_free(&HyperRam, (uint32_t)l3_bias, bias_size);
 }
 
 

@@ -43,11 +43,7 @@ char out_perf_string[120];
 void body(void * parameters)
 {
     (void) parameters;
-    int File = 0;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyper_conf hyper_conf;
+    struct pi_hyperram_conf hyper_conf;
 
     PRINTF("Start DB Selector test\n");
 

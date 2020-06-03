@@ -96,7 +96,7 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
 
     *layer_size = size_total;
 
-    return hyper_buff;
+    return (void *)hyper_buff;
 }
 
 void loadLayerFromL3ToL2(struct pi_device *hyper, void* hyper_buff, void* base_addr, int layer_size)
