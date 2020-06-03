@@ -30,10 +30,10 @@ typedef struct Stranger_T
     char* preview;
 } Stranger;
 
-char addStrangerL2(char* preview, short* descriptor);
-char addStrangerL3(char* preview, short* descriptor);
+char addStrangerL2(char* preview, const short* descriptor);
+char addStrangerL3(char* preview, const short *descriptor);
 char getStranger(int idx, Stranger* s);
-void dropStrangers();
-char getStrangersCount();
+void dropStrangers(void);
+char getStrangersCount(void);
 
 #endif

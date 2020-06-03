@@ -17,7 +17,8 @@
 -->
 
 <resources>
-    <color name="white_color">#FFFFFF</color>
+    <color name="white_color">#fff</color>
     <color name="gray_device_name">#63666f</color>
-    <color name="ublox_blue_color">#23a11d</color>
+    <color name="black_text">#070707</color>
+    <color name="gwt_green_color">#23a11d</color>
 </resources>

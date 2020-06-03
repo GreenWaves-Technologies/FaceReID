@@ -17,6 +17,13 @@
 #ifndef __PARAM_LAYERS_STRUCT_H__
 #define __PARAM_LAYERS_STRUCT_H__
 
+typedef struct quant_conv_layer {
+    char in;
+    char out;
+    char weights;
+    char bias;
+} quant_t;
+
 struct param_conv_layer {
   int nb_if;
   int nb_of;
@@ -28,10 +35,11 @@ struct param_conv_layer {
   char max_pool;
   char pool_size;
   char pool_stride;
-  char norm_data;
   char conv_padding;
   char conv_stride;
-  char* name;
+  quant_t q;
+  const char *name;
+  const char *filename;
 };
 
 #define NB_CONV 26

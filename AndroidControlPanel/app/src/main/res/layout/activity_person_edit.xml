@@ -44,7 +44,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:labelFor="@+id/visitorName"
-        android:text="@string/visitor_name" />
+        android:text="@string/visitor_name"
+        android:textColor="@color/black_text" />
 
     <EditText
         android:id="@+id/visitorName"
@@ -59,7 +60,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:labelFor="@+id/visitorDescription"
-        android:text="@string/visitor_description" />
+        android:text="@string/visitor_description"
+        android:textColor="@color/black_text" />
 
     <EditText
         android:id="@+id/visitorDescription"
@@ -74,7 +76,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:labelFor="@+id/deviceList"
-        android:text="@string/visitor_access" />
+        android:text="@string/visitor_access"
+        android:textColor="@color/black_text" />
 
     <ListView
         android:id="@+id/deviceList"

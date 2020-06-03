@@ -14,72 +14,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-stop_macros=(\
-"-DSTOP_AFTER_ConvLayer0=1" \
-"-DSTOP_AFTER_ConvLayer1=1" \
-"-DSTOP_AFTER_FIRE_MODULE=0" \
-"-DSTOP_AFTER_FIRE_MODULE=1" \
-"-DSTOP_AFTER_FIRE_MODULE=2" \
-"-DSTOP_AFTER_FIRE_MODULE=3" \
-"-DSTOP_AFTER_FIRE_MODULE=4" \
-"-DSTOP_AFTER_FIRE_MODULE=5" \
-"-DSTOP_AFTER_FIRE_MODULE=6" \
-"-DSTOP_AFTER_FIRE_MODULE=7" \
-"" )
+tolerance=5
 
-layer_outputs=(\
-conv1.0/output.json \
-features.2/output.json \
-features.3/output.json \
-features.4/output.json \
-features.6/output.json \
-features.7/output.json \
-features.9/output.json \
-features.10/output.json \
-features.11/output.json \
-features.12/output.json \
-global_avgpool/output.json )
+make_options="$@"
 
-let "layers_count = ${#stop_macros[@]} - 1"
+stop_macros=(
+    "-DSTOP_AFTER_ConvLayer0=1"
+    "-DSTOP_AFTER_ConvLayer1=1"
+    "-DSTOP_AFTER_FIRE_MODULE=0"
+    "-DSTOP_AFTER_FIRE_MODULE=1"
+    "-DSTOP_AFTER_FIRE_MODULE=2"
+    "-DSTOP_AFTER_FIRE_MODULE=3"
+    "-DSTOP_AFTER_FIRE_MODULE=4"
+    "-DSTOP_AFTER_FIRE_MODULE=5"
+    "-DSTOP_AFTER_FIRE_MODULE=6"
+    "-DSTOP_AFTER_FIRE_MODULE=7"
+    ""
+)
+
+layer_outputs=(
+    conv1.0/output.json
+    features.2/output.json
+    features.3/output.json
+    features.4/output.json
+    features.6/output.json
+    features.7/output.json
+    features.9/output.json
+    features.10/output.json
+    features.11/output.json
+    features.12/output.json
+    global_avgpool/output.json
+)
 
 if [ ${#stop_macros[@]} -ne ${#layer_outputs[@]} ]; then
     echo "Layers inputs and outputs are not consistent"
     exit 1
 fi
 
-MAKEFILE_OPTIONS="-f Makefile $@"
-
-mkdir -p groups_logs
 echo "Generating Model"
 
-make -C ../ReID-Demo clean > ./groups_logs/model_generaition.log 2>&1
-make -j8 -C ../ReID-Demo reid_model >> ./groups_logs/model_generaition.log 2>&1 # to generate layers blobs for GAP
+mkdir -p groups_logs
+make -C ../ReID-Demo clean > groups_logs/model_generation.log 2>&1
+make -j8 -C ../ReID-Demo reid_model >> groups_logs/model_generation.log 2>&1 # to generate layers blobs for GAP
 
 echo "Stop macro; Output blob; Found outliers; Max diff; Diff summary;" > group_layer_test_summary.csv
 
-../scripts/json2bin.py ./activations_dump/conv1.0/input.json ./first_n_layers_test/input.bin
+../scripts/json2bin.py activations_dump/conv1.0/input.json first_n_layers_test/input.bin
 cd first_n_layers_test
 
 status=0
 
-for i in $(seq 0 $layers_count)
-do
-    echo "Stop word $i: ${stop_macros[$i]} => ${layer_outputs[$i]}"
-    make $MAKEFILE_OPTIONS clean > /dev/null 2>&1
-    make $MAKEFILE_OPTIONS -j4 CONTROL_MACRO="${stop_macros[$i]}" tiler_models > ../groups_logs/$i.stdout.log 2>&1
-    make $MAKEFILE_OPTIONS -j4 CONTROL_MACRO="${stop_macros[$i]}" run >> ../groups_logs/$i.stdout.log 2>&1
-    echo -n "${stop_macros[$i]}; ${layer_outputs[$i]}; " >> ../group_layer_test_summary.csv
-    ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[$i]} ./output.bin >> ../group_layer_test_summary.csv
+for (( i=0; i < ${#stop_macros[@]}; i++ )); do
+    echo "Stop word $i: ${stop_macros[i]} => ${layer_outputs[i]}"
+    make $make_options clean > /dev/null 2>&1
+    make $make_options -j4 CONTROL_MACRO="${stop_macros[i]}" tiler_models > ../groups_logs/$i.stdout.log 2>&1
+    make $make_options CONTROL_MACRO="${stop_macros[i]}" all run >> ../groups_logs/$i.stdout.log 2>&1
+    echo -n "${stop_macros[i]}; ${layer_outputs[i]}; " >> ../group_layer_test_summary.csv
+    ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[i]} output.bin $tolerance >> ../group_layer_test_summary.csv
     if [ $? -ne 0 ]; then
         echo ";" >> ../group_layer_test_summary.csv
-        echo -e "Layer $i: ${stop_macros[$i]} => ${layer_outputs[$i]} \e[31mFAILED\e[0m"
-        let "status = $status + 1"
+        echo -e "Layer $i: ${stop_macros[i]} => ${layer_outputs[i]} \e[31mFAILED\e[0m"
+        (( status++ ))
     else
-        echo -e "Layer $i: ${stop_macros[$i]} => ${layer_outputs[$i]} \e[32mPASSED\e[0m"
+        echo -e "Layer $i: ${stop_macros[i]} => ${layer_outputs[i]} \e[32mPASSED\e[0m"
     fi
-    mv ./delta.csv ../groups_logs/$i.delta.csv
-    mv ./output.bin ../groups_logs/$i.output.bin
-
+    mv delta.csv ../groups_logs/$i.delta.csv
+    mv output.bin ../groups_logs/$i.output.bin
 done
 
 cd ..

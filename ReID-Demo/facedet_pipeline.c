@@ -44,11 +44,11 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
 void detection_cluster_init(ArgCluster_T *ArgC)
 {
     // PRINTF ("Cluster Init start\n");
-    FaceDet_L1_Memory = (char *) pmsis_l1_malloc(_FaceDet_L1_Memory_SIZE);
-    if (FaceDet_L1_Memory == 0)
+    FaceDet_L1_Memory = pmsis_l1_malloc(_FaceDet_L1_Memory_SIZE);
+    if (FaceDet_L1_Memory == NULL)
     {
         PRINTF("Failed to allocate %d bytes for L1_memory\n", _FaceDet_L1_Memory_SIZE);
-        return ;
+        return;
     }
 
     //Get Cascade Model
@@ -79,11 +79,11 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char* ImageIn, int Win, int Hin, cascade_reponse_t* reponses, int num_reponse)
+static void draw_responses(unsigned char* ImageIn, int Win, int Hin, const cascade_reponse_t* reponses, int num_reponse)
 {
     for(int i = 0; i < num_reponse; i++)
     {
-        if(reponses[i].x!=-1)
+        if(reponses[i].x != -1)
         {
             DrawRectangle(ImageIn, Hin, Win, reponses[i].x, reponses[i].y, reponses[i].w, reponses[i].h, 0);
             DrawRectangle(ImageIn, Hin, Win, reponses[i].x-1, reponses[i].y-1, reponses[i].w+2, reponses[i].h+2, 255);
@@ -116,38 +116,26 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     pi_cl_team_fork(__builtin_pulp_CoreCount(), (void *)prepare_to_render, (void *) ArgC);
 }
 
-static int check_intersection(cascade_reponse_t* a, cascade_reponse_t* b)
+static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_t* b)
 {
-    cascade_reponse_t* left;
-    cascade_reponse_t* right;
-
-    if(a->x > b->x)
+    if ((a->x + a->w - 1 <= b->x) || (b->x + b->w - 1 <= a->x) ||
+        (a->y + a->h - 1 <= b->y) || (b->y + b->h - 1 <= a->y))
     {
-        left = a;
-        right = b;
-    }
-    else
-    {
-        left = b;
-        right = a;
+        return 0;
     }
 
-    int check_x = (right->x < left->x+left->w);
-    int top_y_in = (left->y <= right->y) && (left->y+left->h > right->y);
-    int bottom_y_in = (left->y <= right->y+right->h) && (left->y+left->h >= right->y+right->h);
-
-    int status = check_x && (top_y_in || bottom_y_in);
-
-    return status;
+    return 1;
 }
 
-int check_detection_stability(cascade_reponse_t* history, int history_size)
+int check_detection_stability(const cascade_reponse_t* history, int history_size)
 {
-    int status = 1;
-    for(int  i = 0; i < history_size-1; i++)
+    for (int i = 0; i < history_size - 1; i++)
     {
-        status = status && check_intersection(&history[i], &history[i+1]);
+        if (check_intersection(&history[i], &history[i+1]) == 0)
+        {
+            return 0;
+        }
     }
 
-    return status;
+    return 1;
 }

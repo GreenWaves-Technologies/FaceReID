@@ -68,7 +68,7 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
     }
     uint32_t hyper_buff;
     pi_ram_alloc(hyper, &hyper_buff, file->size);
-    if(hyper_buff == NULL)
+    if(!hyper_buff)
     {
         PRINTF("HyperRAM allocation failed\n");
         return NULL;
@@ -79,7 +79,7 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
     pi_task_t task;
     do
     {
-        //PRINTF("Readning data to local bufer\n");
+        //PRINTF("Reading data to local bufer\n");
         size = pi_fs_read_async(file, buff, IO_BUFF_SIZE, pi_task_block(&task));
         pi_task_wait_on(&task);
         //PRINTF("Read %d bytes from %s\n", size, file_name);
@@ -92,7 +92,6 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
         }
         size_total += size;
     } while(size_total < file->size);
-
 
     pi_fs_close(file);
 
@@ -117,21 +116,21 @@ int get_activations_size(int idx)
     int out_width = convLayers[idx].win;
     int out_height = convLayers[idx].hin;
 
-    if(!convLayers[idx].conv_padding)
+    if(convLayers[idx].conv_padding == 0)
     {
-        out_width = out_width - convLayers[idx].kernel_width + 1;
-        out_height = out_height - convLayers[idx].kernel_height + 1;
+        out_width -= convLayers[idx].kernel_width - 1;
+        out_height -= convLayers[idx].kernel_height - 1;
     }
 
-    out_width = out_width / convLayers[idx].conv_stride;
-    out_height = out_height / convLayers[idx].conv_stride;
+    out_width /= convLayers[idx].conv_stride;
+    out_height /= convLayers[idx].conv_stride;
 
     // see output size formulae at https://pytorch.org/docs/0.4.0/nn.html#torch.nn.MaxPool2d
     // dilation = 1, padding = 0
     if(convLayers[idx].max_pool)
     {
-        out_width = (1.f*(out_width-(convLayers[idx].pool_size-1) - 1)) / convLayers[idx].pool_stride + 1;
-        out_height = (1.f*(out_height-(convLayers[idx].pool_size-1) - 1)) / convLayers[idx].pool_stride + 1;
+        out_width = (out_width - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
+        out_height = (out_height - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
     }
 
     int activation_size = convLayers[idx].nb_of * out_height * out_width;
@@ -142,14 +141,14 @@ int get_activations_size(int idx)
     return activation_size;
 }
 
-unsigned int l2_distance(short* v1, short* v2)
+unsigned int l2_distance(const short* v1, const short* v2)
 {
     unsigned int sum = 0;
 
     for (int i = 0; i < FACE_DESCRIPTOR_SIZE; i++)
     {
-        int delta = v1[i]-v2[i];
-        sum += delta*delta;
+        int delta = v1[i] - v2[i];
+        sum += delta * delta;
     }
 
     return sum;

@@ -62,49 +62,38 @@ int weights_size;
 short int* l3_bias;
 int bias_size;
 
-#ifndef TEST_LAYER_INDEX
-# define TEST_LAYER_INDEX 0
-#endif
-
 int test_layer_idx = TEST_LAYER_INDEX;
 
-typedef void (*ConvLayerFunctionType)(
-                short int *,
-                short int *,
-                short int *,
-                short int *,
-                unsigned int,
-                unsigned int
-                );
+typedef void (*ConvLayerFunctionType)(short int *, short int *, short int *, short int *);
 
 ConvLayerFunctionType ConvLayerArray[NB_CONV] =
 {
-    ConvLayer0,
-    ConvLayer1,
-    ConvLayer2,
-    ConvLayer3,
-    ConvLayer4,
-    ConvLayer5,
-    ConvLayer6,
-    ConvLayer7,
-    ConvLayer8,
-    ConvLayer9,
-    ConvLayer10,
-    ConvLayer11,
-    ConvLayer12,
-    ConvLayer13,
-    ConvLayer14,
-    ConvLayer15,
-    ConvLayer16,
-    ConvLayer17,
-    ConvLayer18,
-    ConvLayer19,
-    ConvLayer20,
-    ConvLayer21,
-    ConvLayer22,
-    ConvLayer23,
-    ConvLayer24,
-    ConvLayer25,
+    Conv0MP0,
+    Conv1MP1,
+    Fire3_C1x1S,
+    Fire3_C1x1,
+    Fire3_C3x3,
+    Fire4_C1x1S,
+    Fire4_C1x1,
+    Fire4_C3x3,
+    Fire6_C1x1S,
+    Fire6_C1x1,
+    Fire6_C3x3,
+    Fire7_C1x1S,
+    Fire7_C1x1,
+    Fire7_C3x3,
+    Fire9_C1x1S,
+    Fire9_C1x1,
+    Fire9_C3x3,
+    Fire10_C1x1S,
+    Fire10_C1x1,
+    Fire10_C3x3,
+    Fire11_C1x1S,
+    Fire11_C1x1,
+    Fire11_C3x3,
+    Fire12_C1x1S,
+    Fire12_C1x1,
+    Fire12_C3x3
 };
 
 void layer_load(struct pi_device * fs, int idx)
@@ -112,9 +101,9 @@ void layer_load(struct pi_device * fs, int idx)
     if(idx < NB_CONV)
     {
         char buffer[64];
-        sprintf(buffer, "%s.weights.bin", convLayers[idx].name);
+        sprintf(buffer, "%s.weights.bin", convLayers[idx].filename);
         l3_weights = loadLayerFromFsToL3(fs, buffer, &HyperRam, &weights_size);
-        sprintf(buffer, "%s.bias.bin", convLayers[idx].name);
+        sprintf(buffer, "%s.bias.bin", convLayers[idx].filename);
         l3_bias = loadLayerFromFsToL3(fs, buffer, &HyperRam, &bias_size);
     }
     else
@@ -141,7 +130,7 @@ short* layer_init()
         return NULL;
     }
 
-    L2_Memory =  pmsis_l2_malloc(_L2_Memory_SIZE);
+    L2_Memory = pmsis_l2_malloc(_L2_Memory_SIZE);
     if(L2_Memory == NULL)
     {
         PRINTF("L2 Working area alloc error\n");
@@ -175,7 +164,7 @@ short* layer_process(int layer_idx, int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_weights, weights, weights_size);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias, bias, bias_size);
         PRINTF("Convolution\n");
-        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output, convLayers[layer_idx].norm_data, convLayers[layer_idx].norm_data);
+        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output);
         PRINTF("Convolution done\n");
 
         *activation_size = get_activations_size(layer_idx);
@@ -188,7 +177,7 @@ short* layer_process(int layer_idx, int* activation_size)
         short* layer_output = memory_pool + 2*get_activations_size(NB_CONV-1);
         *activation_size = 512;
 
-        FinalAvgPool(layer_input, layer_output);
+        GPool10(layer_input, layer_output);
 
         return layer_output;
     }

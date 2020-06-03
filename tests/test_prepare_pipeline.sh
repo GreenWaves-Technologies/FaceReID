@@ -14,27 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MAKEFILE_OPTIONS="-f Makefile $@"
+make_options="$@"
 
 mkdir -p prepare_pipeline_logs
 
-status=0
-cd ./prepare_pipeline_test
+cd prepare_pipeline_test
 
-for i in `seq 0 2`
-do
+status=0
+for i in {0..2}; do
     echo "Prepare L$i test"
-    make $MAKEFILE_OPTIONS TEST_LEVEL=$i clean > /dev/null 2>&1
-    make $MAKEFILE_OPTIONS TEST_LEVEL=$i tiler_models > ../prepare_pipeline_logs/l$i.log 2>&1
-    make $MAKEFILE_OPTIONS TEST_LEVEL=$i run >> ../prepare_pipeline_logs/l$i.log 2>&1
+    make $make_options TEST_LEVEL=$i clean > /dev/null 2>&1
+    make $make_options TEST_LEVEL=$i tiler_models > ../prepare_pipeline_logs/l$i.log 2>&1
+    make $make_options TEST_LEVEL=$i all run >> ../prepare_pipeline_logs/l$i.log 2>&1
     compare expected_output_l$i.pgm output.pgm -metric AE ../prepare_pipeline_logs/diff_l$i.png >> ../prepare_pipeline_logs/l$i.log 2>&1
-    mv ./output.pgm ../prepare_pipeline_logs/output_$i.png
-    if [ "$?" -eq "0" ];
-    then
+    mv output.pgm ../prepare_pipeline_logs/output_$i.png
+    if [ $? -eq 0 ]; then
         echo -e "Prepare L$i test \e[32mPASSED\e[0m"
     else
         echo -e "Prepare L$i test \e[31mFAILED\e[0m"
-        let "status = $status + 1"
+        (( status++ ))
     fi
 done
 

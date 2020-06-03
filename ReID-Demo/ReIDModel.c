@@ -23,10 +23,8 @@
 #include "CNN_Generators.h"
 #include "param_layer_struct.h"
 
-void CnnModel(unsigned int L1Memory)
+void CnnModel(unsigned int L1Memory, unsigned int L2Memory)
 {
-    char filename[128];
-
     SetInlineMode(ALWAYS_INLINE);
     SetSymbolDynamics();
 #if defined(_FOR_FREERTOS_)
@@ -36,14 +34,11 @@ void CnnModel(unsigned int L1Memory)
 #endif
     SetGeneratedFilesNames("CnnKernels.c", "CnnKernels.h");
 
-//    SetL1MemorySize(L1Memory);
-    int L2Memory=50000;
     int L3Memory=8*1024*1024;
-    SetMemoryDeviceInfos(4,
+    SetMemoryDeviceInfos(3,
         AT_MEM_L1, L1Memory, "L1_Memory", 0, 0,
         AT_MEM_L2, L2Memory, "L2_Memory", 0, 0,
-        AT_MEM_L3_HRAM, L3Memory, "Dronet_L3_Memory", 0, 1,
-        AT_MEM_L3_HFLASH, 20*1024*1024, "Dronet_L3_Flash", "Dronet_L3_Flash_Const.dat", 1
+        AT_MEM_L3_HRAM, L3Memory, "L3_Memory", 0, 1
     );
 
 
@@ -52,16 +47,19 @@ void CnnModel(unsigned int L1Memory)
 
     for (size_t i = 0; i < NB_CONV; i++)
     {
-        sprintf(filename, "ConvLayer%ld", i);
-        printf("%s\n", filename);
-
-        CNN_ConvolutionPoolReLU(    filename, 0,
-                  2,2,2,2,                /* All short ints */
-                  0,1,1,0,
-                  convLayers[i].nb_if, // InFeat
-                  convLayers[i].nb_of, // OutFeat
-                  convLayers[i].win,   // Width
-                  convLayers[i].hin,   // Height
+        CNN_ConvolutionPoolReLU(
+            convLayers[i].name,
+            NULL,
+            2,2,2,2,             // All short ints
+            convLayers[i].q.in,  // Input quantization
+            convLayers[i].q.weights, // Weight quantization
+            convLayers[i].q.bias,// Bias quantization
+            convLayers[i].q.out, // Output quantization
+            0,1,1,0,
+            convLayers[i].nb_if, // InFeat
+            convLayers[i].nb_of, // OutFeat
+            convLayers[i].win,   // Width
+            convLayers[i].hin,   // Height
             KOP_CONV,
             convLayers[i].kernel_width, // FScW
             convLayers[i].kernel_height, // FScH
@@ -80,36 +78,36 @@ void CnnModel(unsigned int L1Memory)
             convLayers[i].pool_stride, // PoolStrideH
             0, // PoolDoPad
 
-
             convLayers[i].relu?KOP_RELU:KOP_NONE      //     convLayers[i].relu
-          );
-
+        );
     }
 
 
     CNN_PoolReLU(
-                "FinalAvgPool", // Name
-                0,
-                2, // In_DataSize
-                2, // Out_DataSize
-                0, // In_InL3
-                0, // Out_InL3
+        "GPool10", // Name
+        NULL,
+        2, // In_DataSize
+        2, // Out_DataSize
+        convLayers[NB_CONV-1].q.out,
+        convLayers[NB_CONV-1].q.out,
+        0, // In_InL3
+        0, // Out_InL3
 
-                512, // InFeat
-                512, // OutFeat
-                7,   // Width
-                7,   // Height
+        512, // InFeat
+        512, // OutFeat
+        7,   // Width
+        7,   // Height
 
-                KOP_AVGPOOL, //AVERAGE POOLING
-                7,   // FSpW
-                7,   // FSpH
-                1,   //Dilation
-                1,   //Dilation
-                1,   // PoolStrideW
-                1,   // PoolStrideH
-                0,   // PoolDoPad
-                KOP_NONE
-                );
+        KOP_AVGPOOL, //AVERAGE POOLING
+        7,   // FSpW
+        7,   // FSpH
+        1,   //Dilation
+        1,   //Dilation
+        1,   // PoolStrideW
+        1,   // PoolStrideH
+        0,   // PoolDoPad
+        KOP_NONE
+    );
 }
 
 int main(int argc, char **argv)
@@ -120,7 +118,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    CnnModel(45000);
+    CnnModel(45000, 50000);
     GenerateTilingCode();
     return 0;
 }

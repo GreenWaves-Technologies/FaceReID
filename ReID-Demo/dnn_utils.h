@@ -40,6 +40,6 @@ int loadLayerFromFsToL2(struct pi_device *fs, const char* file_name, void* buffe
 
 int get_activations_size(int idx);
 
-unsigned int l2_distance(short* v1, short* v2);
+unsigned int l2_distance(const short *v1, const short *v2);
 
 #endif

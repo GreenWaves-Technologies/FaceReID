@@ -16,6 +16,8 @@ USE_PMSIS_BSP=1
 export GAP_USE_OPENOCD=1
 io=host
 
+TEST_LAYER_INDEX ?= 0
+
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH = $(TILER_PATH)/generators
@@ -40,27 +42,30 @@ $(REID_MODEL_GEN_C): GenReidNet
 
 reid_model: $(REID_MODEL_GEN_C)
 
-APP_SRCS = main.c ../../ReID-Demo/param_layer_manual.c ../../ReID-Demo/dnn_utils.c $(REID_MODEL_GEN_C) $(CNN_KERNELS_SRC)
-
-APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(TILER_PATH)" -I"$(CNN_KER_PATH)"
+APP_SRCS = \
+  main.c \
+  ../../ReID-Demo/param_layer_manual.c \
+  ../../ReID-Demo/dnn_utils.c \
+  $(REID_MODEL_GEN_C) \
+  $(CNN_KERNELS_SRC)
+APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_INC)" "$(TILER_PATH)" "$(CNN_KER_PATH)"
 APP_CFLAGS += -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX) -DNORM_ROUND=1 -Os
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f
 DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
 READFS_FILES += $(realpath $(DATA_FILES))
 
 tiler_models: reid_model
 
-all:: tiler_models
+build: tiler_models
 
 clean::
-	rm -rf ./GenReidNet
-	rm -rf ./output.bin
-	rm -rf $(REID_MODEL_GEN_CLEAN)
+	rm -f GenReidNet
+	rm -f output.bin
+	rm -f $(REID_MODEL_GEN_CLEAN)
 
-.PHONY: reid_model tiler_models all clean
+.PHONY: reid_model tiler_models build clean
 
 include $(RULES_DIR)/pmsis_rules.mk

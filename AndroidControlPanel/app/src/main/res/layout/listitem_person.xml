@@ -60,6 +60,7 @@
             android:layout_height="wrap_content"
             android:text="@string/visitor_description_placeholder"
             android:textAllCaps="false"
+            android:textColor="@color/black_text"
             android:visibility="visible" />
 
     </LinearLayout>

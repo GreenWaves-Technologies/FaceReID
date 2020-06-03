@@ -50,7 +50,7 @@ typedef struct BleContext_T
 
 #define MIN(a, b) (((a)<(b))?(a):(b))
 
-void ble_protocol_handler(void* params)
+static void ble_protocol_handler(void* params)
 {
     BleContext* context = (BleContext*)params;
 
@@ -70,7 +70,7 @@ void ble_protocol_handler(void* params)
             if (context->strangers_head < context->strangers_tail)
             {
 #if defined(HAVE_DISPLAY)
-                char message[32];
+                char message[16];
                 sprintf(message, "Sending %d/%d", context->strangers_head+1, context->strangers_tail);
                 draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
@@ -158,7 +158,7 @@ void ble_protocol_handler(void* params)
             if (context->visitors_head < context->visitors_tail)
             {
 #if defined(HAVE_DISPLAY)
-                char message[32];
+                char message[16];
                 sprintf(message, "Sending %d/%d", context->visitors_head+1, context->visitors_tail);
                 draw_text(context->display, message, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
@@ -488,6 +488,11 @@ int initHandler(struct pi_device * gpio_port)
     pi_gpio_pin_notif_configure(gpio_port, BUTTON_PIN_ID, PI_GPIO_NOTIF_FALL);
 
     pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
+    if (!preview_hyper)
+    {
+        PRINTF("HyperRAM allocation failed\n");
+        return 0;
+    }
 
     PRINTF("Setting button handler..done\n");
 
@@ -507,10 +512,15 @@ int prepareStranger(void* preview)
 
 int handleStranger(short* descriptor)
 {
-    int status = addStrangerL3(preview_hyper, descriptor);
+    int status = addStrangerL3((char *)preview_hyper, descriptor);
     if (status == 0)
     {
         pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
+        if (!preview_hyper)
+        {
+            PRINTF("HyperRAM allocation failed\n");
+            return 1;
+        }
     }
     return status;
 }

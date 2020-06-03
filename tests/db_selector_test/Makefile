@@ -17,8 +17,7 @@ export GAP_USE_OPENOCD=1
 io=host
 
 APP_SRCS = main.c ../../ReID-Demo/face_db.c ../../ReID-Demo/dnn_utils.c
-
-APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo  -I"$(TILER_PATH)/include" -I"$(CNN_KER_PATH)/include"
+APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_PATH)/include" "$(CNN_KER_PATH)/include"
 
 FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
 DATA_FILES = ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
@@ -28,7 +27,6 @@ ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f
 READFS_FILES += $(realpath $(DATA_FILES))
 
 include $(RULES_DIR)/pmsis_rules.mk

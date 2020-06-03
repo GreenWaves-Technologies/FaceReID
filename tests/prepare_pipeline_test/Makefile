@@ -17,6 +17,8 @@ USE_PMSIS_BSP=1
 export GAP_USE_OPENOCD=1
 io=host
 
+TEST_LEVEL ?= 0
+
 TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB = $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH = $(TILER_PATH)/generators
@@ -66,22 +68,18 @@ APP_SRCS = \
   $(REID_MODEL_GEN_C) \
   $(CNN_KERNELS_SRC) \
   $(EXTRA_MODEL_GEN_C)
-
-APP_CFLAGS += -I$(PWD) -I$(PWD)/../../ReID-Demo -I"$(TILER_INC)" -I"$(CNN_KER_PATH)"
-APP_CFLAGS += -Os -O3 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
+APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_INC)" "$(CNN_KER_PATH)"
+APP_CFLAGS += -O3 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f $(DATA_FILES)
-
-all:: tiler_models
+build: tiler_models
 
 clean::
-	rm -rf GenReidNet
-	rm -rf GenExtraTile
-	rm -rf $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
 
-.PHONY: reid_model extra_model tiler_models all clean
+.PHONY: reid_model extra_model tiler_models build clean
 
 include $(RULES_DIR)/pmsis_rules.mk

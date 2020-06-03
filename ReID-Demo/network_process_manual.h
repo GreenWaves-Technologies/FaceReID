@@ -27,10 +27,10 @@
 
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort
-extern short* network_init();
-extern short* network_process(int* activation_size);
+short* network_init(void);
+short* network_process(int* activation_size);
 
-extern void network_load(struct pi_device * fs);
-extern void network_free();
+void network_load(struct pi_device * fs);
+void network_free(void);
 
 #endif

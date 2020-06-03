@@ -9,7 +9,7 @@
         android:id="@+id/tvStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/ublox_blue_color"
+        android:background="@color/gwt_green_color"
         android:padding="6dp"
         android:text="@string/status_connecting"
         android:textAllCaps="true"

@@ -23,80 +23,73 @@ short int* l3_weights[NB_CONV];
 int weights_size[NB_CONV];
 short int* l3_bias[NB_CONV];
 int bias_size[NB_CONV];
-int __networ_init_done = 0;
+int __network_init_done = 0;
 
-typedef void (*ConvLayerFunctionType)(
-                short int *,
-                short int *,
-                short int *,
-                short int *,
-                unsigned int,
-                unsigned int
-                );
+typedef void (*ConvLayerFunctionType)(short int *, short int *, short int *, short int *);
 
 ConvLayerFunctionType ConvLayerArray[NB_CONV] =
 {
-    ConvLayer0,
-    ConvLayer1,
-    ConvLayer2,
-    ConvLayer3,
-    ConvLayer4,
-    ConvLayer5,
-    ConvLayer6,
-    ConvLayer7,
-    ConvLayer8,
-    ConvLayer9,
-    ConvLayer10,
-    ConvLayer11,
-    ConvLayer12,
-    ConvLayer13,
-    ConvLayer14,
-    ConvLayer15,
-    ConvLayer16,
-    ConvLayer17,
-    ConvLayer18,
-    ConvLayer19,
-    ConvLayer20,
-    ConvLayer21,
-    ConvLayer22,
-    ConvLayer23,
-    ConvLayer24,
-    ConvLayer25
+    Conv0MP0,
+    Conv1MP1,
+    Fire3_C1x1S,
+    Fire3_C1x1,
+    Fire3_C3x3,
+    Fire4_C1x1S,
+    Fire4_C1x1,
+    Fire4_C3x3,
+    Fire6_C1x1S,
+    Fire6_C1x1,
+    Fire6_C3x3,
+    Fire7_C1x1S,
+    Fire7_C1x1,
+    Fire7_C3x3,
+    Fire9_C1x1S,
+    Fire9_C1x1,
+    Fire9_C3x3,
+    Fire10_C1x1S,
+    Fire10_C1x1,
+    Fire10_C3x3,
+    Fire11_C1x1S,
+    Fire11_C1x1,
+    Fire11_C3x3,
+    Fire12_C1x1S,
+    Fire12_C1x1,
+    Fire12_C3x3
 };
+
+#define MAX(a, b) (((a)>(b))?(a):(b))
 
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort
-short* network_init()
+short* network_init(void)
 {
-    L1_Memory =  pmsis_l1_malloc((_L1_Memory_SIZE>_ExtaKernels_L1_Memory_SIZE?_L1_Memory_SIZE:_ExtaKernels_L1_Memory_SIZE));
+    L1_Memory = pmsis_l1_malloc(MAX(_L1_Memory_SIZE, _ExtaKernels_L1_Memory_SIZE));
     if(L1_Memory == NULL)
     {
         PRINTF("L1 Working area alloc error\n");
         return NULL;
     }
 
-    if(!__networ_init_done)
+    if(!__network_init_done)
     {
-        L2_Memory =  pmsis_l2_malloc(_L2_Memory_SIZE);
+        L2_Memory = pmsis_l2_malloc(_L2_Memory_SIZE);
         if(L2_Memory == NULL)
         {
             PRINTF("L2 Working area alloc error\n");
             return NULL;
         }
-        __networ_init_done = 1;
+        __network_init_done = 1;
     }
 
     return memory_pool;
 }
 
-void network_deinit()
+void network_deinit(void)
 {
     pmsis_l1_malloc_free(L1_Memory, _L1_Memory_SIZE);
-    pmsis_l2_malloc_free(L2_Memory,  _L2_Memory_SIZE);
-    __networ_init_done = 0;
+    pmsis_l2_malloc_free(L2_Memory, _L2_Memory_SIZE);
+    __network_init_done = 0;
 }
-
-#define MAX(a, b) (((a)>(b))?(a):(b))
 
 short* network_process(int* activation_size)
 {
@@ -116,8 +109,7 @@ short* network_process(int* activation_size)
     //loadLayerFromL3ToL2(&hyper, l3_weights[0], weights, weights_size[0]);
     //loadLayerFromL3ToL2(&HyperRam, l3_bias[0], bias, bias_size[0]);
 
-    ConvLayer0(layer_input, l3_weights[0], l3_bias[0], layer_output,
-               convLayers[0].norm_data, convLayers[0].norm_data);
+    Conv0MP0(layer_input, l3_weights[0], l3_bias[0], layer_output);
 
 #ifdef STOP_AFTER_ConvLayer0
     *activation_size = get_activations_size(0);
@@ -136,8 +128,7 @@ short* network_process(int* activation_size)
     //loadLayerFromL3ToL2(&hyper, l3_weights[1], weights, weights_size[1]);
     //loadLayerFromL3ToL2(&HyperRam, l3_bias[1], bias, bias_size[1]);
 
-    ConvLayer1(layer_input, l3_weights[1], l3_bias[1], layer_output,
-               convLayers[1].norm_data, convLayers[1].norm_data);
+    Conv1MP1(layer_input, l3_weights[1], l3_bias[1], layer_output);
 
 #ifdef STOP_AFTER_ConvLayer1
     *activation_size = get_activations_size(1);
@@ -191,9 +182,7 @@ short* network_process(int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+0], bias, bias_size[fire_entry_idx+i+0]);
 
         ConvLayerArray[fire_entry_idx+i+0](layer_input, l3_weights[fire_entry_idx+i+0],
-                                           l3_bias[fire_entry_idx+i+0], layer_output,
-                                           convLayers[fire_entry_idx+i+0].norm_data,
-                                           convLayers[fire_entry_idx+i+0].norm_data);
+                                           l3_bias[fire_entry_idx+i+0], layer_output);
 
         layer_input = layer_output;
         layer_output = memory_pool;
@@ -213,9 +202,7 @@ short* network_process(int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+1], bias, bias_size[fire_entry_idx+i+1]);
 
         ConvLayerArray[fire_entry_idx+i+1](layer_input, l3_weights[fire_entry_idx+i+1],
-                                           l3_bias[fire_entry_idx+i+1], layer_output,
-                                           convLayers[fire_entry_idx+i+1].norm_data,
-                                           convLayers[fire_entry_idx+i+1].norm_data);
+                                           l3_bias[fire_entry_idx+i+1], layer_output);
 
         layer_output = memory_pool + get_activations_size(fire_entry_idx+i+1);
         //weights = weight_base_address;
@@ -233,9 +220,7 @@ short* network_process(int* activation_size)
         //loadLayerFromL3ToL2(&hyper, l3_weights[fire_entry_idx+i+2], weights, weights_size[fire_entry_idx+i+2]);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias[fire_entry_idx+i+2], bias, bias_size[fire_entry_idx+i+2]);
         ConvLayerArray[fire_entry_idx+i+2](layer_input, l3_weights[fire_entry_idx+i+2],
-                                           l3_bias[fire_entry_idx+i+2], layer_output,
-                                           convLayers[fire_entry_idx+i+2].norm_data,
-                                           convLayers[fire_entry_idx+i+2].norm_data);
+                                           l3_bias[fire_entry_idx+i+2], layer_output);
 
         previous_activation_size = concated_activation_size;
 
@@ -250,7 +235,7 @@ short* network_process(int* activation_size)
 
     layer_input = memory_pool;
     layer_output = memory_pool + previous_activation_size;
-    FinalAvgPool(layer_input, layer_output);
+    GPool10(layer_input, layer_output);
     *activation_size = 512;
 
     return layer_output;
@@ -261,14 +246,14 @@ void network_load(struct pi_device * fs)
     char buffer[64];
     for (unsigned int i = 0; i < NB_CONV; i++)
     {
-        sprintf(buffer, "%s.weights.bin", convLayers[i].name);
+        sprintf(buffer, "%s.weights.bin", convLayers[i].filename);
         l3_weights[i] = loadLayerFromFsToL3(fs, buffer, &HyperRam, &weights_size[i]);
-        sprintf(buffer, "%s.bias.bin", convLayers[i].name);
+        sprintf(buffer, "%s.bias.bin", convLayers[i].filename);
         l3_bias[i] = loadLayerFromFsToL3(fs, buffer, &HyperRam, &bias_size[i]);
     }
 }
 
-void network_free()
+void network_free(void)
 {
     for (unsigned int i = 0; i < NB_CONV; i++)
     {
