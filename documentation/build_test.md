@@ -97,4 +97,4 @@ setup.h:
     $ make BOARD_NAME=gapuino DEVICE_CONNECTION=-jtag run # for Gapuino board
     $ make BOARD_NAME=gapoc_a DEVICE_CONNECTION=-ftdi run # for Gapoc A board
 ```
-Test application output should contain line `Hi, Lena! Conf: 150` where confidence can vary depending on SDK (Autotiler) version, but should not be too big.
+Test application output should contain line `Hi, Lena! Conf: 150` where confidence can vary depending on model quantization, but should not be too big.

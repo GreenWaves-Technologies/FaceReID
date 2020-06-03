@@ -6,7 +6,7 @@ The project is aimed to create and deploy a smart doorbell application that woul
 
 # Target Platforms
 
-The demo is targeted for two boards Gapoc A v2 and Gapuino v2 and GAP SDK release 3.3. GAP8 V1 chips are not supported in SDK any more.
+The demo is targeted for two boards Gapoc A v2 and Gapuino v2 and GAP SDK releases 3.3 and 3.4. GAP8 V1 chips are not supported in SDK any more.
 List of extra components is provided bellow.
 
 For Gapuino board:
