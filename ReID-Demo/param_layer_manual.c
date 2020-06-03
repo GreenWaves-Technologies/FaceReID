@@ -36,7 +36,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_0,
      .q.weights = Q_WEIGHTS_0,
      .q.bias = Q_BIAS_0,
-     .name = "conv1.0"},
+     .name = "Conv0MP0",
+     .filename = "conv1.0"},
 
     {.nb_if = 3,
      .nb_of = 64,
@@ -54,7 +55,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_1,
      .q.weights = Q_WEIGHTS_1,
      .q.bias = Q_BIAS_1,
-     .name = "features.0.0"},
+     .name = "Conv1MP1",
+     .filename = "features.0.0"},
 
     // Fire modules
     {.nb_if = 64,
@@ -73,7 +75,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_2,
      .q.weights = Q_WEIGHTS_2,
      .q.bias = Q_BIAS_2,
-     .name = "features.3.squeeze.0"},
+     .name = "Fire3_C1x1S",
+     .filename = "features.3.squeeze.0"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -91,7 +94,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_3,
      .q.weights = Q_WEIGHTS_3,
      .q.bias = Q_BIAS_3,
-     .name = "features.3.expand1x1.0"},
+     .name = "Fire3_C1x1",
+     .filename = "features.3.expand1x1.0"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -109,7 +113,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_4,
      .q.weights = Q_WEIGHTS_4,
      .q.bias = Q_BIAS_4,
-     .name = "features.3.expand3x3.0"},
+     .name = "Fire3_C3x3",
+     .filename = "features.3.expand3x3.0"},
 
     {.nb_if = 128,
      .nb_of = 16,
@@ -127,7 +132,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_5,
      .q.weights = Q_WEIGHTS_5,
      .q.bias = Q_BIAS_5,
-     .name = "features.4.squeeze.0"},
+     .name = "Fire4_C1x1S",
+     .filename = "features.4.squeeze.0"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -145,7 +151,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_6,
      .q.weights = Q_WEIGHTS_6,
      .q.bias = Q_BIAS_6,
-     .name = "features.4.expand1x1.0"},
+     .name = "Fire4_C1x1",
+     .filename = "features.4.expand1x1.0"},
 
     {.nb_if = 16,
      .nb_of = 64,
@@ -163,7 +170,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_7,
      .q.weights = Q_WEIGHTS_7,
      .q.bias = Q_BIAS_7,
-     .name = "features.4.expand3x3.0"},
+     .name = "Fire4_C3x3",
+     .filename = "features.4.expand3x3.0"},
 
     // MaxPool here
 
@@ -183,7 +191,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_8,
      .q.weights = Q_WEIGHTS_8,
      .q.bias = Q_BIAS_8,
-     .name = "features.6.squeeze.0"},
+     .name = "Fire6_C1x1S",
+     .filename = "features.6.squeeze.0"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -201,7 +210,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_9,
      .q.weights = Q_WEIGHTS_9,
      .q.bias = Q_BIAS_9,
-     .name = "features.6.expand1x1.0"},
+     .name = "Fire6_C1x1",
+     .filename = "features.6.expand1x1.0"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -219,7 +229,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_10,
      .q.weights = Q_WEIGHTS_10,
      .q.bias = Q_BIAS_10,
-     .name = "features.6.expand3x3.0"},
+     .name = "Fire6_C3x3",
+     .filename = "features.6.expand3x3.0"},
 
     {.nb_if = 256,
      .nb_of = 32,
@@ -237,7 +248,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_11,
      .q.weights = Q_WEIGHTS_11,
      .q.bias = Q_BIAS_11,
-     .name = "features.7.squeeze.0"},
+     .name = "Fire7_C1x1S",
+     .filename = "features.7.squeeze.0"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -255,7 +267,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_12,
      .q.weights = Q_WEIGHTS_12,
      .q.bias = Q_BIAS_12,
-     .name = "features.7.expand1x1.0"},
+     .name = "Fire7_C1x1",
+     .filename = "features.7.expand1x1.0"},
 
     {.nb_if = 32,
      .nb_of = 128,
@@ -273,21 +286,22 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_13,
      .q.weights = Q_WEIGHTS_13,
      .q.bias = Q_BIAS_13,
-     .name = "features.7.expand3x3.0"},
+     .name = "Fire7_C3x3",
+     .filename = "features.7.expand3x3.0"},
 
     // MaxPool here
 
-    {256,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_14, Q_OUT_14, Q_WEIGHTS_14, Q_BIAS_14, "features.9.squeeze.0"},
-    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_15, Q_OUT_15, Q_WEIGHTS_15, Q_BIAS_15, "features.9.expand1x1.0"},
-    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_16, Q_OUT_16, Q_WEIGHTS_16, Q_BIAS_16, "features.9.expand3x3.0"},
+    {256,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_14, Q_OUT_14, Q_WEIGHTS_14, Q_BIAS_14, "Fire9_C1x1S", "features.9.squeeze.0"},
+    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_15, Q_OUT_15, Q_WEIGHTS_15, Q_BIAS_15, "Fire9_C1x1",  "features.9.expand1x1.0"},
+    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_16, Q_OUT_16, Q_WEIGHTS_16, Q_BIAS_16, "Fire9_C3x3",  "features.9.expand3x3.0"},
 
-    {384,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_17, Q_OUT_17, Q_WEIGHTS_17, Q_BIAS_17, "features.10.squeeze.0"},
-    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_18, Q_OUT_18, Q_WEIGHTS_18, Q_BIAS_18, "features.10.expand1x1.0"},
-    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_19, Q_OUT_19, Q_WEIGHTS_19, Q_BIAS_19, "features.10.expand3x3.0"},
+    {384,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_17, Q_OUT_17, Q_WEIGHTS_17, Q_BIAS_17, "Fire10_C1x1S", "features.10.squeeze.0"},
+    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_18, Q_OUT_18, Q_WEIGHTS_18, Q_BIAS_18, "Fire10_C1x1",  "features.10.expand1x1.0"},
+    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_19, Q_OUT_19, Q_WEIGHTS_19, Q_BIAS_19, "Fire10_C3x3",  "features.10.expand3x3.0"},
 
-    {384,64,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_20, Q_OUT_20, Q_WEIGHTS_20, Q_BIAS_20, "features.11.squeeze.0"},
-    {64,256,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_21, Q_OUT_21, Q_WEIGHTS_21, Q_BIAS_21, "features.11.expand1x1.0"},
-    {64,256,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_22, Q_OUT_22, Q_WEIGHTS_22, Q_BIAS_22, "features.11.expand3x3.0"},
+    {384,64,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_20, Q_OUT_20, Q_WEIGHTS_20, Q_BIAS_20, "Fire11_C1x1S", "features.11.squeeze.0"},
+    {64,256,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_21, Q_OUT_21, Q_WEIGHTS_21, Q_BIAS_21, "Fire11_C1x1",  "features.11.expand1x1.0"},
+    {64,256,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_22, Q_OUT_22, Q_WEIGHTS_22, Q_BIAS_22, "Fire11_C3x3",  "features.11.expand3x3.0"},
 
     {.nb_if = 512,
      .nb_of = 64,
@@ -305,7 +319,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_23,
      .q.weights = Q_WEIGHTS_23,
      .q.bias = Q_BIAS_23,
-     .name = "features.12.squeeze.0"},
+     .name = "Fire12_C1x1S",
+     .filename = "features.12.squeeze.0"},
 
     {.nb_if = 64,
      .nb_of = 256,
@@ -323,7 +338,8 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_24,
      .q.weights = Q_WEIGHTS_24,
      .q.bias = Q_BIAS_24,
-     .name = "features.12.expand1x1.0"},
+     .name = "Fire12_C1x1",
+     .filename = "features.12.expand1x1.0"},
 
     {.nb_if = 64,
      .nb_of = 256,
@@ -341,5 +357,6 @@ struct param_conv_layer convLayers[] =
      .q.out = Q_OUT_25,
      .q.weights = Q_WEIGHTS_25,
      .q.bias = Q_BIAS_25,
-     .name = "features.12.expand3x3.0"},
+     .name = "Fire12_C3x3",
+     .filename = "features.12.expand3x3.0"},
 };

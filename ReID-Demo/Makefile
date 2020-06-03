@@ -128,25 +128,15 @@ else
   endif
 endif
 
-ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
-  APP_CFLAGS += -DDUMP_SUCCESSFUL_FRAME=1
-endif
-
-ifeq ($(ALREADY_FLASHED),1)
-  PLPBRIDGE_FLAGS += $(DEVICE_CONNECTION) #-fileIO
-else
-  PLPBRIDGE_FLAGS += -f
-  READFS_FILES += $(CNN_LAYERS_BIN)
-endif
+READFS_FILES += $(CNN_LAYERS_BIN)
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
-  PLPBRIDGE_FLAGS += -hyper
-else
-  PLPBRIDGE_FLAGS += -fileIO
 endif
 
 ifeq ($(DUMP_SUCCESSFUL_FRAME),1)
+  APP_CFLAGS += -DDUMP_SUCCESSFUL_FRAME=1
+
 prepare_debug:
 	mkdir -p dumps
 	rm -rf dumps/*
@@ -160,11 +150,8 @@ build: tiler_models
 run: prepare_debug
 
 clean::
-	rm -rf BUILD
-	rm -rf GenDetectionTile
-	rm -rf GenReidNet
-	rm -rf GenExtraTile
-	rm -rf $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile GenDetectionTile
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
 
 .PHONY: detection_model reid_model extra_model tiler_models build clean
 

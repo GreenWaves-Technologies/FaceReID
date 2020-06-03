@@ -66,7 +66,6 @@ ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f
 DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
 READFS_FILES += $(realpath $(DATA_FILES))
 
@@ -75,9 +74,9 @@ tiler_models: reid_model extra_model
 build: tiler_models
 
 clean::
-	rm -rf ./GenReidNet
-	rm -rf ./output.bin
-	rm -rf $(REID_MODEL_GEN_CLEAN)
+	rm -f GenReidNet GenExtraTile
+	rm -f output.bin
+	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
 
 .PHONY: reid_model extra_model tiler_models build clean
 

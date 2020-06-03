@@ -27,7 +27,6 @@ ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-PLPBRIDGE_FLAGS += -f
 READFS_FILES += $(realpath $(DATA_FILES))
 
 include $(RULES_DIR)/pmsis_rules.mk
