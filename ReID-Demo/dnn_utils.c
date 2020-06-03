@@ -16,7 +16,6 @@
 
 #if defined(__FREERTOS__)
 #include "pmsis.h"
-#include "pmsis_l2_malloc.h"
 #include "drivers/hyperbus.h"
 #include "hyperbus_cl_internal.h"
 #endif

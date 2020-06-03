@@ -36,7 +36,6 @@
 
 #if defined(__FREERTOS__)
 # include "GAPOC_BSP_Board_Init.h"
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -123,14 +122,14 @@ void layer_free()
 // Expected format: 128x128xshort
 short* layer_init()
 {
-    L1_Memory = pmsis_l1_malloc(_L1_Memory_SIZE);
+    L1_Memory = pi_l1_malloc(NULL, _L1_Memory_SIZE);
     if(L1_Memory == NULL)
     {
         PRINTF("WorkingArea alloc error\n");
         return NULL;
     }
 
-    L2_Memory = pmsis_l2_malloc(_L2_Memory_SIZE);
+    L2_Memory = pi_l2_malloc(_L2_Memory_SIZE);
     if(L2_Memory == NULL)
     {
         PRINTF("L2 Working area alloc error\n");
@@ -333,7 +332,7 @@ void body(void *parameters)
     pi_cluster_close(&cluster_dev);
 
     host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open host file, %s\n", outputBlob);
         pmsis_exit(-7);

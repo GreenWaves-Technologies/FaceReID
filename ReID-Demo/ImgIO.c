@@ -160,7 +160,7 @@ static unsigned int GetInputImageInfos(char *Name, unsigned int *W, unsigned int
     }
     if (File)
     {
-        unsigned char *Header = (unsigned char *) pmsis_l2_malloc(256);
+        unsigned char *Header = pi_l2_malloc(256);
         Err |= (Header == NULL);
         if (Err)
         {
@@ -184,7 +184,7 @@ static unsigned int GetInputImageInfos(char *Name, unsigned int *W, unsigned int
         {
             Err = 2;
         }
-        pmsis_l2_malloc_free(Header, 256);
+        pi_l2_free(Header, 256);
 		pi_fs_close(File);
 		pi_fs_unmount(&fs);
     }
@@ -230,7 +230,7 @@ unsigned char *ReadImageFromFile(char *ImageName, unsigned int *W, unsigned int 
     {
         Allocated = 1;
         AlignedSize = ALIGN(Size, 2);
-        ImagePtr = (unsigned char *) pmsis_l2_malloc(AlignedSize);
+        ImagePtr = pi_l2_malloc(AlignedSize);
     }
     if (ImagePtr == 0)
     {
@@ -262,7 +262,7 @@ unsigned char *ReadImageFromFile(char *ImageName, unsigned int *W, unsigned int 
 Fail:
     if (ImagePtr && Allocated)
     {
-        pmsis_l2_malloc_free(ImagePtr, AlignedSize);
+        pi_l2_free(ImagePtr, AlignedSize);
     }
 	pi_fs_close(File);
 	pi_fs_unmount(&fs);
@@ -273,7 +273,7 @@ Fail:
 static void WritePPMHeader(void *FD, unsigned int W, unsigned int H)
 {
     unsigned int Ind = 0, x, i, L;
-    unsigned char *Buffer = (unsigned char *) pmsis_l2_malloc(PPM_HEADER * sizeof(unsigned char));
+    unsigned char *Buffer = pi_l2_malloc(PPM_HEADER * sizeof(unsigned char));
 
     /* P5<cr>* */
     Buffer[Ind++] = 0x50; Buffer[Ind++] = 0x35; Buffer[Ind++] = 0xA;
@@ -323,7 +323,7 @@ static void WritePPMHeader(void *FD, unsigned int W, unsigned int H)
   		pi_fs_write(FD,&(Buffer[a]), sizeof(unsigned char));
     }
 
-    pmsis_l2_malloc_free(Buffer, PPM_HEADER * sizeof(unsigned char));
+    pi_l2_free(Buffer, PPM_HEADER * sizeof(unsigned char));
 }
 
 int WriteImageToFile(char *ImageName, unsigned int W, unsigned int H, unsigned char *OutBuffer)

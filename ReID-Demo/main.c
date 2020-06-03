@@ -24,7 +24,6 @@
 #include "bsp/flash/hyperflash.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -377,6 +376,7 @@ void body(void* parameters)
         pmsis_exit(-6);
     }
 
+    ClusterDetectionCall.cl                   = &cluster_dev;
     ClusterDetectionCall.ImageIn              = ImageIn;
     ClusterDetectionCall.Win                  = CAMERA_WIDTH;
     ClusterDetectionCall.Hin                  = CAMERA_HEIGHT;
@@ -461,7 +461,7 @@ void body(void* parameters)
                     ClusterDnnCall.roi         = &responses[optimal_detection_id];
                     ClusterDnnCall.frame       = ImageIn;
                     ClusterDnnCall.face        = ((unsigned char*)output_map) - (194*194); // Largest possible face after Cascade
-                    ClusterDnnCall.scaled_face = network_init();
+                    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
                     if(!ClusterDnnCall.scaled_face)
                     {
                         PRINTF("Failed to initialize ReID network!\n");

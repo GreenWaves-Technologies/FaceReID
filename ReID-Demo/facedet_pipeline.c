@@ -17,7 +17,6 @@
 #if defined(__FREERTOS__)
 # include "pmsis.h"
 # include "pmsis_os.h"
-# include "pmsis_l1_malloc.h"
 # include "pmsis_tiling.h"
 #else
 # include "Gap.h"
@@ -44,7 +43,7 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
 void detection_cluster_init(ArgCluster_T *ArgC)
 {
     // PRINTF ("Cluster Init start\n");
-    FaceDet_L1_Memory = pmsis_l1_malloc(_FaceDet_L1_Memory_SIZE);
+    FaceDet_L1_Memory = pi_l1_malloc(ArgC->cl, _FaceDet_L1_Memory_SIZE);
     if (FaceDet_L1_Memory == NULL)
     {
         PRINTF("Failed to allocate %d bytes for L1_memory\n", _FaceDet_L1_Memory_SIZE);
@@ -52,7 +51,7 @@ void detection_cluster_init(ArgCluster_T *ArgC)
     }
 
     //Get Cascade Model
-    ArgC->model = getFaceCascade();
+    ArgC->model = getFaceCascade(ArgC->cl);
 
     #ifdef PERF_COUNT
     // Configure performance counters for counting the cycles
