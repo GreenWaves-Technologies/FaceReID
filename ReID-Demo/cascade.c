@@ -19,7 +19,6 @@
 #if defined(__FREERTOS__)
 # include "dma/cl_dma.h"
 # include "pmsis_os.h"
-# include "pmsis_l1_malloc.h"
 # include "pmsis_tiling.h"
 #else
 # include "Gap.h"
@@ -36,11 +35,11 @@
 static unsigned biggest_cascade_stage(const cascade_t *cascade);
 
 //Permanently Store a cascade stage to L1
-single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
+single_cascade_t* sync_copy_cascade_stage_to_l1(struct pi_device *cl, single_cascade_t* cascade_l2)
 {
     pi_cl_dma_cmd_t DmaR_Evt1;
 
-    single_cascade_t *cascade_l1 = pmsis_l1_malloc(sizeof(single_cascade_t));
+    single_cascade_t *cascade_l1 = pi_l1_malloc(cl, sizeof(single_cascade_t));
     if (cascade_l1 == NULL) {
         PRINTF("Error: Failed to allocate cascade stage\n");
         return NULL;
@@ -49,27 +48,27 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     cascade_l1->stage_size = cascade_l2->stage_size;
     cascade_l1->rectangles_size = cascade_l2->rectangles_size;
 
-    cascade_l1->thresholds = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->thresholds = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->thresholds, (uint32_t) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha1     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->alpha1     = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->alpha1, (uint32_t) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha2     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->alpha2     = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->alpha2, (uint32_t) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rect_num   = pmsis_l1_malloc(sizeof(unsigned short) * (cascade_l1->stage_size+1));
+    cascade_l1->rect_num   = pi_l1_malloc(cl, sizeof(unsigned short) * (cascade_l1->stage_size+1));
     pi_cl_dma_cmd((uint32_t) cascade_l2->rect_num, (uint32_t) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->weights    = pmsis_l1_malloc(sizeof(signed char) * (cascade_l1->rectangles_size/4));
+    cascade_l1->weights    = pi_l1_malloc(cl, sizeof(signed char) * (cascade_l1->rectangles_size/4));
     pi_cl_dma_cmd((uint32_t) cascade_l2->weights, (uint32_t) cascade_l1->weights, sizeof(signed char)*(cascade_l1->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rectangles = pmsis_l1_malloc(sizeof(char) * cascade_l1->rectangles_size);
+    cascade_l1->rectangles = pi_l1_malloc(cl, sizeof(char) * cascade_l1->rectangles_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->rectangles, (uint32_t) cascade_l1->rectangles, sizeof(char)*cascade_l1->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
@@ -87,17 +86,17 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     return cascade_l1;
 }
 
-cascade_t *getFaceCascade(void)
+cascade_t *getFaceCascade(struct pi_device *cl)
 {
-    cascade_t *face_cascade = pmsis_l1_malloc(sizeof(cascade_t));
+    cascade_t *face_cascade = pi_l1_malloc(cl, sizeof(cascade_t));
     if (face_cascade == NULL)
     {
         PRINTF("Error: Failed to allocate cascade");
         return NULL;
     }
 
-    single_cascade_t **model_stages = pmsis_l1_malloc(sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
-    face_cascade->thresholds = pmsis_l1_malloc(sizeof(signed short) * CASCADE_TOTAL_STAGES);
+    single_cascade_t **model_stages = pi_l1_malloc(cl, sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = pi_l1_malloc(cl, sizeof(signed short) * CASCADE_TOTAL_STAGES);
     if (face_cascade->thresholds == NULL)
     {
         PRINTF("Error: Failed to allocate cascade");
@@ -168,10 +167,10 @@ cascade_t *getFaceCascade(void)
     PRINTF("Max cascade size:%u\n", max_cascade_size);
 
     for(int i = 0; i < CASCADE_STAGES_L1; i++)
-        face_cascade->stages[i] = sync_copy_cascade_stage_to_l1((face_cascade->stages[i]));
+        face_cascade->stages[i] = sync_copy_cascade_stage_to_l1(cl, (face_cascade->stages[i]));
 
-    face_cascade->buffers_l1[0] = pmsis_l1_malloc(max_cascade_size);
-    face_cascade->buffers_l1[1] = pmsis_l1_malloc(max_cascade_size);
+    face_cascade->buffers_l1[0] = pi_l1_malloc(cl, max_cascade_size);
+    face_cascade->buffers_l1[1] = pi_l1_malloc(cl, max_cascade_size);
 
     if(face_cascade->buffers_l1[0] == NULL || face_cascade->buffers_l1[1] == NULL)
     {
@@ -270,7 +269,7 @@ static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
 void cascade_detect(ArgCluster_T *ArgC)
 {
     unsigned int Wout = WOUT_INIT, Hout = HOUT_INIT;
-    unsigned int Win=ArgC->Win, Hin=ArgC->Hin;
+    unsigned int Win = ArgC->Win, Hin = ArgC->Hin;
     int reponse_idx = 0;
     int result;
 

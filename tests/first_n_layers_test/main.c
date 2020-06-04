@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-#ifndef CCN_PULP
-#include <stdio.h>
-#include <stdint.h>
-#endif
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,11 +25,7 @@
 #include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
-
-#include "param_layer_struct.h"
-
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -51,6 +42,7 @@
 #include "setup.h"
 
 #include "ImgIO.h"
+#include "param_layer_struct.h"
 #include "network_process_manual.h"
 #include "dnn_utils.h"
 
@@ -74,7 +66,7 @@ void body(void* parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    struct pi_hyper_conf hyper_conf;
+    struct pi_hyperram_conf hyper_conf;
     pi_fs_file_t* host_file = NULL;
 
     PRINTF("main call\n");
@@ -153,7 +145,7 @@ void body(void* parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = network_init();
+    l2_x = network_init(&cluster_dev);
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -234,6 +226,7 @@ void body(void* parameters)
 #endif
     PRINTF("Activations size, shorts: %d\n", activation_size);
 
+    network_deinit(&cluster_dev);
     pi_cluster_close(&cluster_dev);
 
     host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);

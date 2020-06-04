@@ -66,6 +66,7 @@ typedef struct cascade_answers
 
 typedef struct ArgCluster
 {
+    struct pi_device *cl;
     unsigned char* ImageIn;
     unsigned int Win;
     unsigned int Hin;
@@ -82,7 +83,7 @@ typedef struct ArgCluster
     unsigned int cycles;
 } ArgCluster_T;
 
-cascade_t *getFaceCascade(void);
+cascade_t *getFaceCascade(struct pi_device *cl);
 void cascade_detect(ArgCluster_T *ArgC);
 
 void detection_cluster_init(ArgCluster_T *ArgC);

@@ -23,7 +23,6 @@
 # include "pmsis.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -112,7 +111,7 @@ void body(void * parameters)
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
-    struct pi_hyper_conf hyper_conf;
+    struct pi_hyperram_conf hyper_conf;
 
     PRINTF("Start ReID Pipeline test\n");
 
@@ -209,7 +208,7 @@ void body(void * parameters)
     ClusterDnnCall.roi         = &test_response;
     ClusterDnnCall.frame       = tmp_frame_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init();
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
@@ -239,8 +238,12 @@ void body(void * parameters)
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     PRINTF("After pi_cluster_send_task_to_cl 2\n");
 
+    // Close the cluster
+    network_deinit(&cluster_dev);
+    pi_cluster_close(&cluster_dev);
+
     pi_fs_file_t* host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", outputBlob);
         pmsis_exit(-7);
@@ -259,9 +262,6 @@ void body(void * parameters)
     tm = rt_time_get_us() - tm;
     PRINTF("Cycle time %d microseconds\n", tm);
 #endif
-
-    // Close the cluster
-    pi_cluster_close(&cluster_dev);
 
     pmsis_exit(0);
 }

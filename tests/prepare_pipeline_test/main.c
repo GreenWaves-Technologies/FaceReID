@@ -23,7 +23,6 @@
 #include "pmsis.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -130,7 +129,7 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 void body(void* parameters)
 {
     (void) parameters;
-    struct pi_hyper_conf hyper_conf;
+    struct pi_hyperram_conf hyper_conf;
     struct pi_device cluster_dev;
     struct pi_cluster_conf cluster_conf;
     struct pi_cluster_task cluster_task;
@@ -175,7 +174,7 @@ void body(void* parameters)
     ClusterDnnCall.roi         = &TEST_RESPONSE;
     ClusterDnnCall.frame       = tmp_frame_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init();
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
@@ -188,6 +187,8 @@ void body(void* parameters)
     cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
     cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+
+    network_deinit(&cluster_dev);
     pi_cluster_close(&cluster_dev);
 
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
