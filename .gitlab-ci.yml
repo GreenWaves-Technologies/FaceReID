@@ -2,8 +2,10 @@ image: asmorkalov/gap_sdk:3.5
 
 stages:
   - BuildDemo
+  - BuildDemoGraph
   - BuildAndroid
   - GapuinoTest
+  - GapuinoTestGraph
   - Deploy
 
 BuildDemo_GAPOC:
@@ -59,6 +61,23 @@ BuildDemo_GAPUINO:
     - make build
     - make build | grep 'Nothing to be done'
 
+BuildDemoGraph_GAPOC:
+  stage: BuildDemoGraph
+  script:
+    - source /gap_sdk/configs/gapoc_a_v2.sh
+    - cd ReID-Demo
+    - make build GRAPH=1
+  artifacts:
+    paths:
+      - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
+
+BuildDemoGraph_GAPUINO:
+  stage: BuildDemoGraph
+  script:
+    - source /gap_sdk/configs/gapuino_v2.sh
+    - cd ReID-Demo
+    - make build GRAPH=1
+
 SingleLayerTest:
   stage: GapuinoTest
   script:
@@ -81,6 +100,21 @@ InferenceTest:
     - cd tests
     - ln -s /test_data/activations_dump_bn activations_dump
     - ./test_inference.sh
+  artifacts:
+    when: on_failure
+    paths:
+      - tests/inference_test_summary.csv
+      - tests/inference_logs/*.log
+  tags:
+    - GAP8v2
+
+InferenceTestGraph:
+  stage: GapuinoTestGraph
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd tests
+    - ln -s /test_data/activations_dump_bn activations_dump
+    - ./test_inference.sh GRAPH=1
   artifacts:
     when: on_failure
     paths:
@@ -162,6 +196,18 @@ ReIDPipelineTest:
     - make -j4 tiler_models
     - make -j4 build
     - make all run | tee test.log
+    - "grep 'Hi, Lena! Conf: 0' test.log"
+  tags:
+    - GAP8v2
+
+ReIDPipelineTestGraph:
+  stage: GapuinoTestGraph
+  script:
+    - source /gap_sdk/configs/$BOARD_NAME.sh
+    - cd tests/reid_pipeline_test
+    - make -j4 GRAPH=1 tiler_models
+    - make -j4 GRAPH=1 build
+    - make GRAPH=1 all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
