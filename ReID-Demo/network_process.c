@@ -19,7 +19,7 @@
 #include <ExtraKernels.h>
 #include <CNN_BasicKernels.h>
 #include <CnnKernels.h>
-#include "network_process_manual.h"
+#include "network_process.h"
 
 short int* l3_weights[NB_CONV];
 int weights_size[NB_CONV];
@@ -74,27 +74,42 @@ short* network_init(struct pi_device *cl)
 
     if(!__network_init_done)
     {
+#ifdef GRAPH
+        L2_Memory = memory_pool;
+        SqueezeNetCNN_Construct();
+#else
         L2_Memory = pi_l2_malloc(_L2_Memory_SIZE);
-        if(L2_Memory == NULL)
+        if (L2_Memory == NULL)
         {
             PRINTF("L2 Working area alloc error\n");
             return NULL;
         }
+#endif
         __network_init_done = 1;
     }
-
     return memory_pool;
 }
 
 void network_deinit(struct pi_device *cl)
 {
-    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
+#ifdef GRAPH
+    SqueezeNetCNN_Destruct();
+#else
     pi_l2_free(L2_Memory, _L2_Memory_SIZE);
+#endif
+    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
+
     __network_init_done = 0;
 }
 
 short* network_process(int* activation_size)
 {
+#ifdef GRAPH
+    // FIXME: Should use NetworkIn, NetworkOut if possible
+    SqueezeNetCNN();
+    *activation_size = 512;
+    return L2_Memory;
+#else
     short* layer_input;
     short* layer_output;
     //short* weight_base_address;
@@ -241,10 +256,14 @@ short* network_process(int* activation_size)
     *activation_size = 512;
 
     return layer_output;
+#endif // GRAPH
 }
 
 void network_load(struct pi_device * fs)
 {
+#ifdef GRAPH
+    // Do nothing, graph code does it on the go
+#else
     char buffer[64];
     for (unsigned int i = 0; i < NB_CONV; i++)
     {
@@ -253,13 +272,18 @@ void network_load(struct pi_device * fs)
         sprintf(buffer, "%s.bias.bin", convLayers[i].filename);
         l3_bias[i] = loadLayerFromFsToL3(fs, buffer, &HyperRam, &bias_size[i]);
     }
+#endif
 }
 
 void network_free(void)
 {
+#ifdef GRAPH
+    // Do nothing, graph code does it on the go
+#else
     for (unsigned int i = 0; i < NB_CONV; i++)
     {
         pi_ram_free(&HyperRam, (uint32_t)l3_weights[i], weights_size[i]);
         pi_ram_free(&HyperRam, (uint32_t)l3_bias[i], bias_size[i]);
     }
+#endif
 }

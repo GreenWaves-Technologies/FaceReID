@@ -24,6 +24,8 @@
 #include "param_layer_struct.h"
 #include "dnn_utils.h"
 
+#define IO_BUFF_SIZE 1024
+
 short memory_pool[MEMORY_POOL_SIZE];
 struct pi_device HyperRam;
 
@@ -108,36 +110,6 @@ void loadLayerFromL3ToL2(struct pi_device *hyper, void* hyper_buff, void* base_a
     //PRINTF("after pi_cl_hyper_read\n");
     pi_cl_ram_read_wait(&req);
     //PRINTF("after pi_cl_hyper_read_wait\n");
-}
-
-int get_activations_size(int idx)
-{
-    int out_width = convLayers[idx].win;
-    int out_height = convLayers[idx].hin;
-
-    if(convLayers[idx].conv_padding == 0)
-    {
-        out_width -= convLayers[idx].kernel_width - 1;
-        out_height -= convLayers[idx].kernel_height - 1;
-    }
-
-    out_width /= convLayers[idx].conv_stride;
-    out_height /= convLayers[idx].conv_stride;
-
-    // see output size formulae at https://pytorch.org/docs/0.4.0/nn.html#torch.nn.MaxPool2d
-    // dilation = 1, padding = 0
-    if(convLayers[idx].max_pool)
-    {
-        out_width = (out_width - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
-        out_height = (out_height - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
-    }
-
-    int activation_size = convLayers[idx].nb_of * out_height * out_width;
-
-//     PRINTF("Output size for layer %d: %dx%d\n", idx, out_width, out_height);
-//     PRINTF("activation_size %d: %d\n", idx, activation_size);
-
-    return activation_size;
 }
 
 unsigned int l2_distance(const short* v1, const short* v2)

@@ -43,7 +43,7 @@
 
 #include "ImgIO.h"
 #include "param_layer_struct.h"
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 
 short* infer_result;

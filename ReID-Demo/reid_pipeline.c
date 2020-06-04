@@ -21,7 +21,7 @@
 #include "setup.h"
 #include "cascade.h"
 #include "ExtraKernels.h"
-#include "network_process_manual.h"
+#include "network_process.h"
 
 static void copy_roi_with_padding(const unsigned char* in, int Win, int Hin, int WinStride, short* out, int Wout, int Hout)
 {

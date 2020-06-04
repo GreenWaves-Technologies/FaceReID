@@ -55,18 +55,25 @@ REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   ReIDModel.c \
+  FireGenerator.c \
   param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+ifeq ($(GRAPH),1)
+  REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
+  CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat
+endif
 
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
-$(REID_MODEL_GEN_C): GenReidNet
+$(REID_MODEL_GEN_C) $(CNN_DATA_BIN): GenReidNet $(CNN_LAYERS_BIN)
 	./GenReidNet
+	sed -i '/AT_L[12]_ALLOC/d' $(REID_MODEL_GEN_C)
+	sed -i '/AT_L[12]_FREE/d'  $(REID_MODEL_GEN_C)
 
-reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
+reid_model: $(REID_MODEL_GEN_C) $(CNN_DATA_BIN)
 
 EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
@@ -92,7 +99,7 @@ APP_SRCS := \
   FaceDetBasicKernels.c \
   ImageDraw.c \
   ImgIO.c \
-  network_process_manual.c \
+  network_process.c \
   param_layer_manual.c \
   dnn_utils.c \
   ExtraBasicKernels.c \
@@ -107,6 +114,10 @@ APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
 
 APP_CFLAGS += -Os -flto -DNORM_ROUND
 APP_LDFLAGS += -flto
+
+ifeq ($(GRAPH),1)
+  APP_CFLAGS += -DGRAPH
+endif
 
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB := 1
@@ -136,7 +147,11 @@ else
   endif
 endif
 
-READFS_FILES += $(CNN_LAYERS_BIN)
+ifeq ($(GRAPH),1)
+  READFS_FILES += $(CNN_DATA_BIN)
+else
+  READFS_FILES += $(CNN_LAYERS_BIN)
+endif
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1

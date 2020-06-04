@@ -60,7 +60,7 @@
 #include "BleUserManager.h"
 #endif
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 #include "face_db.h"
 

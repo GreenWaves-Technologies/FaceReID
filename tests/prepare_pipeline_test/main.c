@@ -36,7 +36,7 @@
 #include "setup.h"
 #include "cascade.h"
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 
 #include "ExtraKernels.h"
