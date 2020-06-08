@@ -43,10 +43,10 @@ char out_perf_string[120];
 void body(void * parameters)
 {
     (void) parameters;
-    struct pi_hyperram_conf hyper_conf;
 
     PRINTF("Start DB Selector test\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 

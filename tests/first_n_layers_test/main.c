@@ -63,14 +63,10 @@ static void cluster_main()
 void body(void* parameters)
 {
     (void) parameters;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyperram_conf hyper_conf;
-    pi_fs_file_t* host_file = NULL;
 
     PRINTF("main call\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -129,6 +125,10 @@ void body(void* parameters)
     char *outputBlob = "../../../output.bin";
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
+
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
@@ -161,6 +161,7 @@ void body(void* parameters)
         pmsis_exit(-4);
     }
 
+    pi_fs_file_t* host_file = NULL;
 #ifdef PGM_INPUT
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT;
     unsigned int Wi = IMAGE_WIDTH;
@@ -181,7 +182,7 @@ void body(void* parameters)
     PRINTF("Writing input.bin\n");
 
     host_file = pi_fs_open(&host_fs, "../../../input.bin", PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-6);
@@ -191,7 +192,7 @@ void body(void* parameters)
     pi_fs_close(host_file);
 #else
     host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
-    if (!host_file)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-7);
@@ -230,7 +231,7 @@ void body(void* parameters)
     pi_cluster_close(&cluster_dev);
 
     host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", outputBlob);
         pmsis_exit(-9);

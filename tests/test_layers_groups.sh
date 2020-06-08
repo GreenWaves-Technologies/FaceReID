@@ -51,23 +51,20 @@ if [ ${#stop_macros[@]} -ne ${#layer_outputs[@]} ]; then
     exit 1
 fi
 
-echo "Generating Model"
-
 mkdir -p groups_logs
-make -C ../ReID-Demo clean > groups_logs/model_generation.log 2>&1
-make -j8 -C ../ReID-Demo reid_model >> groups_logs/model_generation.log 2>&1 # to generate layers blobs for GAP
 
 echo "Stop macro; Output blob; Found outliers; Max diff; Diff summary;" > group_layer_test_summary.csv
 
-../scripts/json2bin.py activations_dump/conv1.0/input.json first_n_layers_test/input.bin
 cd first_n_layers_test
+../../scripts/json2bin.py ../activations_dump/conv1.0/input.json input.bin
 
 status=0
 
 for (( i=0; i < ${#stop_macros[@]}; i++ )); do
     echo "Stop word $i: ${stop_macros[i]} => ${layer_outputs[i]}"
     make $make_options clean > /dev/null 2>&1
-    make $make_options -j4 CONTROL_MACRO="${stop_macros[i]}" tiler_models > ../groups_logs/$i.stdout.log 2>&1
+    make $make_options CONTROL_MACRO="${stop_macros[i]}" -j4 tiler_models > ../groups_logs/$i.stdout.log 2>&1
+    make $make_options CONTROL_MACRO="${stop_macros[i]}" -j4 build >> ../groups_logs/$i.stdout.log 2>&1
     make $make_options CONTROL_MACRO="${stop_macros[i]}" all run >> ../groups_logs/$i.stdout.log 2>&1
     echo -n "${stop_macros[i]}; ${layer_outputs[i]}; " >> ../group_layer_test_summary.csv
     ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[i]} output.bin $tolerance >> ../group_layer_test_summary.csv

@@ -15,9 +15,11 @@
  */
 
 #include "param_layer_struct.h"
-#include "network_process_manual.h"
 #include "dnn_utils.h"
-#include "ExtraKernels.h"
+#include <ExtraKernels.h>
+#include <CNN_BasicKernels.h>
+#include <CnnKernels.h>
+#include "network_process_manual.h"
 
 short int* l3_weights[NB_CONV];
 int weights_size[NB_CONV];

@@ -19,16 +19,13 @@ tolerance=5
 make_options="$@"
 
 mkdir -p inference_logs
-echo "Generating Model"
 
-make -C ../ReID-Demo clean > inference_logs/model_generation.log 2>&1
-make -j8 -C ../ReID-Demo reid_model >> inference_logs/model_generation.log 2>&1 # to generate layers blobs for GAP
-
-../scripts/json2bin.py activations_dump/conv1.0/input.json first_n_layers_test/input.bin
 cd first_n_layers_test
+../../scripts/json2bin.py ../activations_dump/conv1.0/input.json input.bin
 
 make $make_options clean > /dev/null 2>&1
 make $make_options -j4 tiler_models > ../inference_logs/stdout.log 2>&1
+make $make_options -j4 build >> ../inference_logs/stdout.log 2>&1
 make $make_options all run >> ../inference_logs/stdout.log 2>&1
 ../../scripts/compareWithBin.py ../activations_dump/global_avgpool/output.json output.bin $tolerance > ../inference_test_summary.csv
 if [ $? -ne 0 ]; then
