@@ -18,15 +18,12 @@
 #BLE_NOTIFIER=0
 
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB := $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH := $(TILER_PATH)/generators
 CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KERNELS_SRC := $(wildcard $(CNN_KER_PATH)/CNN_*.c)
 CNN_LAYERS_PATH := quantized_model
 CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
 CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
@@ -42,7 +39,7 @@ ifeq ($(BOARD_NAME),gapoc_a)
 endif
 
 GenDetectionTile: $(DETECTION_GEN_SRC)
-	gcc -no-pie -o $@ $(DETECTION_GEN_CFLAGS) $(DETECTION_GEN_SRC) $(TILER_LIB)
+	gcc -o $@ $(DETECTION_GEN_CFLAGS) $(DETECTION_GEN_SRC) $(TILER_LIB)
 
 $(DETECTION_MODEL_GEN_C): GenDetectionTile
 	./GenDetectionTile
@@ -59,11 +56,12 @@ REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 REID_GEN_SRCS := \
   ReIDModel.c \
   param_layer_manual.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c
+  $(CNN_GEN_PATH)/CNN_Generators.c \
+  $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 
 GenReidNet: $(REID_GEN_SRCS)
-	gcc -no-pie -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
+	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -75,7 +73,7 @@ EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
 EXTRA_MODEL_GEN_CLEAN := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: ExtraModels.c
-	gcc -no-pie -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
+	gcc -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
@@ -100,8 +98,10 @@ APP_SRCS := \
   ExtraBasicKernels.c \
   $(DETECTION_MODEL_GEN_C) \
   $(REID_MODEL_GEN_C) \
-  $(CNN_KERNELS_SRC) \
-  $(EXTRA_MODEL_GEN_C)
+  $(EXTRA_MODEL_GEN_C) \
+  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
 
 APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
 

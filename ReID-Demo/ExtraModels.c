@@ -26,7 +26,7 @@ void GenerateResizeShort(char *Name, int Wi, int Hi, int Wo, int Ho)
         KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
         TILE_HOR,
         CArgs(2, TCArg("unsigned char *", "In"), TCArg("short *", "Out")),
-        Calls(1, Call("KerResizeBilinearShort", LOC_INNER_LOOP,
+        Calls(1, Call("KerResizeBilinearShort", LOC_LOOP,
             Bindings(8, K_Arg("In", KER_ARG_TILE),
                         K_Arg("In", KER_ARG_W),
                         K_Arg("In", KER_ARG_H),
