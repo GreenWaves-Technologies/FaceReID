@@ -13,8 +13,6 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
 TEST_LAYER_INDEX ?= 0
 
@@ -24,7 +22,6 @@ TILER_LIB := $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH := $(TILER_PATH)/generators
 CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KERNELS_SRC := $(wildcard $(CNN_KER_PATH)/CNN_*.c)
 CNN_LAYERS_PATH := $(REID_PATH)/quantized_model
 CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
 CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
@@ -39,11 +36,12 @@ REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
   $(REID_PATH)/param_layer_manual.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c
+  $(CNN_GEN_PATH)/CNN_Generators.c \
+  $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 
 GenReidNet: $(REID_GEN_SRCS)
-	gcc -no-pie -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
+	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
 $(REID_MODEL_GEN_C): GenReidNet
 	./GenReidNet
@@ -55,7 +53,9 @@ APP_SRCS := \
   $(REID_PATH)/param_layer_manual.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_MODEL_GEN_C) \
-  $(CNN_KERNELS_SRC)
+  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include" "$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DNORM_ROUND -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX)
 ifeq ($(SILENT),1)

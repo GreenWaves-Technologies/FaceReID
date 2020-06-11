@@ -13,8 +13,6 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
 REID_PATH := ../../ReID-Demo
 
