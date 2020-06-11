@@ -21,9 +21,7 @@
 # include "Gap.h"
 #endif
 
-#include "CNN_BasicKernels.h"
-#include "CnnKernels.h"
-#include "dnn_utils.h"
+#include "pmsis.h"
 
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort

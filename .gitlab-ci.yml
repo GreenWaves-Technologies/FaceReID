@@ -158,9 +158,9 @@ ReIDPipelineTest:
   stage: GapuinoTest
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
-    - cd ReID-Demo
-    - make clean reid_model
-    - cd ../tests/reid_pipeline_test
+    - cd tests/reid_pipeline_test
+    - make -j4 tiler_models
+    - make -j4 build
     - make all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
@@ -170,9 +170,9 @@ ReIDPipelineTest_SILENT:
   stage: GapuinoTest
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
-    - cd ReID-Demo
-    - make clean reid_model
-    - cd ../tests/reid_pipeline_test
+    - cd tests/reid_pipeline_test
+    - make -j4 SILENT=1 tiler_models
+    - make -j4 SILENT=1 build
     - make SILENT=1 all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:

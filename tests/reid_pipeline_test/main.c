@@ -108,13 +108,10 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 void body(void * parameters)
 {
     (void) parameters;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyperram_conf hyper_conf;
 
     PRINTF("Start ReID Pipeline test\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -196,6 +193,9 @@ void body(void * parameters)
     PRINTF("Host file read\n");
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;

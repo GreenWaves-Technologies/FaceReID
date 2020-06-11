@@ -16,17 +16,18 @@ USE_PMSIS_BSP=1
 export GAP_USE_OPENOCD=1
 io=host
 
-APP = ble_test
+REID_PATH := ../../ReID-Demo
 
-APP_SRCS = \
+APP := ble_test
+APP_SRCS := \
   ble_main.c \
-  ../../ReID-Demo/BleUserManager.c \
-  ../../ReID-Demo/dnn_utils.c \
-  ../../ReID-Demo/strangers_db.c \
-  ../../ReID-Demo/face_db.c \
-  ../../ReID-Demo/ImgIO.c \
-  ../../ReID-Demo/display.c
-APP_INC += $(PWD) $(PWD)/../../ReID-Demo
+  $(REID_PATH)/BleUserManager.c \
+  $(REID_PATH)/dnn_utils.c \
+  $(REID_PATH)/strangers_db.c \
+  $(REID_PATH)/face_db.c \
+  $(REID_PATH)/ImgIO.c \
+  $(REID_PATH)/display.c
+APP_INC += $(PWD) $(REID_PATH)
 APP_CFLAGS += -DUSE_BLE_USER_MANAGEMENT=1
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
