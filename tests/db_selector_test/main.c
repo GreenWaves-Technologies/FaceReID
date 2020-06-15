@@ -58,16 +58,9 @@ void body(void * parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..\n");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -77,9 +70,16 @@ void body(void * parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.fs.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
+
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+    pi_open_from_conf(&fs, &fs_conf);
 
     if (pi_fs_mount(&fs))
     {
@@ -141,8 +141,6 @@ void body(void * parameters)
     PRINTF(out_perf_string);
     sprintf(out_perf_string, "ReID L2: %d\n", id_l2);
     PRINTF(out_perf_string);
-
-    pmsis_exit(0);
 }
 
 int main()

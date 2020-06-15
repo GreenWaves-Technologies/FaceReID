@@ -36,6 +36,7 @@
 
 #include "bsp/fs.h"
 #include "bsp/fs/hostfs.h"
+#include "bsp/fs/readfs.h"
 
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
@@ -251,7 +252,6 @@ void body(void* parameters)
 
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
-
     if (pi_ram_open(&HyperRam))
     {
         PRINTF("Error: cannot open Hyperram!\n");
@@ -260,28 +260,27 @@ void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..\n");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_fs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_fs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
-
     if (pi_flash_open(&flash))
     {
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
+
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+    pi_open_from_conf(&fs, &fs_conf);
 
     int error = pi_fs_mount(&fs);
     if (error)
@@ -455,7 +454,7 @@ void body(void* parameters)
 
                     // Reset cluster (frees all L1 memory after cascades)
                     pi_cluster_close(&cluster_dev);
-                    pi_time_wait_us(1*1000*10);
+                    pi_time_wait_us(10 * 1000);
                     pi_cluster_open(&cluster_dev);
 
                     ClusterDnnCall.roi         = &responses[optimal_detection_id];
