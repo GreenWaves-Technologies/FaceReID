@@ -169,13 +169,23 @@ cascade_t *getFaceCascade(struct pi_device *cl)
     for(int i = 0; i < CASCADE_STAGES_L1; i++)
         face_cascade->stages[i] = sync_copy_cascade_stage_to_l1(cl, (face_cascade->stages[i]));
 
-    face_cascade->buffers_l1[0] = pi_l1_malloc(cl, max_cascade_size);
-    face_cascade->buffers_l1[1] = pi_l1_malloc(cl, max_cascade_size);
-
-    if(face_cascade->buffers_l1[0] == NULL || face_cascade->buffers_l1[1] == NULL)
+    if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES)
     {
-        PRINTF("Error: Failed to allocate cascade buffers\n");
-        return NULL;
+        face_cascade->buffers_l1[0] = pi_l1_malloc(cl, max_cascade_size);
+        if (face_cascade->buffers_l1[0] == NULL)
+        {
+            PRINTF("Error: Failed to allocate cascade buffers\n");
+            return NULL;
+        }
+    }
+    if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES - 1)
+    {
+        face_cascade->buffers_l1[1] = pi_l1_malloc(cl, max_cascade_size);
+        if (face_cascade->buffers_l1[1] == NULL)
+        {
+            PRINTF("Error: Failed to allocate cascade buffers\n");
+            return NULL;
+        }
     }
 
     return face_cascade;

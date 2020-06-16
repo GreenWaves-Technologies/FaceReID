@@ -318,7 +318,7 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
 {
         pi_cl_dma_cmd_t Dma_Evt;
         int buffer=0;
-        int n = (win_w * win_h);
+        int n = win_w * win_h;
         int i_s = integral_image_lookup (integralImage,      off_x,off_y,win_w,win_h,img_w);
         int i_sq = integral_image_lookup(sqaredIntegralImage,off_x,off_y,win_w,win_h,img_w);
         int m = i_s/n;
@@ -348,23 +348,24 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
         Arg.off_y = off_y;
         int i;
 
-        async_cascade_stage_to_l1((cascade->stages[CASCADE_STAGES_L1]), (cascade->buffers_l1[buffer%2]), &Dma_Evt);
+        if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES)
+            async_cascade_stage_to_l1(cascade->stages[CASCADE_STAGES_L1], cascade->buffers_l1[buffer%2], &Dma_Evt);
 
         for (i = 0; i < CASCADE_TOTAL_STAGES; i++) {
-                if(i<CASCADE_STAGES_L1)
+                if(i < CASCADE_STAGES_L1)
                     Arg.cascade_stage=(cascade->stages[i]);
                 else {
                     //cl_dma_wait(&Dma_Evt);
                     Arg.cascade_stage = (cascade->buffers_l1[buffer%2]);
                     if (i < CASCADE_TOTAL_STAGES - 1)
-                        async_cascade_stage_to_l1((cascade->stages[i+1]), (cascade->buffers_l1[(++buffer)%2]), &Dma_Evt);
+                        async_cascade_stage_to_l1(cascade->stages[i+1], cascade->buffers_l1[(++buffer)%2], &Dma_Evt);
                 }
                 pi_cl_team_fork(gap_ncore(), (void *) spawn_eval_weak_classifier, (void *) &Arg);
                 //Here we suppose always using 8 cores!
-                stage_sum[0]+= stage_sum[1] + stage_sum[2] + stage_sum[3] + stage_sum[4] + stage_sum[5] + stage_sum[6] + stage_sum[7];
-                stages_score+=stage_sum[0]-cascade->thresholds[i];
+                stage_sum[0] += stage_sum[1] + stage_sum[2] + stage_sum[3] + stage_sum[4] + stage_sum[5] + stage_sum[6] + stage_sum[7];
+                stages_score += stage_sum[0] - cascade->thresholds[i];
                 //This Operation can be moved offline!
-                if (stage_sum[0] < (cascade->thresholds[i])) {
+                if (stage_sum[0] < cascade->thresholds[i]) {
                 //if (stage_sum[0] < ((DETECT_THRESHOLD) * cascade->thresholds[i])) {
                         return 0;
                 }
@@ -382,8 +383,8 @@ void KerEvaluateCascade(
     void * cascade_model,
     unsigned char WinW,
     unsigned char WinH,
-    int * __restrict__ CascadeReponse){
-
+    int * __restrict__ CascadeReponse)
+{
     cascade_t *model = (cascade_t*) cascade_model;
 
     for(unsigned int Line=0;Line<H-WinW+1;Line++){

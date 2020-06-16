@@ -114,7 +114,6 @@ void GenerateIntegralImage(char *Name,
 		unsigned int H      /* Image Height */
 	)
 {
-
 	UserKernel(AppendNames("Process", Name),
 		KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
 		TILE_HOR,
@@ -195,13 +194,11 @@ void GenerateCascadeClassifier(char *Name,
 		unsigned int WinH   /* Detection window Height */
 	)
 {
-
-
 	UserKernel(AppendNames("Process", Name),
 		KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
 		TILE_HOR,
 		CArgs(4,
-			TCArg("unsigned int *  __restrict__",  "IntegralImage"),
+			TCArg("unsigned int *  __restrict__", "IntegralImage"),
 			TCArg("unsigned int *  __restrict__", "SquaredIntegralImage"),
 			TCArg("void * "                     , "cascade_model"),
 			TCArg("int  *  __restrict__"        , "CascadeReponse")
@@ -231,7 +228,6 @@ void GenerateCascadeClassifier(char *Name,
 
 
 void FaceDetectionConfiguration(unsigned int L1Memory)
-
 {
     SetInlineMode(ALWAYS_INLINE);
     //SetInlineMode(NEVER_INLINE);
