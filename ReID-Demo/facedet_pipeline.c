@@ -99,14 +99,13 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     #ifdef PERF_COUNT
     gap_cl_starttimer();
     gap_cl_resethwtimer();
-    unsigned int Ta = gap_fc_readhwtimer();
+    unsigned int Ta = gap_cl_readhwtimer();
     #endif
 
     cascade_detect(ArgC);
 
     #ifdef PERF_COUNT
-    unsigned int Ti = gap_fc_readhwtimer();
-    ArgC->cycles = Ti-Ta;
+    ArgC->cycles = gap_cl_readhwtimer() - Ta;
     #endif
 
     draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->reponses, ArgC->num_reponse);
