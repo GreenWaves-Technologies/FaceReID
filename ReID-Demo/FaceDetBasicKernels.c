@@ -42,8 +42,7 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
 	return Chunk;
 }
 
-void KerResizeBilinear(KerResizeBilinear_ArgT *Arg)
-
+void KerResizeNN(KerResizeNN_ArgT *Arg)
 {
         unsigned char * __restrict__ In  = Arg->In;
         unsigned int Win                 = Arg->Win;
@@ -62,25 +61,18 @@ void KerResizeBilinear(KerResizeBilinear_ArgT *Arg)
         unsigned int HStep = ((Hin-1)<<16)/Hout;
 
         unsigned int x, y;
-        unsigned int hCoeff = HStep*FirstLineIndex;
+        unsigned int hCoeff = HStep * FirstLineIndex;
         unsigned int BaseY = (hCoeff>>16);
-        for (y = 0 ; y < HTileOut ; y++) {
+        for (y = 0; y < HTileOut; y++)
+        {
                 unsigned int offsetY = (hCoeff >> 16) - BaseY;
-                unsigned int hc2 = (hCoeff >> 9) & 127;
-                unsigned int hc1 = 128 - hc2;
-                // unsigned int wCoeff = 0;
-                unsigned int wCoeff = First*WStep;
+                unsigned int wCoeff = First * WStep;
 
-                // for (x = 0 ; x < Wout ; x++) {
-                for (x = First ; x < Last ; x++) {
+                for (x = First; x < Last; x++)
+                {
                         unsigned int offsetX = (wCoeff >> 16);
-                        unsigned int wc2 = (wCoeff >> 9) & 127;
-                        unsigned int wc1 = 128 - wc2;
-                        unsigned int P1 = In[offsetY*Win       + offsetX    ];
-                        unsigned int P2 = In[(offsetY + 1)*Win + offsetX    ];
-                        unsigned int P3 = In[offsetY*Win       + offsetX + 1];
-                        unsigned int P4 = In[(offsetY + 1)*Win + offsetX + 1];
-                        Out[y*Wout + x] = ((P1*hc1 + P2*hc2)*wc1 + (P3*hc1 + P4*hc2)*wc2) >> 14;
+
+                        Out[y * Wout + x] = In[offsetY * Win + offsetX];
                         wCoeff += WStep;
                 }
                 hCoeff += HStep;

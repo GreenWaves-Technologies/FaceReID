@@ -29,9 +29,9 @@ typedef struct {
 	unsigned int Hout;
 	unsigned int HTileOut;
 	unsigned int FirstLineIndex;
-} KerResizeBilinear_ArgT;
+} KerResizeNN_ArgT;
 
-void KerResizeBilinear(KerResizeBilinear_ArgT *KerArg);
+void KerResizeNN(KerResizeNN_ArgT *KerArg);
 
 typedef struct {
 	unsigned int * __restrict__ KerBuffer;
