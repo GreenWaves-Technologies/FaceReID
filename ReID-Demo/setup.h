@@ -41,7 +41,8 @@
 #define CAMERA_HEIGHT 244
 #endif
 
-#define CLUSTER_STACK_SIZE 1024
+#define CL_SLAVE_STACK_SIZE 1024
+#define CL_STACK_SIZE       2048
 
 #define WOUT_INIT 64
 #define HOUT_INIT 48

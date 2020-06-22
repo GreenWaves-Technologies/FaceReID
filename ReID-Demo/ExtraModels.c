@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "setup.h"
 
 // AutoTiler Libraries
 #include "AutoTilerLib.h"
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
     SetUsedFilesNames(0, 1, "ExtraBasicKernels.h");
     SetGeneratedFilesNames("ExtraKernels.c", "ExtraKernels.h");
 
-    SetL1MemorySize(49000);
+    SetL1MemorySize(64*1024 - (CL_STACK_SIZE + 7 * CL_SLAVE_STACK_SIZE + 7 * 1024));
 
     LibKernel("KerResizeBilinearShort", CALL_PARALLEL,
         CArgs(8,
