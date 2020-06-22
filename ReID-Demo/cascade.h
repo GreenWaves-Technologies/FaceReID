@@ -23,7 +23,7 @@
 #include "Gap.h"
 #endif
 
-#define CASCADE_STAGES_L1 5
+#define CASCADE_STAGES_L1 15
 #define CASCADE_TOTAL_STAGES 25
 
 #define ENABLE_LAYER_1

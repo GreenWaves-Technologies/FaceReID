@@ -20,7 +20,7 @@
 
 void LoadFaceDetectionLibrary()
 {
-	LibKernel("KerResizeBilinear", CALL_PARALLEL,
+	LibKernel("KerResizeNN", CALL_PARALLEL,
 		CArgs(8,
 			TCArg("unsigned char * __restrict__", "In"),
 			TCArg("unsigned int", "Win"),
@@ -30,7 +30,7 @@ void LoadFaceDetectionLibrary()
 			TCArg("unsigned int", "Hout"),
 			TCArg("unsigned int", "HTileOut"),
 			TCArg("unsigned int", "FirstLineIndex")),
-		"KerResizeBilinear_ArgT",
+		"KerResizeNN_ArgT",
 		NULL
 	);
 
@@ -92,7 +92,7 @@ void GenerateResize(char *Name, int Wi, int Hi, int Wo, int Ho)
 		KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
 		TILE_HOR,
 		CArgs(2, TCArg("unsigned char *", "In"), TCArg("unsigned char *", "Out")),
-		Calls(1, Call("KerResizeBilinear", LOC_LOOP,
+		Calls(1, Call("KerResizeNN", LOC_LOOP,
 			Bindings(8, K_Arg("In", KER_ARG_TILE),
 				        K_Arg("In", KER_ARG_W),
 				        K_Arg("In", KER_ARG_H),
@@ -114,7 +114,6 @@ void GenerateIntegralImage(char *Name,
 		unsigned int H      /* Image Height */
 	)
 {
-
 	UserKernel(AppendNames("Process", Name),
 		KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
 		TILE_HOR,
@@ -195,13 +194,11 @@ void GenerateCascadeClassifier(char *Name,
 		unsigned int WinH   /* Detection window Height */
 	)
 {
-
-
 	UserKernel(AppendNames("Process", Name),
 		KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
 		TILE_HOR,
 		CArgs(4,
-			TCArg("unsigned int *  __restrict__",  "IntegralImage"),
+			TCArg("unsigned int *  __restrict__", "IntegralImage"),
 			TCArg("unsigned int *  __restrict__", "SquaredIntegralImage"),
 			TCArg("void * "                     , "cascade_model"),
 			TCArg("int  *  __restrict__"        , "CascadeReponse")
@@ -231,7 +228,6 @@ void GenerateCascadeClassifier(char *Name,
 
 
 void FaceDetectionConfiguration(unsigned int L1Memory)
-
 {
     SetInlineMode(ALWAYS_INLINE);
     //SetInlineMode(NEVER_INLINE);

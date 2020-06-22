@@ -42,8 +42,7 @@ static inline unsigned int __attribute__((always_inline)) ChunkSize(unsigned int
 	return Chunk;
 }
 
-void KerResizeBilinear(KerResizeBilinear_ArgT *Arg)
-
+void KerResizeNN(KerResizeNN_ArgT *Arg)
 {
         unsigned char * __restrict__ In  = Arg->In;
         unsigned int Win                 = Arg->Win;
@@ -62,25 +61,18 @@ void KerResizeBilinear(KerResizeBilinear_ArgT *Arg)
         unsigned int HStep = ((Hin-1)<<16)/Hout;
 
         unsigned int x, y;
-        unsigned int hCoeff = HStep*FirstLineIndex;
+        unsigned int hCoeff = HStep * FirstLineIndex;
         unsigned int BaseY = (hCoeff>>16);
-        for (y = 0 ; y < HTileOut ; y++) {
+        for (y = 0; y < HTileOut; y++)
+        {
                 unsigned int offsetY = (hCoeff >> 16) - BaseY;
-                unsigned int hc2 = (hCoeff >> 9) & 127;
-                unsigned int hc1 = 128 - hc2;
-                // unsigned int wCoeff = 0;
-                unsigned int wCoeff = First*WStep;
+                unsigned int wCoeff = First * WStep;
 
-                // for (x = 0 ; x < Wout ; x++) {
-                for (x = First ; x < Last ; x++) {
+                for (x = First; x < Last; x++)
+                {
                         unsigned int offsetX = (wCoeff >> 16);
-                        unsigned int wc2 = (wCoeff >> 9) & 127;
-                        unsigned int wc1 = 128 - wc2;
-                        unsigned int P1 = In[offsetY*Win       + offsetX    ];
-                        unsigned int P2 = In[(offsetY + 1)*Win + offsetX    ];
-                        unsigned int P3 = In[offsetY*Win       + offsetX + 1];
-                        unsigned int P4 = In[(offsetY + 1)*Win + offsetX + 1];
-                        Out[y*Wout + x] = ((P1*hc1 + P2*hc2)*wc1 + (P3*hc1 + P4*hc2)*wc2) >> 14;
+
+                        Out[y * Wout + x] = In[offsetY * Win + offsetX];
                         wCoeff += WStep;
                 }
                 hCoeff += HStep;
@@ -318,7 +310,7 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
 {
         pi_cl_dma_cmd_t Dma_Evt;
         int buffer=0;
-        int n = (win_w * win_h);
+        int n = win_w * win_h;
         int i_s = integral_image_lookup (integralImage,      off_x,off_y,win_w,win_h,img_w);
         int i_sq = integral_image_lookup(sqaredIntegralImage,off_x,off_y,win_w,win_h,img_w);
         int m = i_s/n;
@@ -348,23 +340,24 @@ static int windows_cascade_classifier(unsigned int* __restrict__ integralImage, 
         Arg.off_y = off_y;
         int i;
 
-        async_cascade_stage_to_l1((cascade->stages[CASCADE_STAGES_L1]), (cascade->buffers_l1[buffer%2]), &Dma_Evt);
+        if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES)
+            async_cascade_stage_to_l1(cascade->stages[CASCADE_STAGES_L1], cascade->buffers_l1[buffer%2], &Dma_Evt);
 
         for (i = 0; i < CASCADE_TOTAL_STAGES; i++) {
-                if(i<CASCADE_STAGES_L1)
+                if(i < CASCADE_STAGES_L1)
                     Arg.cascade_stage=(cascade->stages[i]);
                 else {
                     //cl_dma_wait(&Dma_Evt);
                     Arg.cascade_stage = (cascade->buffers_l1[buffer%2]);
                     if (i < CASCADE_TOTAL_STAGES - 1)
-                        async_cascade_stage_to_l1((cascade->stages[i+1]), (cascade->buffers_l1[(++buffer)%2]), &Dma_Evt);
+                        async_cascade_stage_to_l1(cascade->stages[i+1], cascade->buffers_l1[(++buffer)%2], &Dma_Evt);
                 }
                 pi_cl_team_fork(gap_ncore(), (void *) spawn_eval_weak_classifier, (void *) &Arg);
                 //Here we suppose always using 8 cores!
-                stage_sum[0]+= stage_sum[1] + stage_sum[2] + stage_sum[3] + stage_sum[4] + stage_sum[5] + stage_sum[6] + stage_sum[7];
-                stages_score+=stage_sum[0]-cascade->thresholds[i];
+                stage_sum[0] += stage_sum[1] + stage_sum[2] + stage_sum[3] + stage_sum[4] + stage_sum[5] + stage_sum[6] + stage_sum[7];
+                stages_score += stage_sum[0] - cascade->thresholds[i];
                 //This Operation can be moved offline!
-                if (stage_sum[0] < (cascade->thresholds[i])) {
+                if (stage_sum[0] < cascade->thresholds[i]) {
                 //if (stage_sum[0] < ((DETECT_THRESHOLD) * cascade->thresholds[i])) {
                         return 0;
                 }
@@ -382,8 +375,8 @@ void KerEvaluateCascade(
     void * cascade_model,
     unsigned char WinW,
     unsigned char WinH,
-    int * __restrict__ CascadeReponse){
-
+    int * __restrict__ CascadeReponse)
+{
     cascade_t *model = (cascade_t*) cascade_model;
 
     for(unsigned int Line=0;Line<H-WinW+1;Line++){
