@@ -68,14 +68,20 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 APP_SRCS := \
   main.c \
-  $(REID_PATH)/network_process.c \
-  $(REID_PATH)/param_layer_manual.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
+
+ifeq ($(GRAPH),1)
+  APP_SRCS += $(REID_PATH)/network_process_graph.c
+else
+  APP_SRCS += \
+    $(REID_PATH)/network_process_manual.c \
+    $(REID_PATH)/param_layer_manual.c
+endif
 
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include" "$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DNORM_ROUND $(CONTROL_MACRO)

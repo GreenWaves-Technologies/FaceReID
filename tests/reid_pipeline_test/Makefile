@@ -72,8 +72,6 @@ tiler_models: reid_model extra_model
 APP_SRCS := \
   main.c \
   $(REID_PATH)/reid_pipeline.c \
-  $(REID_PATH)/network_process.c \
-  $(REID_PATH)/param_layer_manual.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/face_db.c \
   $(REID_PATH)/ExtraBasicKernels.c \
@@ -83,6 +81,15 @@ APP_SRCS := \
   $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
+
+ifeq ($(GRAPH),1)
+  APP_SRCS += $(REID_PATH)/network_process_graph.c
+else
+  APP_SRCS += \
+    $(REID_PATH)/network_process_manual.c \
+    $(REID_PATH)/param_layer_manual.c
+endif
+
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(CNN_KER_PATH)"
 APP_CFLAGS += -O3 -DNORM_ROUND -DCONFIG_GAPOC_A
 ifeq ($(GRAPH),1)

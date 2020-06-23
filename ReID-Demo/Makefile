@@ -99,8 +99,6 @@ APP_SRCS := \
   FaceDetBasicKernels.c \
   ImageDraw.c \
   ImgIO.c \
-  network_process.c \
-  param_layer_manual.c \
   dnn_utils.c \
   ExtraBasicKernels.c \
   $(DETECTION_MODEL_GEN_C) \
@@ -109,6 +107,14 @@ APP_SRCS := \
   $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
+
+ifeq ($(GRAPH),1)
+  APP_SRCS += network_process_graph.c
+else
+  APP_SRCS += \
+    network_process_manual.c \
+    param_layer_manual.c
+endif
 
 APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
 

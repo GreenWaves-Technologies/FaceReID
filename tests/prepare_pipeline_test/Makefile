@@ -60,7 +60,7 @@ tiler_models: reid_model extra_model
 APP_SRCS := \
   main.c \
   $(REID_PATH)/reid_pipeline.c \
-  $(REID_PATH)/network_process.c \
+  $(REID_PATH)/network_process_manual.c \
   $(REID_PATH)/param_layer_manual.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/ExtraBasicKernels.c \
