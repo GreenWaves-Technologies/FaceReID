@@ -19,7 +19,7 @@
 #include <ExtraKernels.h>
 #include <CNN_BasicKernels.h>
 #include <CnnKernels.h>
-#include "network_process_manual.h"
+#include "network_process.h"
 
 short int* l3_weights[NB_CONV];
 int weights_size[NB_CONV];
@@ -75,21 +75,21 @@ short* network_init(struct pi_device *cl)
     if(!__network_init_done)
     {
         L2_Memory = pi_l2_malloc(_L2_Memory_SIZE);
-        if(L2_Memory == NULL)
+        if (L2_Memory == NULL)
         {
             PRINTF("L2 Working area alloc error\n");
             return NULL;
         }
         __network_init_done = 1;
     }
-
     return memory_pool;
 }
 
 void network_deinit(struct pi_device *cl)
 {
-    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
     pi_l2_free(L2_Memory, _L2_Memory_SIZE);
+    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
+
     __network_init_done = 0;
 }
 

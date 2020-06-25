@@ -33,18 +33,26 @@ REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
+  $(REID_PATH)/FireGenerator.c \
   $(REID_PATH)/param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 
+ifeq ($(GRAPH),1)
+  REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
+  CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat
+endif
+
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
-$(REID_MODEL_GEN_C): GenReidNet
+$(REID_MODEL_GEN_C) $(CNN_DATA_BIN): GenReidNet $(CNN_LAYERS_BIN)
 	./GenReidNet
+	sed -i '/AT_L[12]_ALLOC/d' $(REID_MODEL_GEN_C)
+	sed -i '/AT_L[12]_FREE/d'  $(REID_MODEL_GEN_C)
 
-reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
+reid_model: $(REID_MODEL_GEN_C) $(CNN_DATA_BIN)
 
 EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
@@ -60,8 +68,6 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 APP_SRCS := \
   main.c \
-  $(REID_PATH)/network_process_manual.c \
-  $(REID_PATH)/param_layer_manual.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/ImgIO.c \
   $(REID_MODEL_GEN_C) \
@@ -69,13 +75,28 @@ APP_SRCS := \
   $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
 
+ifeq ($(GRAPH),1)
+  APP_SRCS += $(REID_PATH)/network_process_graph.c
+else
+  APP_SRCS += \
+    $(REID_PATH)/network_process_manual.c \
+    $(REID_PATH)/param_layer_manual.c
+endif
+
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include" "$(CNN_KER_PATH)"
 APP_CFLAGS += -Os -DNORM_ROUND $(CONTROL_MACRO)
+ifeq ($(GRAPH),1)
+  APP_CFLAGS += -DGRAPH
+endif
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-READFS_FILES += $(CNN_LAYERS_BIN)
+ifeq ($(GRAPH),1)
+  READFS_FILES += $(CNN_DATA_BIN)
+else
+  READFS_FILES += $(CNN_LAYERS_BIN)
+endif
 
 tiler_models: reid_model extra_model
 

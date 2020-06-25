@@ -36,7 +36,7 @@
 #include "setup.h"
 #include "cascade.h"
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 
 #include "ExtraKernels.h"
@@ -185,8 +185,8 @@ void body(void* parameters)
     ExtaKernels_L1_Memory = L1_Memory;
 
     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
     network_deinit(&cluster_dev);

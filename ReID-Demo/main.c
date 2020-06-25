@@ -60,7 +60,7 @@
 #include "BleUserManager.h"
 #endif
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 #include "face_db.h"
 
@@ -391,8 +391,8 @@ void body(void* parameters)
 
     //Cluster Init
     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
     PRINTF("Main cycle\n");
@@ -419,8 +419,8 @@ void body(void* parameters)
         unsigned int tm = rt_time_get_us();
 #endif
         pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_main, &ClusterDetectionCall);
-        cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-        cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+        cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+        cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(HAVE_DISPLAY)
@@ -471,8 +471,8 @@ void body(void* parameters)
                     ExtaKernels_L1_Memory = L1_Memory;
 
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined(USE_BLE_USER_MANAGEMENT)
@@ -496,8 +496,8 @@ void body(void* parameters)
                     unsigned int inftm = rt_time_get_us();
 #endif
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 #ifdef PERF_COUNT
                     inftm = rt_time_get_us() - inftm;
@@ -571,8 +571,8 @@ void body(void* parameters)
                     pi_cluster_open(&cluster_dev);
 
                     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
                 }
                 else

@@ -35,6 +35,7 @@ REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
+  $(REID_PATH)/FireGenerator.c \
   $(REID_PATH)/param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c

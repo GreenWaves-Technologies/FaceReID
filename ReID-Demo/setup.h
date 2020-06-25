@@ -41,7 +41,8 @@
 #define CAMERA_HEIGHT 244
 #endif
 
-#define CLUSTER_STACK_SIZE 1024
+#define CL_SLAVE_STACK_SIZE 1024
+#define CL_STACK_SIZE       2048
 
 #define WOUT_INIT 64
 #define HOUT_INIT 48
@@ -59,7 +60,7 @@
 
 //Instructions for REID_L2_THRESHOLD and STRANGER_L2_THRESHOLD changing are in documentation/quantization_instruction.md
 
-#define MEMORY_POOL_SIZE 140000
+#define MEMORY_POOL_SIZE 150 * 1024
 
 #define FACE_DETECTOR_STABILIZATION_PERIOD 3
 
