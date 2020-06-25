@@ -27,7 +27,7 @@ int __network_init_done = 0;
 // Expected format: 128x128xshort
 short* network_init(struct pi_device *cl)
 {
-    L1_Memory = pi_l1_malloc(cl, MAX(_L1_Memory_SIZE, _ExtaKernels_L1_Memory_SIZE));
+    ExtraKernels_L1_Memory = L1_Memory = pi_l1_malloc(cl, MAX(_L1_Memory_SIZE, _ExtraKernels_L1_Memory_SIZE));
     if(L1_Memory == NULL)
     {
         PRINTF("L1 Working area alloc error\n");

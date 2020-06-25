@@ -31,7 +31,7 @@ CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.b
 
 REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
@@ -72,7 +72,7 @@ build: tiler_models
 clean::
 	rm -f GenReidNet
 	rm -f output.bin
-	rm -f $(REID_MODEL_GEN_CLEAN)
+	rm -f $(REID_MODEL_GEN_CH)
 
 .PHONY: reid_model tiler_models build clean
 

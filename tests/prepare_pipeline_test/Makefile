@@ -25,7 +25,7 @@ CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
 
 REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
@@ -45,7 +45,7 @@ reid_model: $(REID_MODEL_GEN_C)
 
 EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
-EXTRA_MODEL_GEN_CLEAN := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: $(REID_PATH)/ExtraModels.c
 	gcc -o $@ -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" $(REID_PATH)/ExtraModels.c $(TILER_LIB)
@@ -80,7 +80,7 @@ build: tiler_models
 
 clean::
 	rm -f GenReidNet GenExtraTile
-	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
+	rm -f $(REID_MODEL_GEN_CH) $(EXTRA_MODEL_GEN_CH)
 
 .PHONY: reid_model extra_model tiler_models build clean
 

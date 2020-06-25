@@ -30,7 +30,7 @@ CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.b
 
 DETECTION_MODEL_GEN := FaceDetKernels
 DETECTION_MODEL_GEN_C := $(addsuffix .c, $(DETECTION_MODEL_GEN))
-DETECTION_MODEL_GEN_CLEAN := $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
+DETECTION_MODEL_GEN_CH := $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
 
 DETECTION_GEN_SRC := FaceDetGenerator.c FaceDetModel.c
 DETECTION_GEN_CFLAGS += -I"$(TILER_PATH)/include"
@@ -51,7 +51,7 @@ detection_model: $(DETECTION_MODEL_GEN_C)
 
 REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
 REID_GEN_SRCS := \
   ReIDModel.c \
@@ -68,16 +68,16 @@ endif
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
-$(REID_MODEL_GEN_C) $(CNN_DATA_BIN): GenReidNet $(CNN_LAYERS_BIN)
+$(subst .,%,$(REID_MODEL_GEN_CH) $(CNN_DATA_BIN)): GenReidNet $(CNN_LAYERS_BIN)
 	./GenReidNet
 	sed -i '/AT_L[12]_ALLOC/d' $(REID_MODEL_GEN_C)
 	sed -i '/AT_L[12]_FREE/d'  $(REID_MODEL_GEN_C)
 
-reid_model: $(REID_MODEL_GEN_C) $(CNN_DATA_BIN)
+reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN) $(CNN_DATA_BIN)
 
 EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
-EXTRA_MODEL_GEN_CLEAN := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: ExtraModels.c
 	gcc -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
@@ -180,7 +180,7 @@ run: prepare_debug
 
 clean::
 	rm -f GenReidNet GenExtraTile GenDetectionTile
-	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f $(REID_MODEL_GEN_CH) $(EXTRA_MODEL_GEN_CH) $(DETECTION_MODEL_GEN_CH)
 
 .PHONY: detection_model reid_model extra_model tiler_models build clean
 

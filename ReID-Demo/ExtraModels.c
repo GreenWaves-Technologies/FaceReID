@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     }
 
     SetInlineMode(ALWAYS_INLINE);
-    SetSymbolNames("ExtaKernels_L1_Memory", "ExtaKernels_L2_Memory");
+    SetSymbolNames("ExtraKernels_L1_Memory", "ExtraKernels_L2_Memory");
     SetSymbolDynamics();
     SetKernelOpts(KER_OPT_NONE, KER_OPT_BUFFER_PROMOTE);
 

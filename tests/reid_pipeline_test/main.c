@@ -47,9 +47,6 @@
 #include "network_process.h"
 #include "dnn_utils.h"
 #include "face_db.h"
-
-#include "CnnKernels.h"
-#include "ExtraKernels.h"
 #include "reid_pipeline.h"
 
 char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT;
@@ -214,8 +211,6 @@ void body(void * parameters)
         PRINTF("Failed to initialize ReID network!\n");
         pmsis_exit(-6);
     }
-
-    ExtaKernels_L1_Memory = L1_Memory;
 
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
