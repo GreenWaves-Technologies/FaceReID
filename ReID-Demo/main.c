@@ -64,8 +64,6 @@
 #include "dnn_utils.h"
 #include "face_db.h"
 
-#include "CnnKernels.h"
-#include "ExtraKernels.h"
 #include "reid_pipeline.h"
 #include "facedet_pipeline.h"
 
@@ -467,8 +465,6 @@ void body(void* parameters)
                         PRINTF("Failed to initialize ReID network!\n");
                         pmsis_exit(-7);
                     }
-
-                    ExtaKernels_L1_Memory = L1_Memory;
 
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
                     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;

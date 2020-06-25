@@ -38,9 +38,6 @@
 
 #include "network_process.h"
 #include "dnn_utils.h"
-
-#include "ExtraKernels.h"
-#include "CnnKernels.h"
 #include "reid_pipeline.h"
 #include "ImgIO.h"
 
@@ -181,8 +178,6 @@ void body(void* parameters)
         PRINTF("Failed to initialize ReID network!\n");
         pmsis_exit(-5);
     }
-
-    ExtaKernels_L1_Memory = L1_Memory;
 
     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
