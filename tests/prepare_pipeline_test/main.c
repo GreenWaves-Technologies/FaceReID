@@ -23,7 +23,6 @@
 #include "pmsis.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -37,10 +36,8 @@
 #include "setup.h"
 #include "cascade.h"
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
-
-#include "ExtraKernels.h"
 #include "reid_pipeline.h"
 #include "ImgIO.h"
 
@@ -130,13 +127,10 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 void body(void* parameters)
 {
     (void) parameters;
-    struct pi_hyper_conf hyper_conf;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
 
     PRINTF("Start Prepare Pipeline test\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -164,6 +158,9 @@ void body(void* parameters)
     PRINTF("Reading image from host...done\n");
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
@@ -175,19 +172,19 @@ void body(void* parameters)
     ClusterDnnCall.roi         = &TEST_RESPONSE;
     ClusterDnnCall.frame       = tmp_frame_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init();
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
         pmsis_exit(-5);
     }
 
-    ExtaKernels_L1_Memory = L1_Memory;
-
     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+
+    network_deinit(&cluster_dev);
     pi_cluster_close(&cluster_dev);
 
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);

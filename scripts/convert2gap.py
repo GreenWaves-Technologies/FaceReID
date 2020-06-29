@@ -33,7 +33,7 @@ tf_weigths = weights
 
 bias = numpy.array(data['bias'])
 
-print("Norm: %d" % data['norm'][0])
+# print("Norm: %d" % data['norm'][0])
 
 written = 0
 with open(sys.argv[2] + ".bias.bin", "wb") as bin_output:

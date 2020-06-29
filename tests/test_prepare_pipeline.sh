@@ -24,7 +24,8 @@ status=0
 for i in {0..2}; do
     echo "Prepare L$i test"
     make $make_options TEST_LEVEL=$i clean > /dev/null 2>&1
-    make $make_options TEST_LEVEL=$i tiler_models > ../prepare_pipeline_logs/l$i.log 2>&1
+    make $make_options TEST_LEVEL=$i -j4 tiler_models > ../prepare_pipeline_logs/l$i.log 2>&1
+    make $make_options TEST_LEVEL=$i -j4 build >> ../prepare_pipeline_logs/l$i.log 2>&1
     make $make_options TEST_LEVEL=$i all run >> ../prepare_pipeline_logs/l$i.log 2>&1
     compare expected_output_l$i.pgm output.pgm -metric AE ../prepare_pipeline_logs/diff_l$i.png >> ../prepare_pipeline_logs/l$i.log 2>&1
     mv output.pgm ../prepare_pipeline_logs/output_$i.png

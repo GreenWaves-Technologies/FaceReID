@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "setup.h"
 
 // AutoTiler Libraries
 #include "AutoTilerLib.h"
@@ -26,7 +27,7 @@ void GenerateResizeShort(char *Name, int Wi, int Hi, int Wo, int Ho)
         KernelIterSpace(1, IterTiledSpace(KER_ITER_TILE0)),
         TILE_HOR,
         CArgs(2, TCArg("unsigned char *", "In"), TCArg("short *", "Out")),
-        Calls(1, Call("KerResizeBilinearShort", LOC_INNER_LOOP,
+        Calls(1, Call("KerResizeBilinearShort", LOC_LOOP,
             Bindings(8, K_Arg("In", KER_ARG_TILE),
                         K_Arg("In", KER_ARG_W),
                         K_Arg("In", KER_ARG_H),
@@ -53,14 +54,14 @@ int main(int argc, char **argv)
     }
 
     SetInlineMode(ALWAYS_INLINE);
-    SetSymbolNames("ExtaKernels_L1_Memory", "ExtaKernels_L2_Memory");
+    SetSymbolNames("ExtraKernels_L1_Memory", "ExtraKernels_L2_Memory");
     SetSymbolDynamics();
     SetKernelOpts(KER_OPT_NONE, KER_OPT_BUFFER_PROMOTE);
 
     SetUsedFilesNames(0, 1, "ExtraBasicKernels.h");
     SetGeneratedFilesNames("ExtraKernels.c", "ExtraKernels.h");
 
-    SetL1MemorySize(49000);
+    SetL1MemorySize(64*1024 - (CL_STACK_SIZE + 7 * CL_SLAVE_STACK_SIZE + 7 * 1024));
 
     LibKernel("KerResizeBilinearShort", CALL_PARALLEL,
         CArgs(8,

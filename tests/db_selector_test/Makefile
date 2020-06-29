@@ -13,16 +13,21 @@
 # limitations under the License.
 
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
-APP_SRCS = main.c ../../ReID-Demo/face_db.c ../../ReID-Demo/dnn_utils.c
-APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_PATH)/include" "$(CNN_KER_PATH)/include"
+REID_PATH := ../../ReID-Demo
 
-FACE_DB_SIZE=$(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
-DATA_FILES = ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
+APP_SRCS := \
+  main.c \
+  $(REID_PATH)/face_db.c \
+  $(REID_PATH)/dnn_utils.c
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include"
+APP_CFLAGS += -O3 -DNORM_ROUND
 
-APP_CFLAGS += -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+FACE_DB_SIZE := $(shell wc -l < $(REID_PATH)/known_faces/index.txt)
+DATA_FILES := $(REID_PATH)/known_faces/index.txt $(wildcard $(REID_PATH)/known_faces/*.bin)
+
+APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif

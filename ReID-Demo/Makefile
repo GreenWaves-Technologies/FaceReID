@@ -17,30 +17,30 @@
 #STATIC_FACE_DB=0
 #BLE_NOTIFIER=0
 
+GRAPH := 1
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB := $(TILER_PATH)/lib/libtile.a
 TILER_GENERATOR_PATH := $(TILER_PATH)/generators
 CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
 CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KERNELS_SRC := $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC := $(wildcard quantized_model/*.json)
+CNN_LAYERS_PATH := quantized_model
+CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
 CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
 
-DETECTION_MODEL_SRC := FaceDetGenerator.c FaceDetModel.c
 DETECTION_MODEL_GEN := FaceDetKernels
 DETECTION_MODEL_GEN_C := $(addsuffix .c, $(DETECTION_MODEL_GEN))
-DETECTION_MODEL_GEN_CLEAN = $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
+DETECTION_MODEL_GEN_CH := $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
 
+DETECTION_GEN_SRC := FaceDetGenerator.c FaceDetModel.c
+DETECTION_GEN_CFLAGS += -I"$(TILER_PATH)/include"
 ifeq ($(BOARD_NAME),gapoc_a)
-  TILER_PLATFORM_FLAGS += -DCONFIG_GAPOC_A
+  DETECTION_GEN_CFLAGS += -DCONFIG_GAPOC_A
 endif
 
-GenDetectionTile: $(DETECTION_MODEL_SRC)
-	gcc -no-pie -o GenDetectionTile $(TILER_PLATFORM_FLAGS) -I"$(TILER_INC)" $(DETECTION_MODEL_SRC) $(TILER_LIB)
+GenDetectionTile: $(DETECTION_GEN_SRC)
+	gcc -o $@ $(DETECTION_GEN_CFLAGS) $(DETECTION_GEN_SRC) $(TILER_LIB)
 
 $(DETECTION_MODEL_GEN_C): GenDetectionTile
 	./GenDetectionTile
@@ -52,31 +52,45 @@ detection_model: $(DETECTION_MODEL_GEN_C)
 
 REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-GenReidNet: ReIDModel.c param_layer_manual.c
-	gcc -no-pie -o GenReidNet -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ReIDModel.c param_layer_manual.c $(CNN_GEN_PATH)/CNN_Generators.c $(TILER_LIB)
+REID_GEN_SRCS := \
+  ReIDModel.c \
+  FireGenerator.c \
+  param_layer_manual.c \
+  $(CNN_GEN_PATH)/CNN_Generators.c \
+  $(CNN_GEN_PATH)/CNN_Generator_Util.c
+REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+ifeq ($(GRAPH),1)
+  REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
+  CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat
+endif
 
-$(REID_MODEL_GEN_C): GenReidNet
+GenReidNet: $(REID_GEN_SRCS)
+	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
+
+$(subst .,%,$(REID_MODEL_GEN_CH) $(CNN_DATA_BIN)): GenReidNet $(CNN_LAYERS_BIN)
 	./GenReidNet
+	sed -i '/AT_L[12]_ALLOC/d' $(REID_MODEL_GEN_C)
+	sed -i '/AT_L[12]_FREE/d'  $(REID_MODEL_GEN_C)
 
-reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
+reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN) $(CNN_DATA_BIN)
 
 EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
-EXTRA_MODEL_GEN_CLEAN := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: ExtraModels.c
-	gcc -no-pie -o GenExtraTile -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
+	gcc -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
 
 extra_model: $(EXTRA_MODEL_GEN_C)
 
-tiler_models: detection_model reid_model extra_model $(CNN_LAYERS_BIN)
+tiler_models: detection_model reid_model extra_model
 
-APP_SRCS = \
+APP_SRCS := \
   main.c \
   cascade.c \
   display.c \
@@ -86,26 +100,38 @@ APP_SRCS = \
   FaceDetBasicKernels.c \
   ImageDraw.c \
   ImgIO.c \
-  network_process_manual.c \
-  param_layer_manual.c \
   dnn_utils.c \
   ExtraBasicKernels.c \
   $(DETECTION_MODEL_GEN_C) \
   $(REID_MODEL_GEN_C) \
-  $(CNN_KERNELS_SRC) \
-  $(EXTRA_MODEL_GEN_C)
+  $(EXTRA_MODEL_GEN_C) \
+  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
+
+ifeq ($(GRAPH),1)
+  APP_SRCS += network_process_graph.c
+else
+  APP_SRCS += \
+    network_process_manual.c \
+    param_layer_manual.c
+endif
 
 APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
+
+APP_CFLAGS += -Os -flto -DNORM_ROUND
+APP_LDFLAGS += -flto
+
+ifeq ($(GRAPH),1)
+  APP_CFLAGS += -DGRAPH
+endif
 
 ifneq ($(BOARD_NAME),gapoc_a)
   STATIC_FACE_DB := 1
 endif
 
-APP_CFLAGS += -DNORM_ROUND=1 -Os -flto
-APP_LDFLAGS += -flto
-
 ifeq ($(STATIC_FACE_DB),1)
-  FACE_DB_SIZE=$(shell wc -l < known_faces/index.txt)
+  FACE_DB_SIZE := $(shell wc -l < known_faces/index.txt)
   ifeq ($(FACE_DB_SIZE),)
     $(error known_faces/index.txt file doesn't exist! Please add people names there)
   endif
@@ -128,7 +154,11 @@ else
   endif
 endif
 
-READFS_FILES += $(CNN_LAYERS_BIN)
+ifeq ($(GRAPH),1)
+  READFS_FILES += $(CNN_DATA_BIN)
+else
+  READFS_FILES += $(CNN_LAYERS_BIN)
+endif
 
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
@@ -151,7 +181,7 @@ run: prepare_debug
 
 clean::
 	rm -f GenReidNet GenExtraTile GenDetectionTile
-	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN) $(DETECTION_MODEL_GEN_CLEAN)
+	rm -f $(REID_MODEL_GEN_CH) $(EXTRA_MODEL_GEN_CH) $(DETECTION_MODEL_GEN_CH)
 
 .PHONY: detection_model reid_model extra_model tiler_models build clean
 

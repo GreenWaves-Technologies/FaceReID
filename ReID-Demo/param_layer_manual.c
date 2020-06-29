@@ -360,3 +360,34 @@ struct param_conv_layer convLayers[] =
      .name = "Fire12_C3x3",
      .filename = "features.12.expand3x3.0"},
 };
+
+
+int get_activations_size(int idx)
+{
+    int out_width = convLayers[idx].win;
+    int out_height = convLayers[idx].hin;
+
+    if (convLayers[idx].conv_padding == 0)
+    {
+        out_width -= convLayers[idx].kernel_width - 1;
+        out_height -= convLayers[idx].kernel_height - 1;
+    }
+
+    out_width /= convLayers[idx].conv_stride;
+    out_height /= convLayers[idx].conv_stride;
+
+    // see output size formulae at https://pytorch.org/docs/0.4.0/nn.html#torch.nn.MaxPool2d
+    // dilation = 1, padding = 0
+    if (convLayers[idx].max_pool)
+    {
+        out_width = (out_width - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
+        out_height = (out_height - (convLayers[idx].pool_size-1) - 1) / convLayers[idx].pool_stride + 1;
+    }
+
+    int activation_size = convLayers[idx].nb_of * out_height * out_width;
+
+//     PRINTF("Output size for layer %d: %dx%d\n", idx, out_width, out_height);
+//     PRINTF("activation_size %d: %d\n", idx, activation_size);
+
+    return activation_size;
+}

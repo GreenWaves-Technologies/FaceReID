@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-#ifndef CCN_PULP
-  #include <stdio.h>
-  #include <stdint.h>
-#endif
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,12 +26,8 @@
 #include "bsp/flash/hyperflash.h"
 #include "bsp/ram/hyperram.h"
 
-
-#include "param_layer_struct.h"
-
 #if defined(__FREERTOS__)
 # include "GAPOC_BSP_Board_Init.h"
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -46,6 +37,8 @@
 #else
 # include "Gap.h"
 #endif
+
+#include "param_layer_struct.h"
 
 #include "CNN_BasicKernels.h"
 #include "CnnKernels.h"
@@ -114,8 +107,8 @@ void layer_load(struct pi_device * fs, int idx)
 
 void layer_free()
 {
-    pi_hyperram_free(&HyperRam, l3_weights, weights_size);
-    pi_hyperram_free(&HyperRam, l3_bias, bias_size);
+    pi_ram_free(&HyperRam, (uint32_t)l3_weights, weights_size);
+    pi_ram_free(&HyperRam, (uint32_t)l3_bias, bias_size);
 }
 
 
@@ -123,14 +116,14 @@ void layer_free()
 // Expected format: 128x128xshort
 short* layer_init()
 {
-    L1_Memory = pmsis_l1_malloc(_L1_Memory_SIZE);
+    L1_Memory = pi_l1_malloc(NULL, _L1_Memory_SIZE);
     if(L1_Memory == NULL)
     {
         PRINTF("WorkingArea alloc error\n");
         return NULL;
     }
 
-    L2_Memory = pmsis_l2_malloc(_L2_Memory_SIZE);
+    L2_Memory = pi_l2_malloc(_L2_Memory_SIZE);
     if(L2_Memory == NULL)
     {
         PRINTF("L2 Working area alloc error\n");
@@ -192,13 +185,10 @@ static void cluster_main()
 void body(void *parameters)
 {
     (void) parameters;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyperram_conf hyper_conf;
 
     PRINTF("main call\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -210,16 +200,9 @@ void body(void *parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -229,9 +212,16 @@ void body(void *parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.fs.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
+
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+
+    pi_open_from_conf(&fs, &fs_conf);
 
     int error = pi_fs_mount(&fs);
     if (error)
@@ -253,6 +243,9 @@ void body(void *parameters)
     char *outputBlob = "../../../output.bin";
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
@@ -333,7 +326,7 @@ void body(void *parameters)
     pi_cluster_close(&cluster_dev);
 
     host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open host file, %s\n", outputBlob);
         pmsis_exit(-7);
@@ -345,8 +338,6 @@ void body(void *parameters)
     pi_fs_unmount(&host_fs);
 
     layer_free();
-
-    pmsis_exit(0);
 }
 
 int main()

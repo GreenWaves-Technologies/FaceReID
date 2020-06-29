@@ -14,44 +14,53 @@
 
 STATIC_FACE_DB=1
 USE_PMSIS_BSP=1
-export GAP_USE_OPENOCD=1
-io=host
 
-TILER_PATH = $(GAP_SDK_HOME)/tools/autotiler_v3
-TILER_LIB = $(TILER_PATH)/lib/libtile.a
-TILER_GENERATOR_PATH = $(TILER_PATH)/generators
-CNN_GEN_PATH = $(TILER_GENERATOR_PATH)/CNN
-CNN_KER_PATH = $(TILER_GENERATOR_PATH)/CNN
-CNN_KERNELS_SRC = $(wildcard $(CNN_KER_PATH)/CNN_*.c)
-CNN_LAYERS_SRC=$(wildcard quantized_model/*.json)
-CNN_LAYERS_BIN=$(CNN_LAYERS_SRC:.json=.bin)
+REID_PATH := ../../ReID-Demo
+TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
+TILER_LIB := $(TILER_PATH)/lib/libtile.a
+TILER_GENERATOR_PATH := $(TILER_PATH)/generators
+CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
+CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
+CNN_LAYERS_PATH := $(REID_PATH)/quantized_model
+CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
+CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
 
-%.bin: %.json
-	../scripts/convert2gap.py $< $(basename $@)
+%.bias.bin %.weights.bin: %.json
+	../../scripts/convert2gap.py $< $(basename $<)
 
-REID_MODEL_GEN = CnnKernels
-REID_MODEL_GEN_C = $(addsuffix .c, $(REID_MODEL_GEN))
-REID_MODEL_GEN_CLEAN = $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
+REID_MODEL_GEN := CnnKernels
+REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
+REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 
-REID_GEN_SRCS = \
-  ../../ReID-Demo/ReIDModel.c \
-  ../../ReID-Demo/param_layer_manual.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c
+REID_GEN_SRCS := \
+  $(REID_PATH)/ReIDModel.c \
+  $(REID_PATH)/FireGenerator.c \
+  $(REID_PATH)/param_layer_manual.c \
+  $(CNN_GEN_PATH)/CNN_Generators.c \
+  $(CNN_GEN_PATH)/CNN_Generator_Util.c
+REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+
+ifeq ($(GRAPH),1)
+  REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
+  CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat
+endif
 
 GenReidNet: $(REID_GEN_SRCS)
-	gcc -no-pie -o GenReidNet -DGRAPH -DNO_CONST -DCONFIG_GAPOC_A=1 -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" $(REID_GEN_SRCS) $(TILER_LIB)
+	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
 
-$(REID_MODEL_GEN_C): GenReidNet
+$(subst .,%,$(REID_MODEL_GEN_CH) $(CNN_DATA_BIN)): GenReidNet $(CNN_LAYERS_BIN)
 	./GenReidNet
+	sed -i '/AT_L[12]_ALLOC/d' $(REID_MODEL_GEN_C)
+	sed -i '/AT_L[12]_FREE/d'  $(REID_MODEL_GEN_C)
 
-reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
+reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN) $(CNN_DATA_BIN)
 
-EXTRA_MODEL_GEN = ExtraKernels
-EXTRA_MODEL_GEN_C = $(addsuffix .c, $(EXTRA_MODEL_GEN))
-EXTRA_MODEL_GEN_CLEAN = $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN := ExtraKernels
+EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
+EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
-GenExtraTile: ../../ReID-Demo/ExtraModels.c
-	gcc -no-pie -o GenExtraTile -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)/include" ../../ReID-Demo/ExtraModels.c $(TILER_LIB)
+GenExtraTile: $(REID_PATH)/ExtraModels.c
+	gcc -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" $(REID_PATH)/ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
@@ -60,36 +69,51 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: reid_model extra_model
 
-APP_SRCS = \
+APP_SRCS := \
   main.c \
-  ../../ReID-Demo/reid_pipeline.c \
-  ../../ReID-Demo/network_process_manual.c \
-  ../../ReID-Demo/param_layer_manual.c \
-  ../../ReID-Demo/dnn_utils.c \
-  ../../ReID-Demo/face_db.c \
-  ../../ReID-Demo/ExtraBasicKernels.c \
-  ../../ReID-Demo/ImgIO.c \
+  $(REID_PATH)/reid_pipeline.c \
+  $(REID_PATH)/dnn_utils.c \
+  $(REID_PATH)/face_db.c \
+  $(REID_PATH)/ExtraBasicKernels.c \
+  $(REID_PATH)/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(EXTRA_MODEL_GEN_C) \
-  $(CNN_KERNELS_SRC)
-APP_INC += $(PWD) $(PWD)/../../ReID-Demo "$(TILER_INC)" "$(CNN_KER_PATH)"
+  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
 
-DATA_FILES = $(wildcard ../../ReID-Demo/quantized_model/*.bin)
+ifeq ($(GRAPH),1)
+  APP_SRCS += $(REID_PATH)/network_process_graph.c
+else
+  APP_SRCS += \
+    $(REID_PATH)/network_process_manual.c \
+    $(REID_PATH)/param_layer_manual.c
+endif
 
-FACE_DB_SIZE = $(shell wc -l < ../../ReID-Demo/known_faces/index.txt)
-DATA_FILES += ../../ReID-Demo/known_faces/index.txt $(wildcard ../../ReID-Demo/known_faces/*.bin)
-APP_CFLAGS += -O3 -DSTATIC_FACE_DB=1 -DNORM_ROUND=1 -DCONFIG_GAPOC_A=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(CNN_KER_PATH)"
+APP_CFLAGS += -O3 -DNORM_ROUND -DCONFIG_GAPOC_A
+ifeq ($(GRAPH),1)
+  APP_CFLAGS += -DGRAPH
+endif
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
 
-READFS_FILES += $(realpath $(DATA_FILES))
+FACE_DB_SIZE := $(shell wc -l < $(REID_PATH)/known_faces/index.txt)
+READFS_FILES += $(REID_PATH)/known_faces/index.txt $(wildcard $(REID_PATH)/known_faces/*.bin)
+APP_CFLAGS += -DSTATIC_FACE_DB=1 -DFACE_DB_SIZE=$(FACE_DB_SIZE)
 
-build: tiler_models $(CNN_LAYERS_BIN)
+ifeq ($(GRAPH),1)
+  READFS_FILES += $(CNN_DATA_BIN)
+else
+  READFS_FILES += $(CNN_LAYERS_BIN)
+endif
+
+build: tiler_models
 
 clean::
 	rm -f GenReidNet GenExtraTile
-	rm -f $(REID_MODEL_GEN_CLEAN) $(EXTRA_MODEL_GEN_CLEAN)
+	rm -f $(REID_MODEL_GEN_CH) $(EXTRA_MODEL_GEN_CH)
 
 .PHONY: reid_model extra_model tiler_models build clean
 

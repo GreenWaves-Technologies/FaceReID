@@ -19,7 +19,6 @@
 #if defined(__FREERTOS__)
 # include "dma/cl_dma.h"
 # include "pmsis_os.h"
-# include "pmsis_l1_malloc.h"
 # include "pmsis_tiling.h"
 #else
 # include "Gap.h"
@@ -36,11 +35,11 @@
 static unsigned biggest_cascade_stage(const cascade_t *cascade);
 
 //Permanently Store a cascade stage to L1
-single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
+single_cascade_t* sync_copy_cascade_stage_to_l1(struct pi_device *cl, single_cascade_t* cascade_l2)
 {
     pi_cl_dma_cmd_t DmaR_Evt1;
 
-    single_cascade_t *cascade_l1 = pmsis_l1_malloc(sizeof(single_cascade_t));
+    single_cascade_t *cascade_l1 = pi_l1_malloc(cl, sizeof(single_cascade_t));
     if (cascade_l1 == NULL) {
         PRINTF("Error: Failed to allocate cascade stage\n");
         return NULL;
@@ -49,27 +48,27 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     cascade_l1->stage_size = cascade_l2->stage_size;
     cascade_l1->rectangles_size = cascade_l2->rectangles_size;
 
-    cascade_l1->thresholds = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->thresholds = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->thresholds, (uint32_t) cascade_l1->thresholds, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha1     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->alpha1     = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->alpha1, (uint32_t) cascade_l1->alpha1, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->alpha2     = pmsis_l1_malloc(sizeof(short) * cascade_l1->stage_size);
+    cascade_l1->alpha2     = pi_l1_malloc(cl, sizeof(short) * cascade_l1->stage_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->alpha2, (uint32_t) cascade_l1->alpha2, sizeof(short)*cascade_l1->stage_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rect_num   = pmsis_l1_malloc(sizeof(unsigned short) * (cascade_l1->stage_size+1));
+    cascade_l1->rect_num   = pi_l1_malloc(cl, sizeof(unsigned short) * (cascade_l1->stage_size+1));
     pi_cl_dma_cmd((uint32_t) cascade_l2->rect_num, (uint32_t) cascade_l1->rect_num, sizeof(unsigned short)*(cascade_l1->stage_size+1), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->weights    = pmsis_l1_malloc(sizeof(signed char) * (cascade_l1->rectangles_size/4));
+    cascade_l1->weights    = pi_l1_malloc(cl, sizeof(signed char) * (cascade_l1->rectangles_size/4));
     pi_cl_dma_cmd((uint32_t) cascade_l2->weights, (uint32_t) cascade_l1->weights, sizeof(signed char)*(cascade_l1->rectangles_size/4), PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
-    cascade_l1->rectangles = pmsis_l1_malloc(sizeof(char) * cascade_l1->rectangles_size);
+    cascade_l1->rectangles = pi_l1_malloc(cl, sizeof(char) * cascade_l1->rectangles_size);
     pi_cl_dma_cmd((uint32_t) cascade_l2->rectangles, (uint32_t) cascade_l1->rectangles, sizeof(char)*cascade_l1->rectangles_size, PI_CL_DMA_DIR_EXT2LOC, &DmaR_Evt1);
     pi_cl_dma_cmd_wait(&DmaR_Evt1);
 
@@ -87,17 +86,17 @@ single_cascade_t* sync_copy_cascade_stage_to_l1(single_cascade_t* cascade_l2)
     return cascade_l1;
 }
 
-cascade_t *getFaceCascade(void)
+cascade_t *getFaceCascade(struct pi_device *cl)
 {
-    cascade_t *face_cascade = pmsis_l1_malloc(sizeof(cascade_t));
+    cascade_t *face_cascade = pi_l1_malloc(cl, sizeof(cascade_t));
     if (face_cascade == NULL)
     {
         PRINTF("Error: Failed to allocate cascade");
         return NULL;
     }
 
-    single_cascade_t **model_stages = pmsis_l1_malloc(sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
-    face_cascade->thresholds = pmsis_l1_malloc(sizeof(signed short) * CASCADE_TOTAL_STAGES);
+    single_cascade_t **model_stages = pi_l1_malloc(cl, sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = pi_l1_malloc(cl, sizeof(signed short) * CASCADE_TOTAL_STAGES);
     if (face_cascade->thresholds == NULL)
     {
         PRINTF("Error: Failed to allocate cascade");
@@ -168,15 +167,25 @@ cascade_t *getFaceCascade(void)
     PRINTF("Max cascade size:%u\n", max_cascade_size);
 
     for(int i = 0; i < CASCADE_STAGES_L1; i++)
-        face_cascade->stages[i] = sync_copy_cascade_stage_to_l1((face_cascade->stages[i]));
+        face_cascade->stages[i] = sync_copy_cascade_stage_to_l1(cl, (face_cascade->stages[i]));
 
-    face_cascade->buffers_l1[0] = pmsis_l1_malloc(max_cascade_size);
-    face_cascade->buffers_l1[1] = pmsis_l1_malloc(max_cascade_size);
-
-    if(face_cascade->buffers_l1[0] == NULL || face_cascade->buffers_l1[1] == NULL)
+    if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES)
     {
-        PRINTF("Error: Failed to allocate cascade buffers\n");
-        return NULL;
+        face_cascade->buffers_l1[0] = pi_l1_malloc(cl, max_cascade_size);
+        if (face_cascade->buffers_l1[0] == NULL)
+        {
+            PRINTF("Error: Failed to allocate cascade buffers\n");
+            return NULL;
+        }
+    }
+    if (CASCADE_STAGES_L1 < CASCADE_TOTAL_STAGES - 1)
+    {
+        face_cascade->buffers_l1[1] = pi_l1_malloc(cl, max_cascade_size);
+        if (face_cascade->buffers_l1[1] == NULL)
+        {
+            PRINTF("Error: Failed to allocate cascade buffers\n");
+            return NULL;
+        }
     }
 
     return face_cascade;
@@ -232,35 +241,35 @@ static int rect_intersect_area(
     #undef MIN
 }
 
-static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
+static void non_max_suppress(cascade_reponse_t* responses, int response_idx)
 {
     int idx;
 
     //Non-max supression
-    for(idx = 0; idx < reponse_idx; idx++){
+    for(idx = 0; idx < response_idx; idx++){
         //check if rect has been removed (-1)
-        if(reponses[idx].x == -1)
+        if(responses[idx].x == -1)
             continue;
 
         int idx_int;
-        for(idx_int = idx + 1; idx_int < reponse_idx; idx_int++){
+        for(idx_int = idx + 1; idx_int < response_idx; idx_int++){
 
-            if(reponses[idx_int].x == -1)
+            if(responses[idx_int].x == -1)
                 continue;
 
             //check the intersection between rects
-            int intersection = rect_intersect_area(reponses[idx].x,reponses[idx].y,reponses[idx].w,reponses[idx].h,
-                                                   reponses[idx_int].x,reponses[idx_int].y,reponses[idx_int].w,reponses[idx_int].h);
+            int intersection = rect_intersect_area(responses[idx].x,responses[idx].y,responses[idx].w,responses[idx].h,
+                                                   responses[idx_int].x,responses[idx_int].y,responses[idx_int].w,responses[idx_int].h);
 
             if(intersection >= NON_MAX_THRES)
             {   //is non-max
                 //supress the one that has lower score
-                if(reponses[idx_int].score > reponses[idx].score){
-                    reponses[idx].x = -1;
-                    reponses[idx].y = -1;
+                if(responses[idx_int].score > responses[idx].score){
+                    responses[idx].x = -1;
+                    responses[idx].y = -1;
                 }else{
-                    reponses[idx_int].x = -1;
-                    reponses[idx_int].y = -1;
+                    responses[idx_int].x = -1;
+                    responses[idx_int].y = -1;
                 }
             }
         }
@@ -270,14 +279,14 @@ static void non_max_suppress(cascade_reponse_t* reponses, int reponse_idx)
 void cascade_detect(ArgCluster_T *ArgC)
 {
     unsigned int Wout = WOUT_INIT, Hout = HOUT_INIT;
-    unsigned int Win=ArgC->Win, Hin=ArgC->Hin;
-    int reponse_idx = 0;
+    unsigned int Win = ArgC->Win, Hin = ArgC->Hin;
+    int response_idx = 0;
     int result;
 
     //create structure for output
-    cascade_reponse_t* reponses = ArgC->reponses;
+    cascade_reponse_t* responses = ArgC->reponses;
     for(int i = 0; i < MAX_NUM_OUT_WINS; i++)
-        reponses[i].x=-1;
+        responses[i].x=-1;
 
 #ifdef ENABLE_LAYER_1
     ResizeImage_1(ArgC->ImageIn,ArgC->ImageOut);
@@ -290,14 +299,14 @@ void cascade_detect(ArgCluster_T *ArgC)
             result = ArgC->output_map[i*(Wout-24+1)+j];
 
             if(result!=0){
-                reponses[reponse_idx].x = (j*Win)/Wout;
-                reponses[reponse_idx].y = (i*Hin)/Hout;
-                reponses[reponse_idx].w = (24*Win)/Wout;
-                reponses[reponse_idx].h = (24*Hin)/Hout;
-                reponses[reponse_idx].score   = result;
-                reponses[reponse_idx].layer_idx = 0;
-                reponse_idx++;
-                PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                responses[response_idx].x = (j*Win)/Wout;
+                responses[response_idx].y = (i*Hin)/Hout;
+                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
+                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
+                responses[response_idx].score  = result;
+                responses[response_idx].layer_idx = 0;
+                response_idx++;
+                // PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif
@@ -315,14 +324,14 @@ void cascade_detect(ArgCluster_T *ArgC)
 
             result = ArgC->output_map[i*(Wout-24+1)+j];
             if(result!=0){
-                reponses[reponse_idx].x = (j*Win)/Wout;
-                reponses[reponse_idx].y = (i*Hin)/Hout;
-                reponses[reponse_idx].w = (24*Win)/Wout;
-                reponses[reponse_idx].h = (24*Hin)/Hout;
-                reponses[reponse_idx].score = result;
-                reponses[reponse_idx].layer_idx = 1;
-                reponse_idx++;
-                PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                responses[response_idx].x = (j*Win)/Wout;
+                responses[response_idx].y = (i*Hin)/Hout;
+                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
+                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
+                responses[response_idx].score = result;
+                responses[response_idx].layer_idx = 1;
+                response_idx++;
+                // PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif
@@ -340,19 +349,19 @@ void cascade_detect(ArgCluster_T *ArgC)
 
             result = ArgC->output_map[i*(Wout-24+1)+j];
             if(result!=0){
-                reponses[reponse_idx].x = (j*Win)/Wout;
-                reponses[reponse_idx].y = (i*Hin)/Hout;
-                reponses[reponse_idx].w = (24*Win)/Wout;
-                reponses[reponse_idx].h = (24*Hin)/Hout;
-                reponses[reponse_idx].score = result;
-                reponses[reponse_idx].layer_idx = 2;
-                reponse_idx++;
-                PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                responses[response_idx].x = (j*Win)/Wout;
+                responses[response_idx].y = (i*Hin)/Hout;
+                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
+                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
+                responses[response_idx].score = result;
+                responses[response_idx].layer_idx = 2;
+                response_idx++;
+                // PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif
 
-    non_max_suppress(reponses,reponse_idx);
+    non_max_suppress(responses, response_idx);
 
-    ArgC->num_reponse=reponse_idx;
+    ArgC->num_reponse = response_idx;
 }

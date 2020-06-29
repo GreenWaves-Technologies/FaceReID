@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-#ifndef CCN_PULP
-#include <stdio.h>
-#include <stdint.h>
-#endif
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,11 +25,7 @@
 #include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
-
-#include "param_layer_struct.h"
-
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -51,7 +42,8 @@
 #include "setup.h"
 
 #include "ImgIO.h"
-#include "network_process_manual.h"
+#include "param_layer_struct.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 
 short* infer_result;
@@ -71,14 +63,10 @@ static void cluster_main()
 void body(void* parameters)
 {
     (void) parameters;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyper_conf hyper_conf;
-    pi_fs_file_t* host_file = NULL;
 
     PRINTF("main call\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -90,16 +78,9 @@ void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..\n");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -109,9 +90,17 @@ void body(void* parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.fs.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
+
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+
+    pi_open_from_conf(&fs, &fs_conf);
 
     int error = pi_fs_mount(&fs);
     if (error)
@@ -137,6 +126,10 @@ void body(void* parameters)
     char *outputBlob = "../../../output.bin";
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
+
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
@@ -153,7 +146,7 @@ void body(void* parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = network_init();
+    l2_x = network_init(&cluster_dev);
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -169,6 +162,7 @@ void body(void* parameters)
         pmsis_exit(-4);
     }
 
+    pi_fs_file_t* host_file = NULL;
 #ifdef PGM_INPUT
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT;
     unsigned int Wi = IMAGE_WIDTH;
@@ -189,7 +183,7 @@ void body(void* parameters)
     PRINTF("Writing input.bin\n");
 
     host_file = pi_fs_open(&host_fs, "../../../input.bin", PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-6);
@@ -199,7 +193,7 @@ void body(void* parameters)
     pi_fs_close(host_file);
 #else
     host_file = pi_fs_open(&host_fs, inputBlob, PI_FS_FLAGS_READ);
-    if (!host_file)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", inputBlob);
         pmsis_exit(-7);
@@ -224,8 +218,8 @@ void body(void* parameters)
     unsigned int tm = rt_time_get_us();
 #endif
     pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #ifdef PERF_COUNT
@@ -234,10 +228,11 @@ void body(void* parameters)
 #endif
     PRINTF("Activations size, shorts: %d\n", activation_size);
 
+    network_deinit(&cluster_dev);
     pi_cluster_close(&cluster_dev);
 
     host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", outputBlob);
         pmsis_exit(-9);
@@ -249,8 +244,6 @@ void body(void* parameters)
     pi_fs_unmount(&host_fs);
 
     network_free();
-
-    pmsis_exit(0);
 }
 
 int main()

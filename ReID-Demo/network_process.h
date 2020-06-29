@@ -21,13 +21,13 @@
 # include "Gap.h"
 #endif
 
-#include "CNN_BasicKernels.h"
-#include "CnnKernels.h"
-#include "dnn_utils.h"
+#include "pmsis.h"
 
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort
-short* network_init(void);
+short* network_init(struct pi_device *cl);
+void network_deinit(struct pi_device *cl);
+
 short* network_process(int* activation_size);
 
 void network_load(struct pi_device * fs);

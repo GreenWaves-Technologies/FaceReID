@@ -24,7 +24,6 @@
 #include "bsp/flash/hyperflash.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -37,6 +36,7 @@
 
 #include "bsp/fs.h"
 #include "bsp/fs/hostfs.h"
+#include "bsp/fs/readfs.h"
 
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
@@ -61,12 +61,10 @@
 #include "BleUserManager.h"
 #endif
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 #include "face_db.h"
 
-#include "CnnKernels.h"
-#include "ExtraKernels.h"
 #include "reid_pipeline.h"
 #include "facedet_pipeline.h"
 
@@ -252,7 +250,6 @@ void body(void* parameters)
 
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
-
     if (pi_ram_open(&HyperRam))
     {
         PRINTF("Error: cannot open Hyperram!\n");
@@ -261,28 +258,27 @@ void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..\n");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_fs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_fs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
-
     if (pi_flash_open(&flash))
     {
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
+
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+    pi_open_from_conf(&fs, &fs_conf);
 
     int error = pi_fs_mount(&fs);
     if (error)
@@ -377,6 +373,7 @@ void body(void* parameters)
         pmsis_exit(-6);
     }
 
+    ClusterDetectionCall.cl                   = &cluster_dev;
     ClusterDetectionCall.ImageIn              = ImageIn;
     ClusterDetectionCall.Win                  = CAMERA_WIDTH;
     ClusterDetectionCall.Hin                  = CAMERA_HEIGHT;
@@ -391,8 +388,8 @@ void body(void* parameters)
 
     //Cluster Init
     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
     PRINTF("Main cycle\n");
@@ -419,8 +416,8 @@ void body(void* parameters)
         unsigned int tm = rt_time_get_us();
 #endif
         pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_main, &ClusterDetectionCall);
-        cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-        cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+        cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+        cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(HAVE_DISPLAY)
@@ -455,24 +452,22 @@ void body(void* parameters)
 
                     // Reset cluster (frees all L1 memory after cascades)
                     pi_cluster_close(&cluster_dev);
-                    pi_time_wait_us(1*1000*10);
+                    pi_time_wait_us(10 * 1000);
                     pi_cluster_open(&cluster_dev);
 
                     ClusterDnnCall.roi         = &responses[optimal_detection_id];
                     ClusterDnnCall.frame       = ImageIn;
                     ClusterDnnCall.face        = ((unsigned char*)output_map) - (194*194); // Largest possible face after Cascade
-                    ClusterDnnCall.scaled_face = network_init();
+                    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
                     if(!ClusterDnnCall.scaled_face)
                     {
                         PRINTF("Failed to initialize ReID network!\n");
                         pmsis_exit(-7);
                     }
 
-                    ExtaKernels_L1_Memory = L1_Memory;
-
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined(USE_BLE_USER_MANAGEMENT)
@@ -496,8 +491,8 @@ void body(void* parameters)
                     unsigned int inftm = rt_time_get_us();
 #endif
                     pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 #ifdef PERF_COUNT
                     inftm = rt_time_get_us() - inftm;
@@ -571,8 +566,8 @@ void body(void* parameters)
                     pi_cluster_open(&cluster_dev);
 
                     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
-                    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-                    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+                    cluster_task.stack_size = CL_STACK_SIZE;
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
                 }
                 else

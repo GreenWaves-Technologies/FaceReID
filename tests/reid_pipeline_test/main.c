@@ -23,7 +23,6 @@
 # include "pmsis.h"
 
 #if defined(__FREERTOS__)
-# include "pmsis_l2_malloc.h"
 # include "pmsis_driver_core_api.h"
 # include "pmsis_task.h"
 # include "pmsis_os.h"
@@ -45,12 +44,9 @@
 #include "cascade.h"
 #include "setup.h"
 
-#include "network_process_manual.h"
+#include "network_process.h"
 #include "dnn_utils.h"
 #include "face_db.h"
-
-#include "CnnKernels.h"
-#include "ExtraKernels.h"
 #include "reid_pipeline.h"
 
 char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT;
@@ -109,13 +105,10 @@ static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 void body(void * parameters)
 {
     (void) parameters;
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cluster_conf;
-    struct pi_cluster_task cluster_task;
-    struct pi_hyper_conf hyper_conf;
 
     PRINTF("Start ReID Pipeline test\n");
 
+    struct pi_hyperram_conf hyper_conf;
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
 
@@ -127,16 +120,9 @@ void body(void * parameters)
 
     PRINTF("HyperRAM config done\n");
 
-    // The hyper chip need to wait a bit.
-    // TODO: find out need to wait how many times.
-    pi_time_wait_us(1*1000*1000);
-
     PRINTF("Configuring Hyperflash and FS..\n");
-    struct pi_device fs;
     struct pi_device flash;
-    struct pi_readfs_conf conf;
     struct pi_hyperflash_conf flash_conf;
-    pi_readfs_conf_init(&conf);
 
     pi_hyperflash_conf_init(&flash_conf);
     pi_open_from_conf(&flash, &flash_conf);
@@ -146,12 +132,19 @@ void body(void * parameters)
         PRINTF("Error: Flash open failed\n");
         pmsis_exit(-3);
     }
-    conf.fs.flash = &flash;
 
-    pi_open_from_conf(&fs, &conf);
+    // The hyper chip needs to wait a bit.
+    pi_time_wait_us(100 * 1000);
 
-    int error;
-    if (error = pi_fs_mount(&fs))
+    struct pi_device fs;
+    struct pi_readfs_conf fs_conf;
+    pi_readfs_conf_init(&fs_conf);
+    fs_conf.fs.flash = &flash;
+
+    pi_open_from_conf(&fs, &fs_conf);
+
+    int error = pi_fs_mount(&fs);
+    if (error)
     {
         PRINTF("Error: FS mount failed with error %d\n", error);
         pmsis_exit(-3);
@@ -197,6 +190,9 @@ void body(void * parameters)
     PRINTF("Host file read\n");
 
     PRINTF("Init cluster...\n");
+    struct pi_device cluster_dev;
+    struct pi_cluster_conf cluster_conf;
+    struct pi_cluster_task cluster_task;
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
@@ -209,22 +205,20 @@ void body(void * parameters)
     ClusterDnnCall.roi         = &test_response;
     ClusterDnnCall.frame       = tmp_frame_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init();
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
         pmsis_exit(-6);
     }
 
-    ExtaKernels_L1_Memory = L1_Memory;
-
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
     PRINTF("Before pi_cluster_send_task_to_cl 1\n");
     pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     PRINTF("After pi_cluster_send_task_to_cl 1\n");
 
@@ -234,13 +228,17 @@ void body(void * parameters)
 
     PRINTF("Before pi_cluster_send_task_to_cl 2\n");
     pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
-    cluster_task.slave_stack_size = CLUSTER_STACK_SIZE;
-    cluster_task.stack_size = 2 * CLUSTER_STACK_SIZE;
+    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+    cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
     PRINTF("After pi_cluster_send_task_to_cl 2\n");
 
+    // Close the cluster
+    network_deinit(&cluster_dev);
+    pi_cluster_close(&cluster_dev);
+
     pi_fs_file_t* host_file = pi_fs_open(&host_fs, outputBlob, PI_FS_FLAGS_WRITE);
-    if (host_file == 0)
+    if (host_file == NULL)
     {
         PRINTF("Failed to open file, %s\n", outputBlob);
         pmsis_exit(-7);
@@ -259,11 +257,6 @@ void body(void * parameters)
     tm = rt_time_get_us() - tm;
     PRINTF("Cycle time %d microseconds\n", tm);
 #endif
-
-    // Close the cluster
-    pi_cluster_close(&cluster_dev);
-
-    pmsis_exit(0);
 }
 
 int main()
