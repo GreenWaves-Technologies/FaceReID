@@ -61,22 +61,22 @@ BuildDemo_GAPUINO:
     - make build
     - make build | grep 'Nothing to be done'
 
-BuildDemoGraph_GAPOC:
+BuildDemoNoGraph_GAPOC:
   stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
-    - make build GRAPH=1
+    - make build GRAPH=0
   artifacts:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
-BuildDemoGraph_GAPUINO:
+BuildDemoNoGraph_GAPUINO:
   stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapuino_v2.sh
     - cd ReID-Demo
-    - make build GRAPH=1
+    - make build GRAPH=0
 
 SingleLayerTest:
   stage: GapuinoTest

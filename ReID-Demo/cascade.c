@@ -306,7 +306,7 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].score  = result;
                 responses[response_idx].layer_idx = 0;
                 response_idx++;
-                PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                // PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif
@@ -331,7 +331,7 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].score = result;
                 responses[response_idx].layer_idx = 1;
                 response_idx++;
-                PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                // PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif
@@ -356,7 +356,7 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].score = result;
                 responses[response_idx].layer_idx = 2;
                 response_idx++;
-                PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                // PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
             }
         }
 #endif

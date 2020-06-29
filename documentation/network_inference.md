@@ -7,8 +7,8 @@ The network output is 512 16-bit fixed point vector with face descriptor. Face d
 
 ![](images/network_architecture.png)
 
-Memory Map
-==========
+Memory Map for Handcrafted Version
+==================================
 
 512 KiB of L2 memory is not enough to store all the weights and activations together with intermediate data. The only way to achieve the goal is to store the weights in external L3 memory and download them to L2 memory before each layer inference. Also, per-layer inference requires layer input, activations, weights and biases stored in L2 during inference. The step to the next layer in the network should produce minimal extra overhead for efficient compute cluster utilization. Input, output and weight buffers should be continuous buffers, and dynamic memory allocation cannot be applied as very limited memory resources are available. The only solution found by authors is static compile-time buffer allocation on top of the continuous memory pool for each layer individually, taking into account the layer output usage on the next steps. This solution requires inference graph analysis and different techniques for different network sub-graphs.
 

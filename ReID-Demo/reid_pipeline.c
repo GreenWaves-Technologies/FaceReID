@@ -69,7 +69,7 @@ static void copy_roi(const unsigned char* in, int WinStride, unsigned char* out,
 
 void reid_prepare_cluster(ArgClusterDnn_T* ArgC)
 {
-    PRINTF("reid_cluster_main call\n");
+    // PRINTF("reid_cluster_main call\n");
     int face_stride = CAMERA_WIDTH;
 
     unsigned char* face_ptr = ArgC->frame + ArgC->roi->y*CAMERA_WIDTH + ArgC->roi->x;
@@ -103,7 +103,7 @@ void reid_prepare_cluster(ArgClusterDnn_T* ArgC)
 
 void reid_inference_cluster(ArgClusterDnn_T* ArgC)
 {
-    PRINTF("Start DNN inference\n");
+    //PRINTF("Start DNN inference\n");
     gap_cl_starttimer();
     gap_cl_resethwtimer();
     unsigned int Ti = gap_cl_readhwtimer();
@@ -111,5 +111,5 @@ void reid_inference_cluster(ArgClusterDnn_T* ArgC)
     Ti = gap_cl_readhwtimer() - Ti;
     ArgC->cycles = Ti;
     PRINTF("Network Cycles: %d\n",Ti);
-    PRINTF("DNN inference finished\n");
+    //PRINTF("DNN inference finished\n");
 }
