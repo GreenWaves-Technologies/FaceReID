@@ -68,7 +68,7 @@ setup.h:
 
 # Tests
 
-0. Download and put activations dump to `tests/activations_dump` folder by [link](https://face-reid-artifacts.s3.eu-west-3.amazonaws.com/FaceID/activations_dump.tar.bz2) or use activations dump for self-trained network.
+0. Download and put activations dump to `tests/activations_dump` folder by [link](https://reid-artifacts.s3.eu-central-1.amazonaws.com/FaceID/activations_dump.tar.bz2) or use activations dump for self-trained network.
 
 1. Run per-layer test:
 ```

@@ -16,7 +16,7 @@ For Gapuino board:
 For Gapoc A board:
 - Adafruit 2.8 TFT display with SPI interface
 - GAPOC_A Adapter for Adafruit LCD 2.8 version 3 or version 4 or hand-made shield with push button
-- Android-based smartphone with [pre-built user management application](https://face-reid-artifacts.s3.eu-west-3.amazonaws.com/FaceID/ReID-Control-App.apk)
+- Android-based smartphone with [pre-built user management application](https://reid-artifacts.s3.eu-central-1.amazonaws.com/FaceID/ReID-Control-App.apk)
 
 # Documentation Pages
 
