@@ -256,9 +256,9 @@ Deploy:
     - tar -cj --file activations_dump.tar.bz2 /test_data/activations_dump_bn/*
     - mv ../ReID-Speaker-latest.apk ./
     - mv ../ReID-Control-App-latest.apk ./
-    - rclone --config $RCLONE_S3_CONFIG sync -P activations_dump.tar.bz2 reid_s3:"face-reid-artifacts/FaceID/"
-    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Speaker-latest.apk reid_s3:"face-reid-artifacts/FaceID/"
-    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Control-App-latest.apk reid_s3:"face-reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_S3_CONFIG sync -P activations_dump.tar.bz2 reid_s3:"reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Speaker-latest.apk reid_s3:"reid-artifacts/FaceID/"
+    - rclone --config $RCLONE_S3_CONFIG sync -P ReID-Control-App-latest.apk reid_s3:"reid-artifacts/FaceID/"
     - rclone --config $RCLONE_GDRIVE_CONFIG sync -P activations_dump.tar.bz2 gdrive:"Xperience.ai/Projects/Greenwaves-public"
     - rclone --config $RCLONE_GDRIVE_CONFIG sync -P ReID-Speaker-latest.apk gdrive:"Xperience.ai/Projects/Greenwaves-public"
     - rclone --config $RCLONE_GDRIVE_CONFIG sync -P ReID-Control-App-latest.apk gdrive:"Xperience.ai/Projects/Greenwaves-public"
