@@ -230,12 +230,13 @@ void body(void* parameters)
 #endif
 
 #if defined(HAVE_DISPLAY)
-    PRINTF("Initializing display\n");
+    PRINTF("Initializing display... ");
     if (open_display(&display))
     {
+        PRINTF("failed!\n");
         pmsis_exit(-5);
     }
-    PRINTF("Initializing display done\n");
+    PRINTF("done\n");
 
     clear_stripe(&display, 0, LCD_HEIGHT);
     setTextColor(&display, LCD_TXT_CLR);
@@ -243,22 +244,19 @@ void body(void* parameters)
     draw_text(&display, "Loading network", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
 
-    PRINTF("Camera resolution: %dx%d\n", CAMERA_WIDTH, CAMERA_HEIGHT);
-
-    PRINTF("Configuring Hyperram..\n");
+    PRINTF("Configuring HyperRAM... ");
     struct pi_hyperram_conf hyper_conf;
 
     pi_hyperram_conf_init(&hyper_conf);
     pi_open_from_conf(&HyperRam, &hyper_conf);
     if (pi_ram_open(&HyperRam))
     {
-        PRINTF("Error: cannot open Hyperram!\n");
+        PRINTF("failed!\n");
         pmsis_exit(-2);
     }
+    PRINTF("done\n");
 
-    PRINTF("HyperRAM config done\n");
-
-    PRINTF("Configuring Hyperflash and FS..\n");
+    PRINTF("Configuring HyperFlash... ");
     struct pi_device flash;
     struct pi_hyperflash_conf flash_conf;
 
@@ -266,9 +264,10 @@ void body(void* parameters)
     pi_open_from_conf(&flash, &flash_conf);
     if (pi_flash_open(&flash))
     {
-        PRINTF("Error: Flash open failed\n");
+        PRINTF("failed!\n");
         pmsis_exit(-3);
     }
+    PRINTF("done\n");
 
     // The hyper chip needs to wait a bit.
     pi_time_wait_us(100 * 1000);
@@ -280,16 +279,15 @@ void body(void* parameters)
     fs_conf.fs.flash = &flash;
     pi_open_from_conf(&fs, &fs_conf);
 
+    PRINTF("Mounting FS... ");
     int error = pi_fs_mount(&fs);
     if (error)
     {
-        PRINTF("Error: FS mount failed with error %d\n", error);
+        PRINTF("failed with error %d\n", error);
         pmsis_exit(-3);
     }
+    PRINTF("done\n");
 
-    PRINTF("FS mounted\n");
-
-    PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
     int status = 1;
@@ -308,9 +306,9 @@ void body(void* parameters)
         pmsis_exit(-5);
     }
 
-    PRINTF("Unmount FS as it's not needed any more\n");
+    PRINTF("Unmounting FS (not needed anymore)... ");
     pi_fs_unmount(&fs);
-    PRINTF("Unmount FS done\n");
+    PRINTF("done\n");
 
 #ifdef DUMP_SUCCESSFUL_FRAME
     struct pi_hostfs_conf host_fs_conf;
@@ -326,13 +324,13 @@ void body(void* parameters)
     }
 #endif
 
-    PRINTF("Init cluster...\n");
+    PRINTF("Initializing cluster... ");
     pi_cluster_conf_init(&cluster_conf);
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
     pi_open_from_conf(&cluster_dev, &cluster_conf);
     pi_cluster_open(&cluster_dev);
-    PRINTF("Init cluster...done\n");
+    PRINTF("done\n");
 
     //Setting FC to 200MHz
     pi_freq_set(PI_FREQ_DOMAIN_FC, 200000000);
@@ -345,14 +343,15 @@ void body(void* parameters)
     // HACK: Init display for the second time, because
     // SPI API does not handle clocks change correctly for now
 #if defined(HAVE_DISPLAY)
-    PRINTF("Initializing display for the second time\n");
+    PRINTF("Initializing display for the second time... ");
     if (open_display(&display))
     {
+        PRINTF("failed!\n");
         pmsis_exit(-5);
     }
     clear_stripe(&display, LCD_TXT_POS_Y, LCD_TXT_HEIGHT(2));
     setTextColor(&display, LCD_TXT_CLR);
-    PRINTF("Initializing display done\n");
+    PRINTF("done\n");
 #endif
 
     // put camera frame to memory pool tail, it does not intersect with the first DNN layer data
@@ -366,12 +365,14 @@ void body(void* parameters)
     pi_buffer_init(&RenderBuffer, PI_BUFFER_TYPE_L2, ImageOut);
     pi_buffer_set_format(&RenderBuffer, CAMERA_WIDTH/2, CAMERA_HEIGHT/2, 1, PI_BUFFER_FORMAT_GRAY);
 
-    PRINTF("Initializing camera\n");
+    PRINTF("Initializing camera... ");
     if (open_camera(&camera))
     {
-        PRINTF("Error: Failed to initialize camera\n");
+        PRINTF("failed!\n");
         pmsis_exit(-6);
     }
+    PRINTF("done\n"
+           "Camera resolution: %dx%d\n", CAMERA_WIDTH, CAMERA_HEIGHT);
 
     ClusterDetectionCall.cl                   = &cluster_dev;
     ClusterDetectionCall.ImageIn              = ImageIn;
@@ -392,9 +393,7 @@ void body(void* parameters)
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
-    PRINTF("Main cycle\n");
-
-    //draw_text(&display, "Ready", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+    PRINTF("Start main loop\n");
 
     int saved_index = 0;
     while(1)
@@ -427,7 +426,7 @@ void body(void* parameters)
 
         if(ClusterDetectionCall.num_reponse)
         {
-            PRINTF("Faces detected\n");
+            PRINTF("Face detected\n");
 
             int optimal_detection_id = -1;
             int optimal_score = -1;
@@ -479,8 +478,6 @@ void body(void* parameters)
 
                     sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
                     WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
-
-                    draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 #endif
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined (USE_BLE_USER_MANAGEMENT)
@@ -496,11 +493,12 @@ void body(void* parameters)
                     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 #ifdef PERF_COUNT
                     inftm = rt_time_get_us() - inftm;
-                    PRINTF("DNN inference finished in %d microseconds\n", inftm);
+                    PRINTF("DNN inference finished in %d us\n", inftm);
 #endif
 
-
 #ifdef DUMP_SUCCESSFUL_FRAME
+                    draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+
                     sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
 
                     pi_fs_file_t* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
@@ -510,7 +508,7 @@ void body(void* parameters)
                         pmsis_exit(-7);
                     }
 
-                    pi_fs_write(host_file, ClusterDnnCall.output, 512*sizeof(short));
+                    pi_fs_write(host_file, ClusterDnnCall.output, FACE_DESCRIPTOR_SIZE*sizeof(short));
                     pi_fs_close(host_file);
 
                     //sprintf(string_buffer, "frame_%d.pgm", saved_index);
@@ -521,7 +519,6 @@ void body(void* parameters)
 
                     int id_l2 = identify_by_db(ClusterDnnCall.output, &person_name);
 
-                    //sprintf(string_buffer, "ReID L2: %d\n", id_l2);
                     sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)(16800.f/(50000000.f/ClusterDnnCall.cycles)));
                     //sprintf(string_buffer, "ReID NN GCycles: %d\n", ClusterDnnCall.cycles/1000000);
                     PRINTF(string_buffer);
@@ -540,9 +537,9 @@ void body(void* parameters)
                     else
                     {
                         pi_cluster_close(&cluster_dev);
-                        PRINTF("STOP, Stranger!\n");
                         draw_text(&display, "STOP, Stranger!\n", LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
-                        PRINTF("Adding stranger to queue\n");
+                        PRINTF("STOP, Stranger!\n"
+                               "Adding stranger to queue\n");
                         status = handleStranger(ClusterDnnCall.output);
                         switch(status)
                         {
@@ -586,7 +583,7 @@ void body(void* parameters)
 
 #ifdef PERF_COUNT
         tm = rt_time_get_us() - tm;
-        PRINTF("Cycle time %d microseconds\n", tm);
+        PRINTF("Cycle time %d us\n", tm);
 #endif
     }
 
@@ -609,7 +606,6 @@ void body(void* parameters)
 
 int main()
 {
-    PRINTF("Start ReID Demo\n");
     pmsis_kickoff(body);
     return 0;
 }

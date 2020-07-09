@@ -41,7 +41,7 @@ int load_static_db(struct pi_device * fs)
     for(int i = 0; i < FACE_DB_SIZE; i++)
     {
         sprintf(buffer, "person_%d.bin", i);
-        int status = loadLayerFromFsToL2(fs, buffer, PeopleDescriptors[i], FACE_DESCRIPTOR_SIZE*sizeof(short));
+        int status = loadLayerFromFsToL2(fs, buffer, PeopleDescriptors[i], FACE_DESCRIPTOR_SIZE * sizeof(short));
         if(status <= 0)
         {
             PRINTF("Person %d descriptor read failed with status %d\n", i, status);
@@ -230,24 +230,25 @@ void dump_db(void)
     for(int i = 0; i < identified_people; i++)
     {
         sprintf(string_buffer, "../../../%s.bin", PeopleNames[i]);
-        PRINTF("Writing descriptor file \"%s\" ..\n", string_buffer);
+
+        PRINTF("Writing descriptor file \"%s\" ...", string_buffer);
 
         pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
         if(!descriptor_file)
         {
-            PRINTF("Face descriptor open failed\n");
+            PRINTF("open failed\n");
             pmsis_exit(-100);
         }
 
-        int bridge_status = pi_fs_write(descriptor_file, PeopleDescriptors[i], 512*sizeof(short));
-        if(bridge_status != 512*sizeof(short))
+        int byte_written = pi_fs_write(descriptor_file, PeopleDescriptors[i], FACE_DESCRIPTOR_SIZE * sizeof(short));
+        if (byte_written != FACE_DESCRIPTOR_SIZE * sizeof(short))
         {
-            PRINTF("Face descriptor read failed\n");
+            PRINTF("write failed\n");
             pmsis_exit(-100);
         }
 
         pi_fs_close(descriptor_file);
-        PRINTF("Writing descriptor file..done\n");
+        PRINTF("done\n");
     }
 
     pi_fs_unmount(&host_fs);

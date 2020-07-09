@@ -245,6 +245,8 @@ short* network_process(int* activation_size)
 
 void network_load(struct pi_device * fs)
 {
+    PRINTF("Loading layers to HyperRAM\n");
+
     char buffer[64];
     for (unsigned int i = 0; i < NB_CONV; i++)
     {

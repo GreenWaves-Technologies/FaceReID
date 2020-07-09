@@ -24,10 +24,8 @@ int32_t open_display(struct pi_device *display)
     pi_ili9341_conf_init(&ili_conf);
     pi_open_from_conf(display, &ili_conf);
     if (pi_display_open(display))
-    {
-        PRINTF("Error: display init failed\n");
         return -1;
-    }
+
     pi_display_ioctl(display, PI_ILI_IOCTL_ORIENTATION, (void *)LCD_ORIENTATION);
     return 0;
 }

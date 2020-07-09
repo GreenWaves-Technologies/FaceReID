@@ -164,7 +164,7 @@ cascade_t *getFaceCascade(struct pi_device *cl)
     face_cascade->stages = model_stages;
 
     unsigned max_cascade_size = biggest_cascade_stage(face_cascade);
-    PRINTF("Max cascade size:%u\n", max_cascade_size);
+    PRINTF("Max cascade size: %u\n", max_cascade_size);
 
     for(int i = 0; i < CASCADE_STAGES_L1; i++)
         face_cascade->stages[i] = sync_copy_cascade_stage_to_l1(cl, (face_cascade->stages[i]));
