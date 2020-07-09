@@ -18,7 +18,7 @@
 #BLE_NOTIFIER=0
 
 GRAPH := 1
-USE_PMSIS_BSP=1
+USE_PMSIS_BSP := 1
 
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB := $(TILER_PATH)/lib/libtile.a

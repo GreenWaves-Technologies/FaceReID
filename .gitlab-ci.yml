@@ -8,8 +8,8 @@ stages:
   - GapuinoTestGraph
   - Deploy
 
-BuildDemo_GAPOC:
-  stage: BuildDemo
+BuildDemoGraph_GAPOC:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
@@ -19,8 +19,8 @@ BuildDemo_GAPOC:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
-BuildDemo_DUMP_DESCRIPTORS:
-  stage: BuildDemo
+BuildDemoGraph_DUMP_DESCRIPTORS:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapuino_v2.sh
     - cd ReID-Demo
@@ -29,22 +29,22 @@ BuildDemo_DUMP_DESCRIPTORS:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
-BuildDemo_GAPOC_STATIC:
-  stage: BuildDemo
+BuildDemoGraph_GAPOC_STATIC:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
     - make STATIC_FACE_DB=1 build
 
-BuildDemo_GAPOC_STATIC_BLE:
-  stage: BuildDemo
+BuildDemoGraph_GAPOC_STATIC_BLE:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
     - make STATIC_FACE_DB=1 BLE_NOTIFIER=1 build
 
-BuildDemo_GAPOC_STATIC_BLE_SILENT:
-  stage: BuildDemo
+BuildDemoGraph_GAPOC_STATIC_BLE_SILENT:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
@@ -53,16 +53,16 @@ BuildDemo_GAPOC_STATIC_BLE_SILENT:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
-BuildDemo_GAPUINO:
-  stage: BuildDemo
+BuildDemoGraph_GAPUINO:
+  stage: BuildDemoGraph
   script:
     - source /gap_sdk/configs/gapuino_v2.sh
     - cd ReID-Demo
     - make build
     - make build | grep 'Nothing to be done'
 
-BuildDemoNoGraph_GAPOC:
-  stage: BuildDemoGraph
+BuildDemo_GAPOC:
+  stage: BuildDemo
   script:
     - source /gap_sdk/configs/gapoc_a_v2.sh
     - cd ReID-Demo
@@ -71,8 +71,8 @@ BuildDemoNoGraph_GAPOC:
     paths:
       - ReID-Demo/BUILD/GAP8_V2/GCC_RISCV/test
 
-BuildDemoNoGraph_GAPUINO:
-  stage: BuildDemoGraph
+BuildDemo_GAPUINO:
+  stage: BuildDemo
   script:
     - source /gap_sdk/configs/gapuino_v2.sh
     - cd ReID-Demo
@@ -99,7 +99,7 @@ InferenceTest:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests
     - ln -s /test_data/activations_dump_bn activations_dump
-    - ./test_inference.sh
+    - ./test_inference.sh GRAPH=0
   artifacts:
     when: on_failure
     paths:
@@ -114,7 +114,7 @@ InferenceTestGraph:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests
     - ln -s /test_data/activations_dump_bn activations_dump
-    - ./test_inference.sh GRAPH=1
+    - ./test_inference.sh
   artifacts:
     when: on_failure
     paths:
@@ -129,7 +129,7 @@ InferenceTest_SILENT:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests
     - ln -s /test_data/activations_dump_bn activations_dump
-    - ./test_inference.sh SILENT=1
+    - ./test_inference.sh SILENT=1 GRAPH=0
   artifacts:
     when: on_failure
     paths:
@@ -193,9 +193,9 @@ ReIDPipelineTest:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests/reid_pipeline_test
-    - make -j4 tiler_models
-    - make -j4 build
-    - make all run | tee test.log
+    - make -j4 GRAPH=0 tiler_models
+    - make -j4 GRAPH=0 build
+    - make GRAPH=0 all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
@@ -205,9 +205,9 @@ ReIDPipelineTestGraph:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests/reid_pipeline_test
-    - make -j4 GRAPH=1 tiler_models
-    - make -j4 GRAPH=1 build
-    - make GRAPH=1 all run | tee test.log
+    - make -j4 tiler_models
+    - make -j4 build
+    - make all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2

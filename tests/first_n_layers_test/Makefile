@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-USE_PMSIS_BSP=1
+GRAPH := 1
+USE_PMSIS_BSP := 1
 
 REID_PATH := ../../ReID-Demo
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
