@@ -495,6 +495,7 @@ void body(void* parameters)
                     inftm = rt_time_get_us() - inftm;
                     PRINTF("DNN inference finished in %d us\n", inftm);
 #endif
+                    pi_cluster_close(&cluster_dev);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
                     draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
@@ -526,7 +527,6 @@ void body(void* parameters)
 
                     if ((id_l2 >= 0) && (id_l2 < REID_L2_THRESHOLD))
                     {
-                        pi_cluster_close(&cluster_dev);
                         sprintf(string_buffer, "Hi, %s!\n", person_name);
                         PRINTF(string_buffer);
                         draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
@@ -536,7 +536,6 @@ void body(void* parameters)
                     }
                     else
                     {
-                        pi_cluster_close(&cluster_dev);
                         draw_text(&display, "STOP, Stranger!\n", LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
                         PRINTF("STOP, Stranger!\n"
                                "Adding stranger to queue\n");
@@ -557,8 +556,6 @@ void body(void* parameters)
                                 break;
                         }
                     }
-
-                    pi_cluster_close(&cluster_dev);
 
                     pi_cluster_open(&cluster_dev);
 
