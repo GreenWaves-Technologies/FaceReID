@@ -387,7 +387,7 @@ void body(void* parameters)
     ClusterDetectionCall.output_map           = output_map;
     ClusterDetectionCall.reponses             = responses;
 
-    //Cluster Init
+    // Init face detector
     pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
@@ -424,159 +424,161 @@ void body(void* parameters)
         pi_display_write(&display, &RenderBuffer, LCD_OFF_X, LCD_OFF_Y, CAMERA_WIDTH/2,CAMERA_HEIGHT/2);
 #endif
 
-        if(ClusterDetectionCall.num_reponse)
+        if (ClusterDetectionCall.num_reponse == 0)
         {
-            PRINTF("Face detected\n");
+            cascade_history_size = 0;
+            goto end_loop; // No face => continue
+        }
 
-            int optimal_detection_id = -1;
-            int optimal_score = -1;
-            for(int i = 0; i < ClusterDetectionCall.num_reponse; i++)
+        PRINTF("Face detected\n");
+
+        int optimal_detection_id = -1;
+        int optimal_score = -1;
+        for(int i = 0; i < ClusterDetectionCall.num_reponse; i++)
+        {
+            if(responses[i].score > optimal_score)
             {
-                if(responses[i].score > optimal_score)
-                {
-                    optimal_detection_id = i;
-                    optimal_score = responses[i].score;
-                }
+                optimal_detection_id = i;
+                optimal_score = responses[i].score;
             }
+        }
 
-            memcpy(&cascade_history[cascade_history_size], &responses[optimal_detection_id], sizeof(cascade_reponse_t));
-            cascade_history_size++;
+        memcpy(&cascade_history[cascade_history_size], &responses[optimal_detection_id], sizeof(cascade_reponse_t));
+        cascade_history_size++;
 
-            if(cascade_history_size == FACE_DETECTOR_STABILIZATION_PERIOD)
-            {
-                if(check_detection_stability(cascade_history, FACE_DETECTOR_STABILIZATION_PERIOD))
-                {
-                    cascade_history_size = 0;
-                    PRINTF("Face detection is stable enough, run ReID\n");
+        // Collect several consecutive frames with a face
+        if (cascade_history_size < FACE_DETECTOR_STABILIZATION_PERIOD)
+            goto end_loop;
 
-                    // Reset cluster (frees all L1 memory after cascades)
-                    pi_cluster_close(&cluster_dev);
-                    pi_time_wait_us(10 * 1000);
-                    pi_cluster_open(&cluster_dev);
+        // Check that face detection is stable
+        if (!is_detection_stable(cascade_history, FACE_DETECTOR_STABILIZATION_PERIOD))
+        {
+            PRINTF("Detection is not stable\n");
+            cascade_history_size--;
+            for(int i = 0; i < cascade_history_size; i++)
+                memcpy(&cascade_history[i], &cascade_history[i+1], sizeof(cascade_reponse_t));
+            goto end_loop;
+        }
 
-                    ClusterDnnCall.roi         = &responses[optimal_detection_id];
-                    ClusterDnnCall.frame       = ImageIn;
-                    ClusterDnnCall.face        = ((unsigned char*)output_map) - (194*194); // Largest possible face after Cascade
-                    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
-                    if(!ClusterDnnCall.scaled_face)
-                    {
-                        PRINTF("Failed to initialize ReID network!\n");
-                        pmsis_exit(-7);
-                    }
+        PRINTF("Face detection is stable, run ReID\n");
+        cascade_history_size = 0;
 
-                    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
-                    cluster_task.stack_size = CL_STACK_SIZE;
-                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+        // Reset cluster (frees all L1 memory after cascades)
+        pi_cluster_close(&cluster_dev);
+        pi_time_wait_us(10 * 1000);
+        pi_cluster_open(&cluster_dev);
+
+        ClusterDnnCall.roi         = &responses[optimal_detection_id];
+        ClusterDnnCall.frame       = ImageIn;
+        ClusterDnnCall.face        = ((unsigned char*)output_map) - (194*194); // Largest possible face after Cascade
+        ClusterDnnCall.scaled_face = network_init(&cluster_dev);
+        if(!ClusterDnnCall.scaled_face)
+        {
+            PRINTF("Failed to initialize ReID network!\n");
+            pmsis_exit(-7);
+        }
+
+        pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+        cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+        cluster_task.stack_size = CL_STACK_SIZE;
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined(USE_BLE_USER_MANAGEMENT)
-                    my_copy(ClusterDnnCall.scaled_face, ClusterDnnCall.face, 128, 128);
+        my_copy(ClusterDnnCall.scaled_face, ClusterDnnCall.face, 128, 128);
 #endif
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-                    draw_text(&display, "Writing photo", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+        draw_text(&display, "Writing photo", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
-                    sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
-                    WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
+        sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
+        WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
 #endif
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined (USE_BLE_USER_MANAGEMENT)
-                    prepareStranger(ClusterDnnCall.face);
+        prepareStranger(ClusterDnnCall.face);
 #endif
 
 #ifdef PERF_COUNT
-                    unsigned int inftm = rt_time_get_us();
+        unsigned int inftm = rt_time_get_us();
 #endif
-                    pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
-                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
-                    cluster_task.stack_size = CL_STACK_SIZE;
-                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+        pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
+        cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+        cluster_task.stack_size = CL_STACK_SIZE;
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 #ifdef PERF_COUNT
-                    inftm = rt_time_get_us() - inftm;
-                    PRINTF("DNN inference finished in %d us\n", inftm);
+        inftm = rt_time_get_us() - inftm;
+        PRINTF("DNN inference finished in %d us\n", inftm);
 #endif
-                    pi_cluster_close(&cluster_dev);
+        pi_cluster_close(&cluster_dev);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
-                    draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+        draw_text(&display, "Writing descriptor", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
-                    sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
+        sprintf(string_buffer, "../../../dumps/face_%d.bin", saved_index);
 
-                    pi_fs_file_t* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
-                    if (!host_file)
-                    {
-                        PRINTF("Failed to open host file, %s\n", string_buffer);
-                        pmsis_exit(-7);
-                    }
+        pi_fs_file_t* host_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_WRITE);
+        if (!host_file)
+        {
+            PRINTF("Failed to open host file, %s\n", string_buffer);
+            pmsis_exit(-7);
+        }
 
-                    pi_fs_write(host_file, ClusterDnnCall.output, FACE_DESCRIPTOR_SIZE*sizeof(short));
-                    pi_fs_close(host_file);
+        pi_fs_write(host_file, ClusterDnnCall.output, FACE_DESCRIPTOR_SIZE*sizeof(short));
+        pi_fs_close(host_file);
 
-                    //sprintf(string_buffer, "frame_%d.pgm", saved_index);
-                    //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
+        //sprintf(string_buffer, "frame_%d.pgm", saved_index);
+        //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
 
-                    saved_index++;
+        saved_index++;
 #endif
 
-                    int id_l2 = identify_by_db(ClusterDnnCall.output, &person_name);
+        int id_l2 = identify_by_db(ClusterDnnCall.output, &person_name);
 
-                    sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)(16800.f/(50000000.f/ClusterDnnCall.cycles)));
-                    //sprintf(string_buffer, "ReID NN GCycles: %d\n", ClusterDnnCall.cycles/1000000);
-                    PRINTF(string_buffer);
-                    draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
+        sprintf(string_buffer, "ReID NN uW/frame/s: %d\n",(int)(16800.f/(50000000.f/ClusterDnnCall.cycles)));
+        //sprintf(string_buffer, "ReID NN GCycles: %d\n", ClusterDnnCall.cycles/1000000);
+        PRINTF(string_buffer);
+        draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
-                    if ((id_l2 >= 0) && (id_l2 < REID_L2_THRESHOLD))
-                    {
-                        sprintf(string_buffer, "Hi, %s!\n", person_name);
-                        PRINTF(string_buffer);
-                        draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
+        if ((id_l2 >= 0) && (id_l2 < REID_L2_THRESHOLD))
+        {
+            sprintf(string_buffer, "Hi, %s!\n", person_name);
+            PRINTF(string_buffer);
+            draw_text(&display, string_buffer, LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
 #if defined(BLE_NOTIFIER)
-                        handleUser(person_name);
+            handleUser(person_name);
 #endif
-                    }
-                    else
-                    {
-                        draw_text(&display, "STOP, Stranger!\n", LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
-                        PRINTF("STOP, Stranger!\n"
-                               "Adding stranger to queue\n");
-                        status = handleStranger(ClusterDnnCall.output);
-                        switch(status)
-                        {
-                            case 0:
-                                PRINTF("Stranger reported!\n");
-                                break;
-                            case DB_FULL:
-                                PRINTF("No space for Stranger!\n");
-                                break;
-                            case DUPLICATE_DROPPED:
-                                PRINTF("Stranger duplicate, dropped!\n");
-                                break;
-                            default:
-                                PRINTF("Error: code=%d", status);
-                                break;
-                        }
-                    }
-
-                    pi_cluster_open(&cluster_dev);
-
-                    pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
-                    cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
-                    cluster_task.stack_size = CL_STACK_SIZE;
-                    pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
-                }
-                else
-                {
-                    PRINTF("Detection is not stable\n");
-                    cascade_history_size--;
-                    for(int i = 0; i < FACE_DETECTOR_STABILIZATION_PERIOD-1; i++)
-                        memcpy(&cascade_history[i], &cascade_history[i+1], sizeof(cascade_reponse_t));
-                }
-            }
         }
         else
         {
-            cascade_history_size = 0;
+            draw_text(&display, "STOP, Stranger!\n", LCD_TXT_POS_X, LCD_TXT_POS_Y - 20, 2);
+            PRINTF("STOP, Stranger!\n"
+                   "Adding stranger to queue\n");
+            status = handleStranger(ClusterDnnCall.output);
+            switch(status)
+            {
+                case 0:
+                    PRINTF("Stranger reported!\n");
+                    break;
+                case DB_FULL:
+                    PRINTF("No space for Stranger!\n");
+                    break;
+                case DUPLICATE_DROPPED:
+                    PRINTF("Stranger duplicate, dropped!\n");
+                    break;
+                default:
+                    PRINTF("Error: code=%d", status);
+                    break;
+            }
         }
+
+        // Reinit face detector
+        pi_cluster_open(&cluster_dev);
+        pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
+        cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
+        cluster_task.stack_size = CL_STACK_SIZE;
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+
+end_loop:
 
 #ifdef PERF_COUNT
         tm = rt_time_get_us() - tm;
