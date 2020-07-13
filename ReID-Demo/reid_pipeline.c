@@ -96,7 +96,7 @@ void reid_prepare_cluster(ArgClusterDnn_T* ArgC)
     }
     else
     {
-        PRINTF("Respose structure corrupted, cascade scale %d does not exists\n", ArgC->roi->layer_idx);
+        PRINTF("Response structure corrupted, cascade scale %d does not exist\n", ArgC->roi->layer_idx);
         return;
     }
 }

@@ -178,7 +178,6 @@ short* layer_process(int layer_idx, int* activation_size)
 
 static void cluster_main()
 {
-    PRINTF("cluster_main call\n");
     infer_result = layer_process(test_layer_idx, &activation_size);
 }
 
@@ -310,18 +309,19 @@ void body(void *parameters)
 
     PRINTF("Reading input from host...done\n");
 
-    PRINTF("DNN inference..\n");
+    PRINTF("Convolution..\n");
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL));
-    PRINTF("DNN inference..done\n");
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
-    PRINTF("DNN inference finished in %d microseconds\n", tm);
-    PRINTF("Activations size, shorts: %d\n", activation_size);
+    PRINTF("Convolution finished in %d us\n", tm);
+#else
+    PRINTF("Convolution finished\n");
 #endif
+    PRINTF("Activations size, shorts: %d\n", activation_size);
 
     pi_cluster_close(&cluster_dev);
 

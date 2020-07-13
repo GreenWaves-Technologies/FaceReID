@@ -197,7 +197,6 @@ void body(void * parameters)
     cluster_conf.id = 0;
     cluster_conf.device_type = 0;
     pi_open_from_conf(&cluster_dev, &cluster_conf);
-    PRINTF("before pi_cluster_open\n");
     pi_cluster_open(&cluster_dev);
     PRINTF("Init cluster...done\n");
 
@@ -255,7 +254,7 @@ void body(void * parameters)
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
-    PRINTF("Cycle time %d microseconds\n", tm);
+    PRINTF("Cycle time %d us\n", tm);
 #endif
 }
 
