@@ -125,7 +125,7 @@ static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_
     return 1;
 }
 
-int check_detection_stability(const cascade_reponse_t* history, int history_size)
+int is_detection_stable(const cascade_reponse_t* history, int history_size)
 {
     for (int i = 0; i < history_size - 1; i++)
     {

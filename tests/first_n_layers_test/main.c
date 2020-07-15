@@ -224,7 +224,7 @@ void body(void* parameters)
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
-    PRINTF("DNN inference finished in %d microseconds\n", tm);
+    PRINTF("DNN inference finished in %d us\n", tm);
 #endif
     PRINTF("Activations size, shorts: %d\n", activation_size);
 

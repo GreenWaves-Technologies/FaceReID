@@ -39,7 +39,7 @@ REID_GEN_SRCS := \
   $(REID_PATH)/param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)

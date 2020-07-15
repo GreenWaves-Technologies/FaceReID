@@ -18,7 +18,7 @@
 #BLE_NOTIFIER=0
 
 GRAPH := 1
-USE_PMSIS_BSP=1
+USE_PMSIS_BSP := 1
 
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
 TILER_LIB := $(TILER_PATH)/lib/libtile.a
@@ -60,7 +60,7 @@ REID_GEN_SRCS := \
   param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 ifeq ($(GRAPH),1)
   REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
   CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat

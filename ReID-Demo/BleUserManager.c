@@ -478,23 +478,22 @@ uint32_t preview_hyper;
 
 int initHandler(struct pi_device * gpio_port)
 {
-    PRINTF("Setting button handler..\n");
+    PRINTF("Setting button handler... ");
     pi_pad_set_function(BUTTON_FUNCTION_PIN, 1);
     if(pi_gpio_pin_configure(gpio_port, BUTTON_PIN_ID, PI_GPIO_INPUT))
     {
-        PRINTF("Error: cannot configure pin\n");
+        PRINTF("failed: cannot configure pin\n");
         return 0;
     }
     pi_gpio_pin_notif_configure(gpio_port, BUTTON_PIN_ID, PI_GPIO_NOTIF_FALL);
+    PRINTF("done\n");
 
     pi_ram_alloc(&HyperRam, &preview_hyper, 128*128);
     if (!preview_hyper)
     {
-        PRINTF("HyperRAM allocation failed\n");
+        PRINTF("Error: HyperRAM allocation failed\n");
         return 0;
     }
-
-    PRINTF("Setting button handler..done\n");
 
     return !0;
 }

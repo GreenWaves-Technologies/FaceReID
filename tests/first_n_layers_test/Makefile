@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-USE_PMSIS_BSP=1
+GRAPH := 1
+USE_PMSIS_BSP := 1
 
 REID_PATH := ../../ReID-Demo
 TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
@@ -37,7 +38,7 @@ REID_GEN_SRCS := \
   $(REID_PATH)/param_layer_manual.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
 
 ifeq ($(GRAPH),1)
   REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
