@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-USE_PMSIS_BSP=1
+USE_PMSIS_BSP := 1
 
 TEST_LAYER_INDEX ?= 0
 
@@ -55,7 +55,7 @@ APP_SRCS := \
   $(TILER_CNN_KERNEL_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(TILER_CNN_KERNEL_PATH)/CNN_Pooling_BasicKernels.c
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
-APP_CFLAGS += -Os -DNORM_ROUND -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX)
+APP_CFLAGS += -O3 -DNORM_ROUND -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
 endif
