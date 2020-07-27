@@ -1,8 +1,6 @@
-#include <stdint.h>
 #include <stdio.h>
-#include "AutoTilerLib.h"
-#include "CNN_Generators.h"
 #include "Gap.h"
+#include "param_layer_struct.h"
 #include "FireGenerator.h"
 
 static char *Str(char *S, int A)
@@ -10,7 +8,7 @@ static char *Str(char *S, int A)
     return S;
 }
 
-int Fire(const char *Name, CNN_GenControl_T *Ctrl, unsigned idx)
+void Fire(const char *Name, CNN_GenControl_T *Ctrl, unsigned idx)
 {
 #ifdef GRAPH
     int w_InL3 = 0, b_InL3 = 0;

@@ -47,7 +47,7 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
     clear_stripe(display, LCD_OFF_Y, LCD_HEIGHT);
     draw_text(display, "Enabling BLE", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
-    uint8_t rx_buffer[PI_AT_RESP_ARRAY_LENGTH];
+    char rx_buffer[PI_AT_RESP_ARRAY_LENGTH];
 
     #if defined(__FREERTOS__)
     // NOTICE:
@@ -103,9 +103,9 @@ int initHandler(struct pi_device* fs, struct pi_device* display)
     PRINTF("Set UBTLE\n");
     pi_nina_b112_AT_send(&ble, "+UBTLN=GreenWaves-GAPOC");
     PRINTF("Set UBTLN\n");
-    pi_nina_b112_AT_query(&ble, "+UMRS?", (char *) rx_buffer);
+    pi_nina_b112_AT_query(&ble, "+UMRS?", rx_buffer);
     PRINTF("BLE configuration : %s\n", rx_buffer);
-    pi_nina_b112_AT_query(&ble, "+UBTLN?", (char *) rx_buffer);
+    pi_nina_b112_AT_query(&ble, "+UBTLN?", rx_buffer);
     PRINTF("BLE name : %s\n", rx_buffer);
 
     PRINTF("AT Config Done\n");

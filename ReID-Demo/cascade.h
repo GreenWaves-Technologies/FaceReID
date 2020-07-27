@@ -71,8 +71,6 @@ typedef struct ArgCluster
     unsigned int Win;
     unsigned int Hin;
     unsigned char* ImageOut;
-    unsigned int Wout;
-    unsigned int Hout;
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     unsigned char * ImageRender;

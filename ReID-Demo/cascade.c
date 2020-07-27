@@ -262,8 +262,8 @@ static void non_max_suppress(cascade_reponse_t* responses, int response_idx)
                                                    responses[idx_int].x,responses[idx_int].y,responses[idx_int].w,responses[idx_int].h);
 
             if(intersection >= NON_MAX_THRES)
-            {   //is non-max
-                //supress the one that has lower score
+            {
+                //suppress the one that has lower score
                 if(responses[idx_int].score > responses[idx].score){
                     responses[idx].x = -1;
                     responses[idx].y = -1;

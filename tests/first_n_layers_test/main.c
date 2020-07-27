@@ -111,7 +111,6 @@ void body(void* parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
     PRINTF("Unmount FS as it's not needed any more\n");

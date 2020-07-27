@@ -43,7 +43,7 @@ struct param_conv_layer {
 };
 
 #define NB_CONV 26
-extern struct param_conv_layer convLayers[NB_CONV];
+extern const struct param_conv_layer convLayers[NB_CONV];
 
 int get_activations_size(int idx);
 

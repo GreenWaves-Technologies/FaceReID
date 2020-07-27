@@ -133,8 +133,6 @@ short* layer_init()
     return memory_pool;
 }
 
-#define MAX(a, b) (((a)>(b))?(a):(b))
-
 short* layer_process(int layer_idx, int* activation_size)
 {
     PRINTF("layer_process call\n");
@@ -231,7 +229,7 @@ void body(void *parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
+    PRINTF("Loading layer %d to HyperRAM\n", test_layer_idx);
     layer_load(&fs, test_layer_idx);
 
     PRINTF("Unmount FS as it's not needed any more\n");

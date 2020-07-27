@@ -17,7 +17,7 @@
 #include "param_layer_struct.h"
 #include "param_layer_quant.h"
 
-struct param_conv_layer convLayers[] =
+const struct param_conv_layer convLayers[] =
 {
     // Intro convolutions
     {.nb_if = 1,
@@ -291,17 +291,17 @@ struct param_conv_layer convLayers[] =
 
     // MaxPool here
 
-    {256,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_14, Q_OUT_14, Q_WEIGHTS_14, Q_BIAS_14, "Fire9_C1x1S", "features.9.squeeze.0"},
-    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_15, Q_OUT_15, Q_WEIGHTS_15, Q_BIAS_15, "Fire9_C1x1",  "features.9.expand1x1.0"},
-    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_16, Q_OUT_16, Q_WEIGHTS_16, Q_BIAS_16, "Fire9_C3x3",  "features.9.expand3x3.0"},
+    {256,48,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_14, Q_OUT_14, Q_WEIGHTS_14, Q_BIAS_14}, "Fire9_C1x1S", "features.9.squeeze.0"},
+    {48,192,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_15, Q_OUT_15, Q_WEIGHTS_15, Q_BIAS_15}, "Fire9_C1x1",  "features.9.expand1x1.0"},
+    {48,192,7,7,3,3, 1, 0,0,0, 1,1, {Q_IN_16, Q_OUT_16, Q_WEIGHTS_16, Q_BIAS_16}, "Fire9_C3x3",  "features.9.expand3x3.0"},
 
-    {384,48,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_17, Q_OUT_17, Q_WEIGHTS_17, Q_BIAS_17, "Fire10_C1x1S", "features.10.squeeze.0"},
-    {48,192,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_18, Q_OUT_18, Q_WEIGHTS_18, Q_BIAS_18, "Fire10_C1x1",  "features.10.expand1x1.0"},
-    {48,192,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_19, Q_OUT_19, Q_WEIGHTS_19, Q_BIAS_19, "Fire10_C3x3",  "features.10.expand3x3.0"},
+    {384,48,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_17, Q_OUT_17, Q_WEIGHTS_17, Q_BIAS_17}, "Fire10_C1x1S", "features.10.squeeze.0"},
+    {48,192,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_18, Q_OUT_18, Q_WEIGHTS_18, Q_BIAS_18}, "Fire10_C1x1",  "features.10.expand1x1.0"},
+    {48,192,7,7,3,3, 1, 0,0,0, 1,1, {Q_IN_19, Q_OUT_19, Q_WEIGHTS_19, Q_BIAS_19}, "Fire10_C3x3",  "features.10.expand3x3.0"},
 
-    {384,64,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_20, Q_OUT_20, Q_WEIGHTS_20, Q_BIAS_20, "Fire11_C1x1S", "features.11.squeeze.0"},
-    {64,256,7,7,1,1, 1, 0,0,0, 1,1, Q_IN_21, Q_OUT_21, Q_WEIGHTS_21, Q_BIAS_21, "Fire11_C1x1",  "features.11.expand1x1.0"},
-    {64,256,7,7,3,3, 1, 0,0,0, 1,1, Q_IN_22, Q_OUT_22, Q_WEIGHTS_22, Q_BIAS_22, "Fire11_C3x3",  "features.11.expand3x3.0"},
+    {384,64,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_20, Q_OUT_20, Q_WEIGHTS_20, Q_BIAS_20}, "Fire11_C1x1S", "features.11.squeeze.0"},
+    {64,256,7,7,1,1, 1, 0,0,0, 1,1, {Q_IN_21, Q_OUT_21, Q_WEIGHTS_21, Q_BIAS_21}, "Fire11_C1x1",  "features.11.expand1x1.0"},
+    {64,256,7,7,3,3, 1, 0,0,0, 1,1, {Q_IN_22, Q_OUT_22, Q_WEIGHTS_22, Q_BIAS_22}, "Fire11_C3x3",  "features.11.expand3x3.0"},
 
     {.nb_if = 512,
      .nb_of = 64,
