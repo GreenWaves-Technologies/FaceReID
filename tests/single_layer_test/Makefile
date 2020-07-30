@@ -36,7 +36,7 @@ REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
   $(REID_PATH)/FireGenerator.c \
-  $(REID_PATH)/param_layer_manual.c \
+  $(REID_PATH)/layer_params.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
@@ -51,7 +51,7 @@ reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
 
 APP_SRCS := \
   main.c \
-  $(REID_PATH)/param_layer_manual.c \
+  $(REID_PATH)/layer_params.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_MODEL_GEN_C) \
   $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \

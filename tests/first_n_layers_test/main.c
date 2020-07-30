@@ -42,7 +42,7 @@
 #include "setup.h"
 
 #include "ImgIO.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
 

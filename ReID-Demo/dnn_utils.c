@@ -21,7 +21,7 @@
 #endif
 
 #include "pmsis.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "dnn_utils.h"
 
 #define IO_BUFF_SIZE 1024

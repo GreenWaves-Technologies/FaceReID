@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "Gap.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "FireGenerator.h"
 
 static char *Str(char *S, int A)
@@ -114,19 +114,19 @@ void Fire(const char *Name, CNN_GenControl_T *Ctrl, unsigned idx)
     GroupKerArgs = AllocateKerArgs(9);
 
     A = 0;
-    GroupKerArgs[A++] = KerGroupArg("In", O_IN, convLayers[idx].nb_if * convLayers[idx].win * convLayers[idx].hin, 2, "In");
+    GroupKerArgs[A++] = KerGroupArg("In", O_IN, get_layer_in_size(idx), 2, "In");
 
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx].name)),   O_IN,   convLayers[idx].nb_if * convLayers[idx].nb_of,   2, Str(S1, sprintf(S1,"%s_W", convLayers[idx].name)));
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx].name)),   O_IN,   convLayers[idx].nb_of,                           2, Str(S1, sprintf(S1,"%s_B", convLayers[idx].name)));
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_O", convLayers[idx].name)), O_IN|O_OUT|O_BUFF,     get_activations_size(idx),          2, Str(S1, sprintf(S1,"%s_O", convLayers[idx].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx].name)),   O_IN,       get_layer_weights_size(idx),    2, Str(S1, sprintf(S1,"%s_W", convLayers[idx].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx].name)),   O_IN,       get_layer_bias_size(idx),       2, Str(S1, sprintf(S1,"%s_B", convLayers[idx].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_O", convLayers[idx].name)), O_IN|O_OUT|O_BUFF,  get_layer_out_size(idx),  2, Str(S1, sprintf(S1,"%s_O", convLayers[idx].name)));
 
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx+1].name)), O_IN,   convLayers[idx].nb_of * convLayers[idx+1].nb_of, 2, Str(S1, sprintf(S1,"%s_W", convLayers[idx+1].name)));
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx+1].name)), O_IN,   convLayers[idx+1].nb_of,                         2, Str(S1, sprintf(S1,"%s_B", convLayers[idx+1].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx+1].name)), O_IN,       get_layer_weights_size(idx+1),  2, Str(S1, sprintf(S1,"%s_W", convLayers[idx+1].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx+1].name)), O_IN,       get_layer_bias_size(idx+1),     2, Str(S1, sprintf(S1,"%s_B", convLayers[idx+1].name)));
 
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx+2].name)), O_IN,   convLayers[idx].nb_of * convLayers[idx+2].nb_of, 2, Str(S1, sprintf(S1,"%s_W", convLayers[idx+2].name)));
-    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx+2].name)), O_IN,   convLayers[idx+2].nb_of,                         2, Str(S1, sprintf(S1,"%s_B", convLayers[idx+2].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_W", convLayers[idx+2].name)), O_IN,       get_layer_weights_size(idx+2),  2, Str(S1, sprintf(S1,"%s_W", convLayers[idx+2].name)));
+    GroupKerArgs[A++] = KerGroupArg(Str(S0, sprintf(S0,"%s_B", convLayers[idx+2].name)), O_IN,       get_layer_bias_size(idx+2),     2, Str(S1, sprintf(S1,"%s_B", convLayers[idx+2].name)));
 
-    GroupKerArgs[A++] = KerGroupArg("Out", O_OUT, get_activations_size(idx+1) + get_activations_size(idx+2), 2, "Out");
+    GroupKerArgs[A++] = KerGroupArg("Out", O_OUT, get_layer_out_size(idx+1) + get_layer_out_size(idx+2), 2, "Out");
 
     UserKernelGroupK(
         Name,

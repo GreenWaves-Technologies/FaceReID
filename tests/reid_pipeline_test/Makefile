@@ -36,7 +36,7 @@ REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
   $(REID_PATH)/FireGenerator.c \
-  $(REID_PATH)/param_layer_manual.c \
+  $(REID_PATH)/layer_params.c \
   $(CNN_GEN_PATH)/CNN_Generators.c \
   $(CNN_GEN_PATH)/CNN_Generator_Util.c
 REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
@@ -88,7 +88,7 @@ ifeq ($(GRAPH),1)
 else
   APP_SRCS += \
     $(REID_PATH)/network_process_manual.c \
-    $(REID_PATH)/param_layer_manual.c
+    $(REID_PATH)/layer_params.c
 endif
 
 APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(CNN_KER_PATH)"

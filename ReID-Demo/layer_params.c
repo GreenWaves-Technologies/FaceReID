@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "param_layer_struct.h"
-#include "param_layer_quant.h"
+#include "layer_params.h"
+#include "layer_params_quant.h"
 
-const struct param_conv_layer convLayers[] =
+const struct conv_layer_params convLayers[] =
 {
     // Intro convolutions
     {.nb_if = 1,
@@ -361,9 +361,19 @@ const struct param_conv_layer convLayers[] =
      .filename = "features.12.expand3x3.0"},
 };
 
-
-int get_activations_size(int idx)
+int get_layer_in_size(int idx)
 {
+    if (idx >= NB_CONV)
+        return 2 * get_layer_out_size(NB_CONV - 1);
+
+    return convLayers[idx].nb_if * convLayers[idx].win * convLayers[idx].hin;
+}
+
+int get_layer_out_size(int idx)
+{
+    if (idx >= NB_CONV)
+        return 512;
+
     int out_width = convLayers[idx].win;
     int out_height = convLayers[idx].hin;
 
@@ -390,4 +400,20 @@ int get_activations_size(int idx)
 //     PRINTF("activation_size %d: %d\n", idx, activation_size);
 
     return activation_size;
+}
+
+int get_layer_weights_size(int idx)
+{
+    if (idx >= NB_CONV)
+        return 0;
+
+    return convLayers[idx].nb_if * convLayers[idx].nb_of * convLayers[idx].kernel_width * convLayers[idx].kernel_height;
+}
+
+int get_layer_bias_size(int idx)
+{
+    if (idx >= NB_CONV)
+        return 0;
+
+    return convLayers[idx].nb_of;
 }

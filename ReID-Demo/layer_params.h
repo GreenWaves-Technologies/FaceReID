@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __PARAM_LAYERS_STRUCT_H__
-#define __PARAM_LAYERS_STRUCT_H__
+#ifndef __LAYER_PARAMS_H__
+#define __LAYER_PARAMS_H__
 
 typedef struct quant_conv_layer {
     char in;
@@ -24,7 +24,7 @@ typedef struct quant_conv_layer {
     char bias;
 } quant_t;
 
-struct param_conv_layer {
+struct conv_layer_params {
   int nb_if;
   int nb_of;
   int win;
@@ -43,8 +43,11 @@ struct param_conv_layer {
 };
 
 #define NB_CONV 26
-extern const struct param_conv_layer convLayers[NB_CONV];
+extern const struct conv_layer_params convLayers[NB_CONV];
 
-int get_activations_size(int idx);
+int get_layer_in_size(int idx);
+int get_layer_out_size(int idx);
+int get_layer_weights_size(int idx);
+int get_layer_bias_size(int idx);
 
 #endif
