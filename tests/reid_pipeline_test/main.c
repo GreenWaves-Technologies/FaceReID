@@ -152,7 +152,6 @@ void body(void * parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
     PRINTF("Loading static ReID database\n");

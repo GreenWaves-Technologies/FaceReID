@@ -38,7 +38,7 @@
 # include "Gap.h"
 #endif
 
-#include "param_layer_struct.h"
+#include "layer_params.h"
 
 #include "CNN_BasicKernels.h"
 #include "CnnKernels.h"
@@ -48,7 +48,6 @@
 
 short* infer_result;
 short * l2_x;
-int activation_size = 0;
 
 short int* l3_weights;
 int weights_size;
@@ -133,22 +132,18 @@ short* layer_init()
     return memory_pool;
 }
 
-#define MAX(a, b) (((a)>(b))?(a):(b))
-
-short* layer_process(int layer_idx, int* activation_size)
+short* layer_process(int layer_idx)
 {
     PRINTF("layer_process call\n");
+    short *layer_input = memory_pool;
+    short *layer_output = memory_pool + get_layer_in_size(layer_idx);
     if(layer_idx < NB_CONV)
     {
-        short* layer_input;
-        short* layer_output;
         //short* weight_base_address;
         //short* weights;
         //short* bias;
 
-        layer_input = memory_pool;
-        layer_output = memory_pool + convLayers[layer_idx].nb_if*convLayers[layer_idx].win*convLayers[layer_idx].hin;
-        //weight_base_address = layer_output + get_activations_size(layer_idx); // expects 3-channels 128x128
+        //weight_base_address = layer_output + get_layer_out_size(layer_idx); // expects 3-channels 128x128
 
         //weights = weight_base_address;
         //bias = weights + weights_size / sizeof(short);
@@ -159,26 +154,19 @@ short* layer_process(int layer_idx, int* activation_size)
         PRINTF("Convolution\n");
         ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output);
         PRINTF("Convolution done\n");
-
-        *activation_size = get_activations_size(layer_idx);
-        return layer_output;
     }
     else
     {
         PRINTF("Global AvgPool Test\n");
-        short* layer_input = memory_pool;
-        short* layer_output = memory_pool + 2*get_activations_size(NB_CONV-1);
-        *activation_size = 512;
-
         GPool10(layer_input, layer_output);
-
-        return layer_output;
     }
+
+    return layer_output;
 }
 
 static void cluster_main()
 {
-    infer_result = layer_process(test_layer_idx, &activation_size);
+    infer_result = layer_process(test_layer_idx);
 }
 
 void body(void *parameters)
@@ -231,7 +219,7 @@ void body(void *parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
+    PRINTF("Loading layer %d to HyperRAM\n", test_layer_idx);
     layer_load(&fs, test_layer_idx);
 
     PRINTF("Unmount FS as it's not needed any more\n");
@@ -284,17 +272,7 @@ void body(void *parameters)
     }
     PRINTF("Host file open done\n");
 
-    int input_size = 0;
-
-    if(test_layer_idx < NB_CONV)
-    {
-        input_size = convLayers[test_layer_idx].nb_if*convLayers[test_layer_idx].win*convLayers[test_layer_idx].hin*sizeof(short);
-    }
-    else
-    {
-        input_size = 2*get_activations_size(NB_CONV-1)*sizeof(short);
-    }
-
+    int input_size = get_layer_in_size(test_layer_idx) * sizeof(short);
     PRINTF("input_size: %d\n", input_size);
 
     int read = pi_fs_read(host_file, l2_x, input_size);
@@ -321,6 +299,7 @@ void body(void *parameters)
 #else
     PRINTF("Convolution finished\n");
 #endif
+    int activation_size = get_layer_out_size(test_layer_idx);
     PRINTF("Activations size, shorts: %d\n", activation_size);
 
     pi_cluster_close(&cluster_dev);

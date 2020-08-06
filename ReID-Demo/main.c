@@ -369,8 +369,6 @@ void body(void* parameters)
     ClusterDetectionCall.ImageIn              = ImageIn;
     ClusterDetectionCall.Win                  = CAMERA_WIDTH;
     ClusterDetectionCall.Hin                  = CAMERA_HEIGHT;
-    ClusterDetectionCall.Wout                 = WOUT_INIT;
-    ClusterDetectionCall.Hout                 = HOUT_INIT;
     ClusterDetectionCall.ImageOut             = ImageOut;
     ClusterDetectionCall.ImageIntegral        = ImageIntegral;
     ClusterDetectionCall.SquaredImageIntegral = SquaredImageIntegral;

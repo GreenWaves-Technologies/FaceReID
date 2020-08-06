@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "dnn_utils.h"
 #include <ExtraKernels.h>
 #include <CNN_BasicKernels.h>
@@ -102,8 +102,8 @@ short* network_process(int* activation_size)
     //short* bias;
 
     layer_input = memory_pool;
-    layer_output = memory_pool + MAX(get_activations_size(1), 128*128);
-    //weight_base_address = layer_output + get_activations_size(0); // expects 3-channels 128x128
+    layer_output = memory_pool + MAX(get_layer_out_size(1), 128*128);
+    //weight_base_address = layer_output + get_layer_out_size(0); // expects 3-channels 128x128
 
     //weights = weight_base_address;
     //bias = weights + weights_size[0] / sizeof(short);
@@ -114,13 +114,13 @@ short* network_process(int* activation_size)
     Conv0MP0(layer_input, l3_weights[0], l3_bias[0], layer_output);
 
 #ifdef STOP_AFTER_ConvLayer0
-    *activation_size = get_activations_size(0);
+    *activation_size = get_layer_out_size(0);
     return layer_output;
 #endif
 
     layer_input = layer_output;
     layer_output = memory_pool;
-    //weight_base_address = layer_input + get_activations_size(0); // expects 3-channels 128x128
+    //weight_base_address = layer_input + get_layer_out_size(0); // expects 3-channels 128x128
 
 
     //weights = weight_base_address;
@@ -133,11 +133,11 @@ short* network_process(int* activation_size)
     Conv1MP1(layer_input, l3_weights[1], l3_bias[1], layer_output);
 
 #ifdef STOP_AFTER_ConvLayer1
-    *activation_size = get_activations_size(1);
+    *activation_size = get_layer_out_size(1);
     return layer_output;
 #endif
 
-    int previous_activation_size = get_activations_size(1);
+    int previous_activation_size = get_layer_out_size(1);
 
     int fire_entry_idx = 2; // amount of layers before fire modules loop
     for(int i = 0; i < 3*8; i+=3)
@@ -147,8 +147,8 @@ short* network_process(int* activation_size)
         // fire_entry_idx+i+1 - e1x1
         // fire_entry_idx+i+2 - e3x3
 
-        int concated_activation_size = get_activations_size(fire_entry_idx+i+1) +
-                     get_activations_size(fire_entry_idx+i+2);
+        int concated_activation_size = get_layer_out_size(fire_entry_idx+i+1) +
+                     get_layer_out_size(fire_entry_idx+i+2);
 
 #ifdef NETWORK_DEBUG
         PRINTF("Fire module iteration %d\n", i/3);
@@ -172,11 +172,11 @@ short* network_process(int* activation_size)
         PRINTF("\tSqueeze Layer\n");
         PRINTF("\tSqueeze layer input offset %d\n", layer_input-memory_pool);
         PRINTF("\tSqueeze layer output offset %d\n", layer_output-memory_pool);
-        PRINTF("\tActivation size: %d\n", get_activations_size(fire_entry_idx+i+0));
+        PRINTF("\tActivation size: %d\n", get_layer_out_size(fire_entry_idx+i+0));
         PRINTF("\tWeight size, bytes: %d\n", weights_size[fire_entry_idx+i+0]);
         PRINTF("\tBias size, bytes: %d\n", bias_size[fire_entry_idx+i+0]);
 #endif
-        //weight_base_address = layer_output + get_activations_size(fire_entry_idx+i+0);
+        //weight_base_address = layer_output + get_layer_out_size(fire_entry_idx+i+0);
         //weights = weight_base_address;
         //bias = weight_base_address + weights_size[fire_entry_idx+i+0] / sizeof(short);
         //loadLayerFromL3ToL2(&hyper, l3_weights[fire_entry_idx+i+0], weights, weights_size[fire_entry_idx+i+0]);
@@ -194,7 +194,7 @@ short* network_process(int* activation_size)
 
 #ifdef NETWORK_DEBUG
         PRINTF("\tE1x1\n");
-        PRINTF("\tActivation size: %d\n", get_activations_size(fire_entry_idx+i+1));
+        PRINTF("\tActivation size: %d\n", get_layer_out_size(fire_entry_idx+i+1));
         PRINTF("\tWeight, bytes: %d\n", weights_size[fire_entry_idx+i+1]);
         PRINTF("\tBias size, bytes: %d\n", bias_size[fire_entry_idx+i+1]);
         PRINTF("\tE1x1 layer input offset %d\n", layer_input-memory_pool);
@@ -206,13 +206,13 @@ short* network_process(int* activation_size)
         ConvLayerArray[fire_entry_idx+i+1](layer_input, l3_weights[fire_entry_idx+i+1],
                                            l3_bias[fire_entry_idx+i+1], layer_output);
 
-        layer_output = memory_pool + get_activations_size(fire_entry_idx+i+1);
+        layer_output = memory_pool + get_layer_out_size(fire_entry_idx+i+1);
         //weights = weight_base_address;
         //bias = weight_base_address + weights_size[fire_entry_idx+i+2] / sizeof(short);
         //bias = weight_base_address;
 #ifdef NETWORK_DEBUG
         PRINTF("\tE3x3\n");
-        PRINTF("\tActivation size: %d\n", get_activations_size(fire_entry_idx+i+2));
+        PRINTF("\tActivation size: %d\n", get_layer_out_size(fire_entry_idx+i+2));
         PRINTF("\tWeight size, bytes: %d\n", weights_size[fire_entry_idx+i+2]);
         PRINTF("\tBias size, bytes: %d\n", bias_size[fire_entry_idx+i+2]);
         PRINTF("\tE3x3 layer input offset %d\n", layer_input-memory_pool);

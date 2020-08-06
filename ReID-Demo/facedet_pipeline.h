@@ -19,7 +19,7 @@
 
 #include "cascade.h"
 
-int is_detection_stable(const cascade_reponse_t *hisotry, int history_size);
+int is_detection_stable(const cascade_reponse_t *history, int history_size);
 void detection_cluster_init(ArgCluster_T *ArgC);
 void detection_cluster_main(ArgCluster_T *ArgC);
 

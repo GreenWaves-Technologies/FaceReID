@@ -42,7 +42,7 @@
 #include "setup.h"
 
 #include "ImgIO.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
 
@@ -111,7 +111,6 @@ void body(void* parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
     PRINTF("Unmount FS as it's not needed any more\n");

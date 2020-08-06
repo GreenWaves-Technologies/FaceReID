@@ -394,9 +394,9 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Set UBTLE\n");
     pi_nina_b112_AT_send(&ble, "+UBTLN=" BLE_NAME);
     PRINTF("Set UBTLN\n");
-    pi_nina_b112_AT_query(&ble, "+UMRS?", (char *) rx_buffer);
+    pi_nina_b112_AT_query(&ble, "+UMRS?", rx_buffer);
     PRINTF("BLE configuration : %s\n", rx_buffer);
-    pi_nina_b112_AT_query(&ble, "+UBTLN?", (char *) rx_buffer);
+    pi_nina_b112_AT_query(&ble, "+UBTLN?", rx_buffer);
     PRINTF("BLE name : %s\n", rx_buffer);
 
     PRINTF("AT Config Done\n");

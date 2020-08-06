@@ -52,12 +52,6 @@ void detection_cluster_init(ArgCluster_T *ArgC)
 
     //Get Cascade Model
     ArgC->model = getFaceCascade(ArgC->cl);
-
-    #ifdef PERF_COUNT
-    // Configure performance counters for counting the cycles
-    pi_perf_conf(1<<RT_PERF_CYCLES);
-    //PRINTF("Cluster core %d Launched, %d cores configuration\n", 1, gap_ncore());
-    #endif
 }
 
 static void prepare_to_render(ArgCluster_T *ArgC)
@@ -111,7 +105,7 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->reponses, ArgC->num_reponse);
 
     //Converting image to RGB 565 for LCD screen and binning image to half the size
-    pi_cl_team_fork(__builtin_pulp_CoreCount(), (void *)prepare_to_render, (void *) ArgC);
+    pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, (void *) ArgC);
 }
 
 static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_t* b)

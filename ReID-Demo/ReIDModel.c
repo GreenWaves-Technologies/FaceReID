@@ -21,7 +21,7 @@
 #include "AutoTilerLib.h"
 #include "FireGenerator.h"
 #include "CNN_Generators.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "setup.h"
 
 void CnnModel(unsigned int L1Memory, unsigned int L2Memory, unsigned int L3Memory, unsigned int L3Flash)
@@ -115,12 +115,10 @@ void CnnModel(unsigned int L1Memory, unsigned int L2Memory, unsigned int L3Memor
     CNN_PoolReLU(
         "GPool10", // Name
         &Ctrl,
-        2, // In_DataSize
-        2, // Out_DataSize
+        2, 2, // All short ints
         convLayers[NB_CONV-1].q.out,
         convLayers[NB_CONV-1].q.out,
-        0, // In_InL3
-        0, // Out_InL3
+        0, 0, // In, Out in L2
 
         512, // InFeat
         512, // OutFeat

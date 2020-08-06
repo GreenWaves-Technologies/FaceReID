@@ -88,14 +88,16 @@ cd single_layer_test
 
 status=0
 
+make $make_options clean > /dev/null 2>&1
+make $make_options -j4 tiler_models > ../single_logs/build.log 2>&1
+make $make_options -j4 build >> ../single_logs/build.log 2>&1
+
 for (( i=0; i < ${#layer_inputs[@]}; i++ )); do
     echo "Layer $i: ${layer_inputs[i]} => ${layer_outputs[i]}"
-    make $make_options clean > /dev/null 2>&1
     rm -f input.bin output.bin
     ../../scripts/json2bin.py ../activations_dump/${layer_inputs[i]} input.bin
-    make $make_options TEST_LAYER_INDEX=$i -j4 tiler_models > ../single_logs/$i.stdout.log 2>&1
-    make $make_options TEST_LAYER_INDEX=$i -j4 build >> ../single_logs/$i.stdout.log 2>&1
-    make $make_options TEST_LAYER_INDEX=$i all run >> ../single_logs/$i.stdout.log 2>&1
+    touch main.c # rebuild to set proper layer index
+    make $make_options TEST_LAYER_INDEX=$i all run > ../single_logs/$i.stdout.log 2>&1
     echo -n "${layer_inputs[i]}; ${layer_outputs[i]}; " >> ../single_layer_test_summary.csv
     ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[i]} output.bin >> ../single_layer_test_summary.csv
     if [ $? -ne 0 ]; then
