@@ -20,11 +20,6 @@
 GRAPH := 1
 USE_PMSIS_BSP := 1
 
-TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
-TILER_LIB := $(TILER_PATH)/lib/libtile.a
-TILER_GENERATOR_PATH := $(TILER_PATH)/generators
-CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
 CNN_LAYERS_PATH := quantized_model
 CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
 CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
@@ -34,7 +29,7 @@ DETECTION_MODEL_GEN_C := $(addsuffix .c, $(DETECTION_MODEL_GEN))
 DETECTION_MODEL_GEN_CH := $(DETECTION_MODEL_GEN_C) $(addsuffix .h, $(DETECTION_MODEL_GEN))
 
 DETECTION_GEN_SRC := FaceDetGenerator.c FaceDetModel.c
-DETECTION_GEN_CFLAGS += -I"$(TILER_PATH)/include"
+DETECTION_GEN_CFLAGS += -I"$(TILER_INC)"
 ifeq ($(BOARD_NAME),gapoc_a)
   DETECTION_GEN_CFLAGS += -DCONFIG_GAPOC_A
 endif
@@ -58,9 +53,9 @@ REID_GEN_SRCS := \
   ReIDModel.c \
   FireGenerator.c \
   layer_params.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c \
-  $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generators.c \
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generator_Util.c
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)"
 ifeq ($(GRAPH),1)
   REID_GEN_CFLAGS += -DGRAPH -DCNN_LAYERS_PATH='"$(CNN_LAYERS_PATH)"'
   CNN_DATA_BIN := SqueezeNet_L3_Flash_Const.dat
@@ -81,7 +76,7 @@ EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
 EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: ExtraModels.c
-	gcc -o $@ -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)" ExtraModels.c $(TILER_LIB)
+	gcc -o $@ -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)" ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
@@ -105,9 +100,9 @@ APP_SRCS := \
   $(DETECTION_MODEL_GEN_C) \
   $(REID_MODEL_GEN_C) \
   $(EXTRA_MODEL_GEN_C) \
-  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
+  $(TILER_CNN_KERNEL_PATH)/CNN_Conv_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_Pooling_BasicKernels.c
 
 ifeq ($(GRAPH),1)
   APP_SRCS += network_process_graph.c
@@ -117,7 +112,7 @@ else
     layer_params.c
 endif
 
-APP_INC += "$(PWD)" "$(TILER_INC)" "$(CNN_KER_PATH)"
+APP_INC += "$(PWD)" "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
 
 APP_CFLAGS += -Os -flto -DNORM_ROUND
 APP_LDFLAGS += -flto

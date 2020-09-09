@@ -20,7 +20,7 @@ APP_SRCS := \
   main.c \
   $(REID_PATH)/face_db.c \
   $(REID_PATH)/dnn_utils.c
-APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include"
+APP_INC += $(PWD) $(REID_PATH)
 APP_CFLAGS += -O3 -DNORM_ROUND
 
 FACE_DB_SIZE := $(shell wc -l < $(REID_PATH)/known_faces/index.txt)

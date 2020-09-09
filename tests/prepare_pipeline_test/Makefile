@@ -17,11 +17,6 @@ USE_PMSIS_BSP=1
 TEST_LEVEL ?= 0
 
 REID_PATH := ../../ReID-Demo
-TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
-TILER_LIB := $(TILER_PATH)/lib/libtile.a
-TILER_GENERATOR_PATH := $(TILER_PATH)/generators
-CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
 
 REID_MODEL_GEN := CnnKernels
 REID_MODEL_GEN_C := $(addsuffix .c, $(REID_MODEL_GEN))
@@ -31,9 +26,9 @@ REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
   $(REID_PATH)/FireGenerator.c \
   $(REID_PATH)/layer_params.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c \
-  $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generators.c \
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generator_Util.c
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)"
 
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
@@ -48,7 +43,7 @@ EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
 EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
 GenExtraTile: $(REID_PATH)/ExtraModels.c
-	gcc -o $@ -I"$(TILER_INC)" -I"$(CNN_GEN_PATH)" $(REID_PATH)/ExtraModels.c $(TILER_LIB)
+	gcc -o $@ -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)" $(REID_PATH)/ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
@@ -67,10 +62,10 @@ APP_SRCS := \
   $(REID_PATH)/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(EXTRA_MODEL_GEN_C) \
-  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
-APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(CNN_KER_PATH)"
+  $(TILER_CNN_KERNEL_PATH)/CNN_Conv_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_Pooling_BasicKernels.c
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
 APP_CFLAGS += -O3 -DNORM_ROUND -DCONFIG_GAPOC_A -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1
