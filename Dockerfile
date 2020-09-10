@@ -41,7 +41,7 @@ RUN apt-get update && \
         pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install wheel && pip3 install opencv-python argcomplete six
+RUN pip3 install argcomplete six numpy
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
@@ -54,7 +54,7 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
-      git checkout release-v3.6 && \
+      git checkout release-v3.7 && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
