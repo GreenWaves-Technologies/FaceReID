@@ -36,11 +36,11 @@ short* network_init(struct pi_device *cl)
 
     if(!__network_init_done)
     {
-        L2_Memory = memory_pool;
+        L2_Memory = (char *)memory_pool;
         SqueezeNetCNN_Construct();
         __network_init_done = 1;
     }
-    return memory_pool;
+    return NetworkIn;
 }
 
 void network_deinit(struct pi_device *cl)
@@ -53,14 +53,14 @@ void network_deinit(struct pi_device *cl)
 
 short* network_process(int* activation_size)
 {
-    // FIXME: Should use NetworkIn, NetworkOut if possible
     SqueezeNetCNN();
     *activation_size = 512;
-    return L2_Memory;
+    return NetworkOut;
 }
 
 void network_load(struct pi_device * fs)
 {
+    (void)fs;
     // Do nothing, graph code does it on the go
 }
 
