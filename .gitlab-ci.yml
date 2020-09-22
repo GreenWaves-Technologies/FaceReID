@@ -217,9 +217,9 @@ ReIDPipelineTest_SILENT:
   script:
     - source /gap_sdk/configs/$BOARD_NAME.sh
     - cd tests/reid_pipeline_test
-    - make -j4 SILENT=1 tiler_models
-    - make -j4 SILENT=1 build
-    - make SILENT=1 all run | tee test.log
+    - make -j4 GRAPH=0 SILENT=1 tiler_models
+    - make -j4 GRAPH=0 SILENT=1 build
+    - make GRAPH=0 SILENT=1 all run | tee test.log
     - "grep 'Hi, Lena! Conf: 0' test.log"
   tags:
     - GAP8v2
