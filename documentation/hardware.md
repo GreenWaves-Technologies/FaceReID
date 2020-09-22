@@ -7,7 +7,7 @@ The document covers Gapoc A and Gapuino board and peripherals setup. Other GAP8 
 ## Bill of Materials
 
 - Adafruit 2.8 TFT display with SPI interface
--  GAPOC_A Adapter for Adafruit LCD 2.8 version 3 or version 4 or hand-made shield with push button
+- GAPOC_A Adapter for Adafruit LCD 2.8 version 3 or version 4 or hand-made shield with push button
 - Android-based smartphone
 
 ## Dip Switches Configuration
@@ -46,11 +46,11 @@ Gapoc pins:
 | Conn3 pin 8 |   GPIO   |
 |   1v8 pad   | 1.8v PWR |
 
-**NOTE**: `Conn3` pin 8 has id 25 for `pi_pad_init` call and id 19 for other `pi_gpio_` calls. The hardware setup cold be changed and the pin can ge replaced by any spare GPIO input pin. The ids should be updated accordingly in `setup.h`.
+**NOTE**: `Conn3` pin 8 has id 25 for `pi_pad_init` call and id 19 for other `pi_gpio_` calls. The hardware setup could be changed and the pin can be replaced by any spare GPIO input pin. The ids should be updated accordingly in `setup.h`.
 
 # Gapuino
 
-## Build of Materials
+## Bill of Materials
 
 - HIGHMAX camera module
 - Adafruit 2.8 TFT display with SPI interface
