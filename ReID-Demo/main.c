@@ -434,7 +434,7 @@ void body(void* parameters)
             }
         }
 
-        memcpy(&cascade_history[cascade_history_size], &responses[optimal_detection_id], sizeof(cascade_response_t));
+        cascade_history[cascade_history_size] = responses[optimal_detection_id];
         cascade_history_size++;
 
         // Collect several consecutive frames with a face
@@ -447,7 +447,7 @@ void body(void* parameters)
             PRINTF("Detection is not stable\n");
             cascade_history_size--;
             for(int i = 0; i < cascade_history_size; i++)
-                memcpy(&cascade_history[i], &cascade_history[i+1], sizeof(cascade_response_t));
+                cascade_history[i] = cascade_history[i+1];
             goto end_loop;
         }
 
