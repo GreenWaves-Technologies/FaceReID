@@ -19,9 +19,9 @@
 
 #include "cascade.h"
 
-typedef struct ArgClusterDnn
+typedef struct
 {
-    cascade_reponse_t* roi;
+    cascade_response_t *roi;
     unsigned char* frame;
     unsigned char* face;
     short* scaled_face;

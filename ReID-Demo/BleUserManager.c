@@ -42,7 +42,7 @@ typedef struct BleContext_T
     int face_chunk_idx;
     struct pi_device* display;
     pi_nina_ble_t* ble;
-    Stranger* l2_strangers;
+    stranger_t *l2_strangers;
     char* current_name;
     short* current_descriptor;
 
@@ -318,7 +318,7 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     context.visitors_tail = get_identities_count();
     context.current_descriptor = memory_pool;
     context.current_name = memory_pool + FACE_DESCRIPTOR_SIZE;
-    context.l2_strangers = (Stranger*) (memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
+    context.l2_strangers = (stranger_t *)(memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
 
     char* previews = (char*) &context.l2_strangers[context.strangers_tail+1]; // right after the last structure
 

@@ -23,16 +23,16 @@
 #define DB_FULL           2
 #define DUPLICATE_DROPPED 3
 
-typedef struct Stranger_T
+typedef struct
 {
     short descriptor[FACE_DESCRIPTOR_SIZE];
     char  name[16];
     char* preview;
-} Stranger;
+} stranger_t;
 
 char addStrangerL2(char* preview, const short* descriptor);
 char addStrangerL3(char* preview, const short *descriptor);
-char getStranger(int idx, Stranger* s);
+char getStranger(int idx, stranger_t *s);
 void dropStrangers(void);
 char getStrangersCount(void);
 

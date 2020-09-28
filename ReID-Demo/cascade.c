@@ -241,7 +241,7 @@ static int rect_intersect_area(
     #undef MIN
 }
 
-static void non_max_suppress(cascade_reponse_t* responses, int response_idx)
+static void non_max_suppress(cascade_response_t *responses, int response_idx)
 {
     int idx;
 
@@ -284,7 +284,7 @@ void cascade_detect(ArgCluster_T *ArgC)
     int result;
 
     //create structure for output
-    cascade_reponse_t* responses = ArgC->reponses;
+    cascade_response_t *responses = ArgC->responses;
     for(int i = 0; i < MAX_NUM_OUT_WINS; i++)
         responses[i].x=-1;
 
@@ -363,5 +363,5 @@ void cascade_detect(ArgCluster_T *ArgC)
 
     non_max_suppress(responses, response_idx);
 
-    ArgC->num_reponse = response_idx;
+    ArgC->num_response = response_idx;
 }

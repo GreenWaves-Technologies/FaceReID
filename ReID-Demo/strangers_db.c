@@ -19,7 +19,7 @@
 
 static int global_stranger_idx = 0;
 
-Stranger StrangersDB[STRANGERS_DB_SIZE];
+stranger_t StrangersDB[STRANGERS_DB_SIZE];
 
 static char findDuplicate(const short* descriptor)
 {
@@ -85,7 +85,7 @@ char addStrangerL3(char* preview, const short* descriptor)
     return 0;
 }
 
-char getStranger(int idx, Stranger* s)
+char getStranger(int idx, stranger_t *s)
 {
     if((idx < 0) || (idx >= STRANGERS_DB_SIZE))
     {

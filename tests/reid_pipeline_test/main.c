@@ -56,7 +56,7 @@ char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH
 
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
-L2_MEM cascade_reponse_t test_response =
+L2_MEM cascade_response_t test_response =
 {
     .x = 96,
     .y = 56,
@@ -67,7 +67,7 @@ L2_MEM cascade_reponse_t test_response =
 };
 #else
 char *inputBlob = "../../../input_324x244.pgm";
-L2_MEM cascade_reponse_t test_response =
+L2_MEM cascade_response_t test_response =
 {
     .x = 98,
     .y = 58,
@@ -81,7 +81,7 @@ L2_MEM cascade_reponse_t test_response =
 char *outputImage = "../../../output.pgm";
 char *outputBlob = "../../../output.bin";
 
-// L2_MEM cascade_reponse_t test_response =
+// L2_MEM cascade_response_t test_response =
 // {
 //     .x = 113,
 //     .y = 97,
