@@ -179,7 +179,7 @@ void body(void* parameters)
         pmsis_exit(-5);
     }
 
-    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    pi_cluster_task(&cluster_task, (void *)reid_prepare_cluster, &ClusterDnnCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);

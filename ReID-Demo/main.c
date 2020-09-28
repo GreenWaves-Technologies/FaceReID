@@ -376,7 +376,7 @@ void body(void* parameters)
     ClusterDetectionCall.output_map           = output_map;
     ClusterDetectionCall.responses            = responses;
 
-    pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
+    pi_cluster_task(&cluster_task, (void *)detection_cluster_init, &ClusterDetectionCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -405,7 +405,7 @@ void body(void* parameters)
 #ifdef PERF_COUNT
         unsigned int tm = rt_time_get_us();
 #endif
-        pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_main, &ClusterDetectionCall);
+        pi_cluster_task(&cluster_task, (void *)detection_cluster_main, &ClusterDetectionCall);
         cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
         cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -470,7 +470,7 @@ void body(void* parameters)
             pmsis_exit(-7);
         }
 
-        pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+        pi_cluster_task(&cluster_task, (void *)reid_prepare_cluster, &ClusterDnnCall);
         cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
         cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -493,7 +493,7 @@ void body(void* parameters)
 #ifdef PERF_COUNT
         unsigned int inftm = rt_time_get_us();
 #endif
-        pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
+        pi_cluster_task(&cluster_task, (void *)reid_inference_cluster, &ClusterDnnCall);
         cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
         cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -566,7 +566,7 @@ void body(void* parameters)
 
         // Reinit face detector
         pi_cluster_open(&cluster_dev);
-        pi_cluster_task(&cluster_task, (void (*)(void *))detection_cluster_init, &ClusterDetectionCall);
+        pi_cluster_task(&cluster_task, (void *)detection_cluster_init, &ClusterDetectionCall);
         cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
         cluster_task.stack_size = CL_STACK_SIZE;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);

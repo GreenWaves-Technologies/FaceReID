@@ -291,7 +291,7 @@ void body(void *parameters)
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL));
+    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void *)cluster_main, NULL));
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
