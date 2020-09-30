@@ -129,14 +129,12 @@ short* layer_init()
         return NULL;
     }
 
-    return memory_pool;
+    return L2_Memory;
 }
 
 short* layer_process(int layer_idx)
 {
     PRINTF("layer_process call\n");
-    short *layer_input = memory_pool;
-    short *layer_output = memory_pool + get_layer_in_size(layer_idx);
     if(layer_idx < NB_CONV)
     {
         //short* weight_base_address;
@@ -152,16 +150,16 @@ short* layer_process(int layer_idx)
         //loadLayerFromL3ToL2(&HyperRam, l3_weights, weights, weights_size);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias, bias, bias_size);
         PRINTF("Convolution\n");
-        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output);
+        ConvLayerArray[layer_idx](l2_x, l3_weights, l3_bias, infer_result);
         PRINTF("Convolution done\n");
     }
     else
     {
         PRINTF("Global AvgPool Test\n");
-        GPool10(layer_input, layer_output);
+        GPool10(l2_x, infer_result);
     }
 
-    return layer_output;
+    return infer_result;
 }
 
 static void cluster_main()
@@ -219,6 +217,17 @@ void body(void *parameters)
 
     PRINTF("FS mounted\n");
 
+    int input_size = get_layer_in_size(test_layer_idx) * sizeof(short);
+    int output_size = get_layer_out_size(test_layer_idx) * sizeof(short);
+
+    l2_x = pi_l2_malloc(input_size);
+    infer_result = pi_l2_malloc(output_size);
+    if (l2_x == NULL || infer_result == NULL)
+    {
+        PRINTF("Error: Failed to allocate %d bytes of L2 memory\n", input_size + output_size);
+        pmsis_exit(-4);
+    }
+
     PRINTF("Loading layer %d to HyperRAM\n", test_layer_idx);
     layer_load(&fs, test_layer_idx);
 
@@ -248,7 +257,10 @@ void body(void *parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = layer_init();
+    if (layer_init() == NULL)
+    {
+        pmsis_exit(-5);
+    }
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -272,7 +284,6 @@ void body(void *parameters)
     }
     PRINTF("Host file open done\n");
 
-    int input_size = get_layer_in_size(test_layer_idx) * sizeof(short);
     PRINTF("input_size: %d\n", input_size);
 
     int read = pi_fs_read(host_file, l2_x, input_size);
@@ -315,6 +326,9 @@ void body(void *parameters)
     pi_fs_close(host_file);
 
     pi_fs_unmount(&host_fs);
+
+    pi_l2_free(l2_x, input_size);
+    pi_l2_free(infer_result, output_size);
 
     layer_free();
 }

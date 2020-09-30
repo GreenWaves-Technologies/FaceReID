@@ -26,6 +26,7 @@ typedef struct
     unsigned char* face;
     short* scaled_face;
     short* output;
+    short *buffer;
     int activation_size;
     unsigned int cycles;
 } ArgClusterDnn_T;

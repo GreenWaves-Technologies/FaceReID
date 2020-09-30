@@ -371,7 +371,7 @@ int main(int argc, char **argv)
 
     CnnModel(
         64*1024 - (CL_STACK_SIZE + 7 * CL_SLAVE_STACK_SIZE + 7 * 1024), // 7 KB for local cluster data (5 KB is minimum)
-        135*1024,     // Gives best performance for L2 < 150 KB according to tests
+        INFERENCE_MEMORY_SIZE, // All available L2
         1*1024*1024,  // 1 MB is enough
         16*1024*1024  // Give all HyperFlash as it's not used anywhere else
     );

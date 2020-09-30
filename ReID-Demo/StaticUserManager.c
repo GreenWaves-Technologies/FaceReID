@@ -17,10 +17,10 @@
 #include "StaticUserManager.h"
 #include "face_db.h"
 
-int initHandler(struct pi_device* fs)
+int initHandler(struct pi_device *fs, void *buffer)
 {
     PRINTF("Loading static ReID database\n");
-    int status = load_static_db(fs);
+    int status = load_static_db(fs, buffer);
     if(!status)
     {
         PRINTF("Static DB load failed!\n");

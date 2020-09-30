@@ -49,11 +49,6 @@
 #include "face_db.h"
 #include "reid_pipeline.h"
 
-char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT;
-// Largest possible face after Cascade
-char* tmp_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194;
-char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194-128*128;
-
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
 L2_MEM cascade_response_t test_response =
@@ -154,8 +149,26 @@ void body(void * parameters)
 
     network_load(&fs);
 
+    unsigned memory_size =
+#if defined (GRAPH)
+        CAMERA_WIDTH * CAMERA_HEIGHT + // tmp_frame_buffer
+        194 * 194 + // tmp_face_buffer
+        128 * 128 +  // tmp_img_face_buffer
+#endif
+        INFERENCE_MEMORY_SIZE;
+    unsigned char *l2_buffer = pi_l2_malloc(memory_size);
+    if (l2_buffer == NULL)
+    {
+        PRINTF("Error: Failed to allocate %d bytes of L2 memory\n", memory_size);
+        pmsis_exit(-4);
+    }
+    unsigned char *tmp_frame_buffer = l2_buffer + memory_size - CAMERA_WIDTH * CAMERA_HEIGHT;
+    // Largest possible face after Cascade
+    unsigned char *tmp_face_buffer = tmp_frame_buffer - 194 * 194;
+    unsigned char *tmp_img_face_buffer = tmp_face_buffer - 128 * 128;
+
     PRINTF("Loading static ReID database\n");
-    load_static_db(&fs);
+    load_static_db(&fs, l2_buffer);
 
     PRINTF("Unmount FS as it's not needed any more\n");
     pi_fs_unmount(&fs);
@@ -174,12 +187,11 @@ void body(void * parameters)
         pmsis_exit(-4);
     }
 
-    int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
     unsigned int Wi = CAMERA_WIDTH;
     unsigned int Hi = CAMERA_HEIGHT;
 
     PRINTF("Before ReadImageFromFile\n");
-    char* read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, input_size);
+    unsigned char *read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, Wi * Hi);
     PRINTF("After ReadImageFromFile with status: %x\n", read);
     if(read != tmp_frame_buffer)
     {
@@ -202,8 +214,9 @@ void body(void * parameters)
     ArgClusterDnn_T ClusterDnnCall;
     ClusterDnnCall.roi         = &test_response;
     ClusterDnnCall.frame       = tmp_frame_buffer;
+    ClusterDnnCall.buffer      = (short *)l2_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev, l2_buffer);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
@@ -255,6 +268,8 @@ void body(void * parameters)
     tm = rt_time_get_us() - tm;
     PRINTF("Cycle time %d us\n", tm);
 #endif
+
+    pi_l2_free(l2_buffer, memory_size);
 }
 
 int main()

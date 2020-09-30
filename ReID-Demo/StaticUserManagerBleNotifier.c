@@ -30,10 +30,10 @@
 uint8_t message[18];
 pi_nina_ble_t ble;
 
-int initHandler(struct pi_device* fs, struct pi_device* display)
+int initHandler(struct pi_device *fs, struct pi_device *display, void *buffer)
 {
     PRINTF("Loading static ReID database\n");
-    int status = load_static_db(fs);
+    int status = load_static_db(fs, buffer);
     if(!status)
     {
         PRINTF("Static DB load failed!\n");

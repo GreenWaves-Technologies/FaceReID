@@ -68,6 +68,8 @@
 #include "reid_pipeline.h"
 #include "facedet_pipeline.h"
 
+#define MAX(a, b) (((a)>(b))?(a):(b))
+
 cascade_response_t responses[MAX_NUM_OUT_WINS];
 
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
@@ -193,8 +195,6 @@ void body(void* parameters)
 {
     (void) parameters;
 
-    char string_buffer[64];
-
     PRINTF("Start ReID Demo Application\n");
 
     pi_freq_set(PI_FREQ_DOMAIN_FC, 50000000);
@@ -266,12 +266,47 @@ void body(void* parameters)
     draw_text(&display, "Loading network", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
     network_load(&fs);
 
+    unsigned memory_size_face =
+        IMAGE_SIZE + // ImageIn
+        WOUT_INIT * HOUT_INIT + // ImageOut
+        WOUT_INIT * HOUT_INIT * sizeof(unsigned int) + // ImageIntegral
+        WOUT_INIT * HOUT_INIT * sizeof(unsigned int) + // SquaredImageIntegral
+        (WOUT_INIT - 24 + 1) * (HOUT_INIT - 24 + 1)  * sizeof(int) + // output_map
+        (CAMERA_WIDTH / 2) * (CAMERA_HEIGHT / 2); // ImageRender
+
+    unsigned memory_size_ble =
+#if defined(USE_BLE_USER_MANAGEMENT)
+        (STRANGERS_DB_SIZE + 1) * sizeof(stranger_t) + // Names + descriptors
+        STRANGERS_DB_SIZE * 128 * 128 + // Face pics
+#endif
+        1024;
+
+    unsigned memory_size_inference =
+#if defined (GRAPH)
+        IMAGE_SIZE + // ImageIn
+        194 * 194 +  // Face buffer
+#endif
+        INFERENCE_MEMORY_SIZE;
+
+    unsigned memory_size = MAX(MAX(
+        memory_size_face, // Face detection
+        memory_size_ble),
+        memory_size_inference
+    );
+
+    void *memory_pool = pi_l2_malloc(memory_size);
+    if (memory_pool == NULL)
+    {
+        PRINTF("Error: Failed to allocate memory pool\n");
+        pmsis_exit(-4);
+    }
+
     int status = 1;
 #if defined(STATIC_FACE_DB)
 # if defined(BLE_NOTIFIER)
-    status = initHandler(&fs, &display);
+    status = initHandler(&fs, &display, memory_pool);
 # else
-    status = initHandler(&fs);
+    status = initHandler(&fs, memory_pool);
 # endif
 #elif defined(USE_BLE_USER_MANAGEMENT)
     status = initHandler(&gpio_port);
@@ -298,6 +333,8 @@ void body(void* parameters)
         PRINTF("pi_fs_mount failed\n");
         pmsis_exit(-8);
     }
+
+    int saved_index = 0;
 #endif
 
     PRINTF("Initializing cluster... ");
@@ -352,7 +389,7 @@ void body(void* parameters)
     unsigned int* SquaredImageIntegral;
     int* output_map;
     // put camera frame to memory pool tail, it does not intersect with the first DNN layer data
-    ImageIn = ((unsigned char*)(memory_pool + MEMORY_POOL_SIZE)) - IMAGE_SIZE;
+    ImageIn = ((unsigned char*)memory_pool) + memory_size - IMAGE_SIZE;
     ImageOut = ImageIn - WOUT_INIT*HOUT_INIT;
     ImageIntegral = ((unsigned int*)ImageOut) - WOUT_INIT*HOUT_INIT;
     SquaredImageIntegral = ImageIntegral - WOUT_INIT*HOUT_INIT;
@@ -386,14 +423,14 @@ void body(void* parameters)
 
     PRINTF("Start main loop\n");
 
-    int saved_index = 0;
     while(1)
     {
+        char string_buffer[64];
 #if defined(USE_BLE_USER_MANAGEMENT)
         if(pi_gpio_pin_notif_get(&gpio_port, BUTTON_PIN_ID) != 0)
         {
             pi_gpio_pin_notif_clear(&gpio_port, BUTTON_PIN_ID);
-            admin_body(&display, &gpio_port, BUTTON_PIN_ID);
+            admin_body(&display, &gpio_port, BUTTON_PIN_ID, memory_pool);
         }
 #endif
 #ifdef HAVE_CAMERA
@@ -462,8 +499,9 @@ void body(void* parameters)
         ArgClusterDnn_T ClusterDnnCall;
         ClusterDnnCall.roi         = &responses[optimal_detection_id];
         ClusterDnnCall.frame       = ImageIn;
-        ClusterDnnCall.face        = ((unsigned char*)output_map) - (194*194); // Largest possible face after Cascade
-        ClusterDnnCall.scaled_face = network_init(&cluster_dev);
+        ClusterDnnCall.buffer      = memory_pool;
+        ClusterDnnCall.face        = ImageIn - 194 * 194; // Largest possible face after Cascade
+        ClusterDnnCall.scaled_face = network_init(&cluster_dev, memory_pool);
         if(!ClusterDnnCall.scaled_face)
         {
             PRINTF("Failed to initialize ReID network!\n");
@@ -501,6 +539,7 @@ void body(void* parameters)
         inftm = rt_time_get_us() - inftm;
         PRINTF("DNN inference finished in %d us\n", inftm);
 #endif
+        network_deinit(&cluster_dev);
         pi_cluster_close(&cluster_dev);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
@@ -584,6 +623,8 @@ end_loop:
 #endif
 
     pi_cluster_close(&cluster_dev);
+
+    pi_l2_free(memory_pool, memory_size);
 
 #ifdef DUMP_SUCCESSFUL_FRAME
     pi_fs_unmount(&host_fs);

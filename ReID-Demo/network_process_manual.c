@@ -63,7 +63,7 @@ ConvLayerFunctionType ConvLayerArray[NB_CONV] =
 
 // The function return L2 memory address where input image should be loader
 // Expected format: 128x128xshort
-short* network_init(struct pi_device *cl)
+short *network_init(struct pi_device *cl, void *l2_buffer)
 {
     ExtraKernels_L1_Memory = L1_Memory = pi_l1_malloc(cl, MAX(_L1_Memory_SIZE, _ExtraKernels_L1_Memory_SIZE));
     if(L1_Memory == NULL)
@@ -82,7 +82,7 @@ short* network_init(struct pi_device *cl)
         }
         __network_init_done = 1;
     }
-    return memory_pool;
+    return l2_buffer;
 }
 
 void network_deinit(struct pi_device *cl)
@@ -93,7 +93,7 @@ void network_deinit(struct pi_device *cl)
     __network_init_done = 0;
 }
 
-short* network_process(int* activation_size)
+short *network_process(short *memory_pool, int *activation_size)
 {
     short* layer_input;
     short* layer_output;
