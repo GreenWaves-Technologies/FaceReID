@@ -37,7 +37,12 @@ short* network_init(struct pi_device *cl)
     if(!__network_init_done)
     {
         L2_Memory = (char *)memory_pool;
-        SqueezeNetCNN_Construct();
+        int err = SqueezeNetCNN_Construct();
+        if (err != 0)
+        {
+            PRINTF("Error: Failed to initialize inference (code=%d)\n", err);
+            return NULL;
+        }
         __network_init_done = 1;
     }
     return NetworkIn;
@@ -46,7 +51,7 @@ short* network_init(struct pi_device *cl)
 void network_deinit(struct pi_device *cl)
 {
     SqueezeNetCNN_Destruct();
-    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
+    pi_l1_free(cl, L1_Memory, MAX(_L1_Memory_SIZE, _ExtraKernels_L1_Memory_SIZE));
 
     __network_init_done = 0;
 }

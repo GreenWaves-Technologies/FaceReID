@@ -88,7 +88,7 @@ short* network_init(struct pi_device *cl)
 void network_deinit(struct pi_device *cl)
 {
     pi_l2_free(L2_Memory, _L2_Memory_SIZE);
-    pi_l1_free(cl, L1_Memory, _L1_Memory_SIZE);
+    pi_l1_free(cl, L1_Memory, MAX(_L1_Memory_SIZE, _ExtraKernels_L1_Memory_SIZE));
 
     __network_init_done = 0;
 }
