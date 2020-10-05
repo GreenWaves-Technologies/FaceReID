@@ -56,7 +56,7 @@ char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH
 
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
-L2_MEM cascade_reponse_t test_response =
+L2_MEM cascade_response_t test_response =
 {
     .x = 96,
     .y = 56,
@@ -67,7 +67,7 @@ L2_MEM cascade_reponse_t test_response =
 };
 #else
 char *inputBlob = "../../../input_324x244.pgm";
-L2_MEM cascade_reponse_t test_response =
+L2_MEM cascade_response_t test_response =
 {
     .x = 98,
     .y = 58,
@@ -81,7 +81,7 @@ L2_MEM cascade_reponse_t test_response =
 char *outputImage = "../../../output.pgm";
 char *outputBlob = "../../../output.bin";
 
-// L2_MEM cascade_reponse_t test_response =
+// L2_MEM cascade_response_t test_response =
 // {
 //     .x = 113,
 //     .y = 97,
@@ -214,7 +214,7 @@ void body(void * parameters)
     unsigned int tm = rt_time_get_us();
 #endif
     PRINTF("Before pi_cluster_send_task_to_cl 1\n");
-    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    pi_cluster_task(&cluster_task, (void *)reid_prepare_cluster, &ClusterDnnCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -225,7 +225,7 @@ void body(void * parameters)
     WriteImageToFile(outputImage, 128, 128, tmp_img_face_buffer);
 
     PRINTF("Before pi_cluster_send_task_to_cl 2\n");
-    pi_cluster_task(&cluster_task, (void (*)(void *))reid_inference_cluster, &ClusterDnnCall);
+    pi_cluster_task(&cluster_task, (void *)reid_inference_cluster, &ClusterDnnCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);

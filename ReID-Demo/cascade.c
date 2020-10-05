@@ -96,7 +96,7 @@ cascade_t *getFaceCascade(struct pi_device *cl)
     }
 
     single_cascade_t **model_stages = pi_l1_malloc(cl, sizeof(single_cascade_t*) * CASCADE_TOTAL_STAGES);
-    face_cascade->thresholds = pi_l1_malloc(cl, sizeof(signed short) * CASCADE_TOTAL_STAGES);
+    face_cascade->thresholds = pi_l1_malloc(cl, sizeof(short) * CASCADE_TOTAL_STAGES);
     if (face_cascade->thresholds == NULL)
     {
         PRINTF("Error: Failed to allocate cascade");
@@ -241,35 +241,36 @@ static int rect_intersect_area(
     #undef MIN
 }
 
-static void non_max_suppress(cascade_reponse_t* responses, int response_idx)
+static void non_max_suppress(cascade_response_t *responses, unsigned cnt)
 {
-    int idx;
-
     //Non-max supression
-    for(idx = 0; idx < response_idx; idx++){
+    for (unsigned i = 0; i < cnt; i++)
+    {
         //check if rect has been removed (-1)
-        if(responses[idx].x == -1)
+        if (responses[i].x == -1)
             continue;
 
-        int idx_int;
-        for(idx_int = idx + 1; idx_int < response_idx; idx_int++){
-
-            if(responses[idx_int].x == -1)
+        for (unsigned j = i + 1; j < cnt; j++)
+        {
+            if (responses[j].x == -1)
                 continue;
 
             //check the intersection between rects
-            int intersection = rect_intersect_area(responses[idx].x,responses[idx].y,responses[idx].w,responses[idx].h,
-                                                   responses[idx_int].x,responses[idx_int].y,responses[idx_int].w,responses[idx_int].h);
+            int intersection = rect_intersect_area(responses[i].x, responses[i].y, responses[i].w, responses[i].h,
+                                                   responses[j].x, responses[j].y, responses[j].w, responses[j].h);
 
             if(intersection >= NON_MAX_THRES)
             {
                 //suppress the one that has lower score
-                if(responses[idx_int].score > responses[idx].score){
-                    responses[idx].x = -1;
-                    responses[idx].y = -1;
-                }else{
-                    responses[idx_int].x = -1;
-                    responses[idx_int].y = -1;
+                if (responses[j].score > responses[i].score)
+                {
+                    responses[i].x = -1;
+                    responses[i].y = -1;
+                }
+                else
+                {
+                    responses[j].x = -1;
+                    responses[j].y = -1;
                 }
             }
         }
@@ -280,13 +281,13 @@ void cascade_detect(ArgCluster_T *ArgC)
 {
     unsigned int Wout = WOUT_INIT, Hout = HOUT_INIT;
     unsigned int Win = ArgC->Win, Hin = ArgC->Hin;
-    int response_idx = 0;
+    unsigned int response_idx = 0;
     int result;
 
     //create structure for output
-    cascade_reponse_t* responses = ArgC->reponses;
+    cascade_response_t *responses = ArgC->responses;
     for(int i = 0; i < MAX_NUM_OUT_WINS; i++)
-        responses[i].x=-1;
+        responses[i].x = -1;
 
 #ifdef ENABLE_LAYER_1
     ResizeImage_1(ArgC->ImageIn,ArgC->ImageOut);
@@ -307,6 +308,8 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].layer_idx = 0;
                 response_idx++;
                 // PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                if (response_idx >= MAX_NUM_OUT_WINS)
+                    goto end;
             }
         }
 #endif
@@ -332,6 +335,8 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].layer_idx = 1;
                 response_idx++;
                 // PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                if (response_idx >= MAX_NUM_OUT_WINS)
+                    goto end;
             }
         }
 #endif
@@ -357,11 +362,15 @@ void cascade_detect(ArgCluster_T *ArgC)
                 responses[response_idx].layer_idx = 2;
                 response_idx++;
                 // PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
+                if (response_idx >= MAX_NUM_OUT_WINS)
+                    goto end;
             }
         }
 #endif
 
+end:
+
     non_max_suppress(responses, response_idx);
 
-    ArgC->num_reponse = response_idx;
+    ArgC->num_response = response_idx;
 }

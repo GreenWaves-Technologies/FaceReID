@@ -17,7 +17,7 @@
 #ifndef __LAYER_PARAMS_H__
 #define __LAYER_PARAMS_H__
 
-typedef struct quant_conv_layer {
+typedef struct {
     char in;
     char out;
     char weights;

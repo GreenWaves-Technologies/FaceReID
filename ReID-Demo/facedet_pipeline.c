@@ -72,7 +72,7 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char* ImageIn, int Win, int Hin, const cascade_reponse_t* reponses, int num_reponse)
+static void draw_responses(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *reponses, int num_reponse)
 {
     for(int i = 0; i < num_reponse; i++)
     {
@@ -102,13 +102,13 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     ArgC->cycles = gap_cl_readhwtimer() - Ta;
     #endif
 
-    draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->reponses, ArgC->num_reponse);
+    draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->responses, ArgC->num_response);
 
     //Converting image to RGB 565 for LCD screen and binning image to half the size
     pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, (void *) ArgC);
 }
 
-static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_t* b)
+static int check_intersection(const cascade_response_t *a, const cascade_response_t *b)
 {
     if ((a->x + a->w - 1 <= b->x) || (b->x + b->w - 1 <= a->x) ||
         (a->y + a->h - 1 <= b->y) || (b->y + b->h - 1 <= a->y))
@@ -119,7 +119,7 @@ static int check_intersection(const cascade_reponse_t* a, const cascade_reponse_
     return 1;
 }
 
-int is_detection_stable(const cascade_reponse_t* history, int history_size)
+int is_detection_stable(const cascade_response_t *history, int history_size)
 {
     for (int i = 0; i < history_size - 1; i++)
     {

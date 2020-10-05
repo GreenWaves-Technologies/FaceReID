@@ -48,7 +48,7 @@ char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH
 
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
-L2_MEM cascade_reponse_t test_response_l0 =
+L2_MEM cascade_response_t test_response_l0 =
 {
     .x = 124,
     .y = 80,
@@ -58,7 +58,7 @@ L2_MEM cascade_reponse_t test_response_l0 =
     .layer_idx = 0,
 };
 
-L2_MEM cascade_reponse_t test_response_l1 =
+L2_MEM cascade_response_t test_response_l1 =
 {
     .x = 120,
     .y = 48,
@@ -68,7 +68,7 @@ L2_MEM cascade_reponse_t test_response_l1 =
     .layer_idx = 1,
 };
 
-L2_MEM cascade_reponse_t test_response_l2 =
+L2_MEM cascade_response_t test_response_l2 =
 {
     .x = 98,
     .y = 18,
@@ -80,7 +80,7 @@ L2_MEM cascade_reponse_t test_response_l2 =
 
 #else
 char *inputBlob = "../../../input_324x244.pgm";
-L2_MEM cascade_reponse_t test_response_l0 =
+L2_MEM cascade_response_t test_response_l0 =
 {
     .x = 126,
     .y = 82,
@@ -90,7 +90,7 @@ L2_MEM cascade_reponse_t test_response_l0 =
     .layer_idx = 0,
 };
 
-L2_MEM cascade_reponse_t test_response_l1 =
+L2_MEM cascade_response_t test_response_l1 =
 {
     .x = 122,
     .y = 50,
@@ -100,7 +100,7 @@ L2_MEM cascade_reponse_t test_response_l1 =
     .layer_idx = 1,
 };
 
-L2_MEM cascade_reponse_t test_response_l2 =
+L2_MEM cascade_response_t test_response_l2 =
 {
     .x = 100,
     .y = 20,
@@ -179,7 +179,7 @@ void body(void* parameters)
         pmsis_exit(-5);
     }
 
-    pi_cluster_task(&cluster_task, (void (*)(void *))reid_prepare_cluster, &ClusterDnnCall);
+    pi_cluster_task(&cluster_task, (void *)reid_prepare_cluster, &ClusterDnnCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);

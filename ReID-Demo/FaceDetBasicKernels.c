@@ -248,8 +248,7 @@ static int eval_weak_classifier(unsigned int* __restrict__ integralImage,int img
 
 static void spawn_eval_weak_classifier(eval_weak_classifier_Arg_T* Arg)
 {
-
-    single_cascade_t *single_cascade=Arg->cascade_stage;
+    single_cascade_t *single_cascade = Arg->cascade_stage;
 
     unsigned int CoreId = pi_core_id();
     unsigned int ChunkBlock = ChunkSize(single_cascade->stage_size);
