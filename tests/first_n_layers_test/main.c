@@ -48,6 +48,7 @@
 
 short* infer_result;
 short * l2_x;
+short *l2_buffer;
 
 #ifdef PGM_INPUT
 L2_MEM unsigned char tmp_buffer[IMAGE_WIDTH*IMAGE_HEIGHT];
@@ -57,7 +58,7 @@ int activation_size = 0;
 
 static void cluster_main()
 {
-    infer_result = network_process(&activation_size);
+    infer_result = network_process(l2_buffer, &activation_size);
 }
 
 void body(void* parameters)
@@ -145,7 +146,18 @@ void body(void* parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = network_init(&cluster_dev);
+    l2_buffer = pi_l2_malloc(INFERENCE_MEMORY_SIZE);
+    if (l2_buffer == NULL)
+    {
+        PRINTF("Error: Failed to allocate L2 memory\n");
+        pmsis_exit(-4);
+    }
+
+    l2_x = network_init(&cluster_dev, l2_buffer);
+    if (l2_x == NULL)
+    {
+        pmsis_exit(-1);
+    }
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -241,6 +253,8 @@ void body(void* parameters)
     pi_fs_close(host_file);
 
     pi_fs_unmount(&host_fs);
+
+    pi_l2_free(l2_buffer, INFERENCE_MEMORY_SIZE);
 
     network_free();
 }

@@ -299,7 +299,7 @@ static void timeout_handler(void *params)
     ble_exit = 1;
 }
 
-void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t button_pin)
+void admin_body(struct pi_device *display, struct pi_device *gpio_port, uint8_t button_pin, void *buffer)
 {
     PRINTF("Starting Admin (BLE) body\n");
 
@@ -316,9 +316,9 @@ void admin_body(struct pi_device *display, struct pi_device* gpio_port, uint8_t 
     PRINTF("Found %d strangers in queue\n", context.strangers_tail);
     context.visitors_head = -1;
     context.visitors_tail = get_identities_count();
-    context.current_descriptor = memory_pool;
-    context.current_name = memory_pool + FACE_DESCRIPTOR_SIZE;
-    context.l2_strangers = (stranger_t *)(memory_pool + FACE_DESCRIPTOR_SIZE + 16/sizeof(short));
+    context.current_descriptor = buffer;
+    context.current_name = (char *)(context.current_descriptor + FACE_DESCRIPTOR_SIZE);
+    context.l2_strangers = (stranger_t *)(context.current_name + 16);
 
     char* previews = (char*) &context.l2_strangers[context.strangers_tail+1]; // right after the last structure
 

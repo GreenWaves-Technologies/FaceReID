@@ -41,11 +41,6 @@
 #include "reid_pipeline.h"
 #include "ImgIO.h"
 
-char* tmp_frame_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT;
-// Largest possible face after Cascade
-char* tmp_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194;
-char* tmp_img_face_buffer = (char*)(memory_pool+MEMORY_POOL_SIZE) - CAMERA_WIDTH*CAMERA_HEIGHT - 194*194-128*128;
-
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
 L2_MEM cascade_response_t test_response_l0 =
@@ -142,6 +137,19 @@ void body(void* parameters)
 
     PRINTF("HyperRAM config done\n");
 
+    unsigned memory_size =
+#if defined (GRAPH)
+        CAMERA_WIDTH * CAMERA_HEIGHT +
+        194 * 194 +
+        128 * 128
+#endif
+        INFERENCE_MEMORY_SIZE;
+    char *l2_buffer = pi_l2_malloc(memory_size);
+    char *tmp_frame_buffer = l2_buffer + memory_size - CAMERA_WIDTH * CAMERA_HEIGHT;
+    // Largest possible face after Cascade
+    char *tmp_face_buffer = tmp_frame_buffer - 194 * 194;
+    char *tmp_img_face_buffer = tmp_face_buffer - 128 * 128;
+
     PRINTF("Reading image from host...\n");
 
     int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
@@ -172,7 +180,8 @@ void body(void* parameters)
     ClusterDnnCall.roi         = &TEST_RESPONSE;
     ClusterDnnCall.frame       = tmp_frame_buffer;
     ClusterDnnCall.face        = tmp_face_buffer;
-    ClusterDnnCall.scaled_face = network_init(&cluster_dev);
+    ClusterDnnCall.buffer      = l2_buffer;
+    ClusterDnnCall.scaled_face = network_init(&cluster_dev, l2_buffer);
     if(!ClusterDnnCall.scaled_face)
     {
         PRINTF("Failed to initialize ReID network!\n");
@@ -193,6 +202,8 @@ void body(void* parameters)
     WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
     WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
     PRINTF("Writing output to file..done\n");
+
+    pi_l2_free(l2_buffer, memory_size);
 
     pmsis_exit(0);
 }

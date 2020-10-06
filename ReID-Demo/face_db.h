@@ -20,7 +20,7 @@
 #include "bsp/fs.h"
 #include "setup.h"
 
-int load_static_db(struct pi_device * fs);
+int load_static_db(struct pi_device *fs, char *buffer);
 int identify_by_db(const short *descriptor, char** name);
 
 #ifndef STATIC_FACE_DB

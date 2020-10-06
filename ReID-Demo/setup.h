@@ -58,9 +58,11 @@
 
 #define STRANGER_L2_THRESHOLD 150000000 // L2 metric threshold for strangers de-duplication.
 
-//Instructions for REID_L2_THRESHOLD and STRANGER_L2_THRESHOLD changing are in documentation/quantization_instruction.md
-
-#define MEMORY_POOL_SIZE 150 * 1024
+#if defined (GRAPH)
+#define INFERENCE_MEMORY_SIZE (135*1024)
+#else
+#define INFERENCE_MEMORY_SIZE 280000
+#endif
 
 #define FACE_DETECTOR_STABILIZATION_PERIOD 3
 

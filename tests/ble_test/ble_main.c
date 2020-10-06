@@ -150,8 +150,8 @@ static void body(void* parameters)
 
         PRINTF("Descriptor opened\n");
 
-        int read = pi_fs_read(descriptor_file, descriptor, 512 * sizeof(short));
-        if(read != 512 * sizeof(short))
+        int read = pi_fs_read(descriptor_file, descriptor, FACE_DESCRIPTOR_SIZE * sizeof(short));
+        if(read != FACE_DESCRIPTOR_SIZE * sizeof(short))
         {
             PRINTF("Face descriptor read failed\n");
             pmsis_exit(-3);
@@ -165,6 +165,14 @@ static void body(void* parameters)
         addStrangerL2(preview, descriptor);
     }
 
+    unsigned memory_size = (STRANGERS_DB_SIZE + 1) * sizeof(stranger_t) + STRANGERS_DB_SIZE * 128 * 128 + 1024;
+    void *ble_buffer = pi_l2_malloc(memory_size);
+    if (ble_buffer == NULL)
+    {
+        PRINTF("Error: Failed to allocate %u bytes of L2\n", memory_size);
+        pmsis_exit(-3);
+    }
+
     PRINTF("Waiting for button press event\n");
     while(pi_gpio_pin_notif_get(&gpio_port, BUTTON_PIN_ID) == 0)
     {
@@ -172,13 +180,15 @@ static void body(void* parameters)
     }
 
     PRINTF("Button pressed\n");
-    admin_body(&display, &gpio_port, BUTTON_PIN_ID);
+    admin_body(&display, &gpio_port, BUTTON_PIN_ID, ble_buffer);
 
     PRINTF("Dumping Known Faces database for check..\n");
     dump_db();
     PRINTF("Dumping Known Faces database for check..done\n");
 
     pi_gpio_pin_notif_clear(&gpio_port, BUTTON_PIN_ID);
+
+    pi_l2_free(ble_buffer, memory_size);
 
     pi_fs_unmount(&host_fs);
 

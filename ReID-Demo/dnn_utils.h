@@ -26,12 +26,9 @@
 
 extern struct pi_device HyperRam;
 
-extern short memory_pool[MEMORY_POOL_SIZE];
-
-int loadLayerFromFsToL2(struct pi_device *fs, const char* file_name, void* buffer, int size);
+int loadLayerFromFsToL2(struct pi_device *fs, const char *file_name, void *res, unsigned size);
 void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi_device* hyper, int* layer_size);
 void loadLayerFromL3ToL2(struct pi_device *hyper, void* hyper_buff, void* base_addr, int layer_size);
-void clusterLoadLayerFromL3ToL2(struct pi_device* hyper, void* hyper_buff, void* base_addr, int layer_size);
 
 unsigned int l2_distance(const short *v1, const short *v2);
 
