@@ -54,13 +54,13 @@ RUN mkdir /gap_sdk && cd /gap_sdk && \
       mkdir -p /root/.ssh/ && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
       git clone https://github.com/GreenWaves-Technologies/gap_sdk.git . && \
-      git checkout release-v3.7 && \
+      git checkout release-v3.7.1 && \
       git submodule update --init --recursive && \
       pip3 install -r ./requirements.txt && \
       echo "https://greenwaves-technologies.com/autotiler/" > .tiler_url && \
-      source ./configs/gapoc_a_v2.sh && make all && \
+      source ./configs/gapoc_a_v2.sh && make all openocd && \
       TILER_LICENSE_AGREED=1 make autotiler && \
-      source ./configs/gapuino_v2.sh && make all && \
+      source ./configs/gapuino_v2.sh && make all openocd && \
       TILER_LICENSE_AGREED=1 make autotiler
 
 RUN useradd ci -m -s /bin/bash -G users,dialout
