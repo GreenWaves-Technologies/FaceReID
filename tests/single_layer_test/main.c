@@ -38,7 +38,7 @@
 # include "Gap.h"
 #endif
 
-#include "param_layer_struct.h"
+#include "layer_params.h"
 
 #include "CNN_BasicKernels.h"
 #include "CnnKernels.h"
@@ -48,7 +48,6 @@
 
 short* infer_result;
 short * l2_x;
-int activation_size = 0;
 
 short int* l3_weights;
 int weights_size;
@@ -130,25 +129,19 @@ short* layer_init()
         return NULL;
     }
 
-    return memory_pool;
+    return L2_Memory;
 }
 
-#define MAX(a, b) (((a)>(b))?(a):(b))
-
-short* layer_process(int layer_idx, int* activation_size)
+short* layer_process(int layer_idx)
 {
     PRINTF("layer_process call\n");
     if(layer_idx < NB_CONV)
     {
-        short* layer_input;
-        short* layer_output;
         //short* weight_base_address;
         //short* weights;
         //short* bias;
 
-        layer_input = memory_pool;
-        layer_output = memory_pool + convLayers[layer_idx].nb_if*convLayers[layer_idx].win*convLayers[layer_idx].hin;
-        //weight_base_address = layer_output + get_activations_size(layer_idx); // expects 3-channels 128x128
+        //weight_base_address = layer_output + get_layer_out_size(layer_idx); // expects 3-channels 128x128
 
         //weights = weight_base_address;
         //bias = weights + weights_size / sizeof(short);
@@ -157,28 +150,21 @@ short* layer_process(int layer_idx, int* activation_size)
         //loadLayerFromL3ToL2(&HyperRam, l3_weights, weights, weights_size);
         //loadLayerFromL3ToL2(&HyperRam, l3_bias, bias, bias_size);
         PRINTF("Convolution\n");
-        ConvLayerArray[layer_idx](layer_input, l3_weights, l3_bias, layer_output);
+        ConvLayerArray[layer_idx](l2_x, l3_weights, l3_bias, infer_result);
         PRINTF("Convolution done\n");
-
-        *activation_size = get_activations_size(layer_idx);
-        return layer_output;
     }
     else
     {
         PRINTF("Global AvgPool Test\n");
-        short* layer_input = memory_pool;
-        short* layer_output = memory_pool + 2*get_activations_size(NB_CONV-1);
-        *activation_size = 512;
-
-        GPool10(layer_input, layer_output);
-
-        return layer_output;
+        GPool10(l2_x, infer_result);
     }
+
+    return infer_result;
 }
 
 static void cluster_main()
 {
-    infer_result = layer_process(test_layer_idx, &activation_size);
+    infer_result = layer_process(test_layer_idx);
 }
 
 void body(void *parameters)
@@ -231,7 +217,18 @@ void body(void *parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
+    int input_size = get_layer_in_size(test_layer_idx) * sizeof(short);
+    int output_size = get_layer_out_size(test_layer_idx) * sizeof(short);
+
+    l2_x = pi_l2_malloc(input_size);
+    infer_result = pi_l2_malloc(output_size);
+    if (l2_x == NULL || infer_result == NULL)
+    {
+        PRINTF("Error: Failed to allocate %d bytes of L2 memory\n", input_size + output_size);
+        pmsis_exit(-4);
+    }
+
+    PRINTF("Loading layer %d to HyperRAM\n", test_layer_idx);
     layer_load(&fs, test_layer_idx);
 
     PRINTF("Unmount FS as it's not needed any more\n");
@@ -260,7 +257,10 @@ void body(void *parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = layer_init();
+    if (layer_init() == NULL)
+    {
+        pmsis_exit(-5);
+    }
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -284,17 +284,6 @@ void body(void *parameters)
     }
     PRINTF("Host file open done\n");
 
-    int input_size = 0;
-
-    if(test_layer_idx < NB_CONV)
-    {
-        input_size = convLayers[test_layer_idx].nb_if*convLayers[test_layer_idx].win*convLayers[test_layer_idx].hin*sizeof(short);
-    }
-    else
-    {
-        input_size = 2*get_activations_size(NB_CONV-1)*sizeof(short);
-    }
-
     PRINTF("input_size: %d\n", input_size);
 
     int read = pi_fs_read(host_file, l2_x, input_size);
@@ -313,7 +302,7 @@ void body(void *parameters)
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL));
+    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cluster_task, (void *)cluster_main, NULL));
 
 #ifdef PERF_COUNT
     tm = rt_time_get_us() - tm;
@@ -321,6 +310,7 @@ void body(void *parameters)
 #else
     PRINTF("Convolution finished\n");
 #endif
+    int activation_size = get_layer_out_size(test_layer_idx);
     PRINTF("Activations size, shorts: %d\n", activation_size);
 
     pi_cluster_close(&cluster_dev);
@@ -336,6 +326,9 @@ void body(void *parameters)
     pi_fs_close(host_file);
 
     pi_fs_unmount(&host_fs);
+
+    pi_l2_free(l2_x, input_size);
+    pi_l2_free(infer_result, output_size);
 
     layer_free();
 }

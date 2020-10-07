@@ -21,16 +21,15 @@
 #endif
 
 #include "pmsis.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "dnn_utils.h"
 
 #define IO_BUFF_SIZE 1024
 
-short memory_pool[MEMORY_POOL_SIZE];
 struct pi_device HyperRam;
 
 
-int loadLayerFromFsToL2(struct pi_device *fs, const char* file_name, void* buffer, int size)
+int loadLayerFromFsToL2(struct pi_device *fs, const char *file_name, void *res, unsigned size)
 {
     PRINTF("Loading layer \"%s\" from FS to L2\n", file_name);
     pi_fs_file_t * file = pi_fs_open(fs, file_name, 0);
@@ -40,14 +39,14 @@ int loadLayerFromFsToL2(struct pi_device *fs, const char* file_name, void* buffe
         return 0;
     }
 
-    if((int)file->size > size)
+    if (file->size > size)
     {
         PRINTF("Provided buffer size %d is smaller than file size %d\n", size, file->size);
         return -1;
     }
 
     pi_task_t task;
-    int size_read = pi_fs_read_async(file, buffer, file->size, pi_task_block(&task));
+    int size_read = pi_fs_read_async(file, res, file->size, pi_task_block(&task));
     pi_task_wait_on(&task);
     PRINTF("Read %d bytes from %s\n", size_read, file_name);
 
@@ -58,7 +57,6 @@ int loadLayerFromFsToL2(struct pi_device *fs, const char* file_name, void* buffe
 
 void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi_device *hyper, int* layer_size)
 {
-    signed char* buff = (signed char*)memory_pool;
     PRINTF("Loading layer \"%s\" from FS to L3\n", file_name);
 
     pi_fs_file_t * file = pi_fs_open(fs, file_name, 0);
@@ -72,6 +70,12 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
     if(!hyper_buff)
     {
         PRINTF("HyperRAM allocation failed\n");
+        return NULL;
+    }
+
+    void *buff = pi_l2_malloc(IO_BUFF_SIZE);
+    if (buff == NULL)
+    {
         return NULL;
     }
 
@@ -93,6 +97,8 @@ void* loadLayerFromFsToL3(struct pi_device *fs, const char* file_name, struct pi
         }
         size_total += size;
     } while(size_total < file->size);
+
+    pi_l2_free(buff, IO_BUFF_SIZE);
 
     pi_fs_close(file);
 

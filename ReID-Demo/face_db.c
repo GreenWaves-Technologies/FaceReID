@@ -32,9 +32,8 @@ int identified_people = 0;
 short PeopleDescriptors[FACE_DB_SIZE][FACE_DESCRIPTOR_SIZE];
 char PeopleNames[FACE_DB_SIZE][16];
 
-int load_static_db(struct pi_device * fs)
+int load_static_db(struct pi_device *fs, char *buffer)
 {
-    char buffer[64];
     int descriptors = 0;
 
     PRINTF("Reading face descriptors\n");
@@ -50,11 +49,9 @@ int load_static_db(struct pi_device * fs)
         descriptors++;
     }
 
-    char* names_buffer = (char*)memory_pool;
-
     PRINTF("Reading names index\n");
-    int names_buffer_size = loadLayerFromFsToL2(fs, "index.txt", names_buffer, 16*FACE_DB_SIZE);
-    if(names_buffer_size <= 0)
+    int bytes_read = loadLayerFromFsToL2(fs, "index.txt", buffer, 16 * FACE_DB_SIZE);
+    if (bytes_read <= 0)
     {
         PRINTF("names index read failed\n");
         return 0;
@@ -63,11 +60,11 @@ int load_static_db(struct pi_device * fs)
     int name_idx = 0;
     int current_name_symbol = 0;
 
-    for(int i = 0; i < names_buffer_size; i++)
+    for (int i = 0; i < bytes_read; i++)
     {
-        if(names_buffer[i] != '\n')
+        if (buffer[i] != '\n')
         {
-            PeopleNames[name_idx][current_name_symbol] = names_buffer[i];
+            PeopleNames[name_idx][current_name_symbol] = buffer[i];
             current_name_symbol++;
         }
         else

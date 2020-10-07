@@ -19,7 +19,7 @@
 
 #include "pmsis.h"
 
-int initHandler(struct pi_device* fs);
+int initHandler(struct pi_device *fs, void *buffer);
 int prepareStranger(void* preview);
 int handleStranger(short* descriptor);
 

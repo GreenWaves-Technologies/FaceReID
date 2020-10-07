@@ -19,13 +19,14 @@
 
 #include "cascade.h"
 
-typedef struct ArgClusterDnn
+typedef struct
 {
-    cascade_reponse_t* roi;
+    cascade_response_t *roi;
     unsigned char* frame;
     unsigned char* face;
     short* scaled_face;
     short* output;
+    short *buffer;
     int activation_size;
     unsigned int cycles;
 } ArgClusterDnn_T;

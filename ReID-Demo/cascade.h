@@ -34,7 +34,7 @@
 
 #define NON_MAX_THRES 250
 
-typedef struct single_cascade
+typedef struct
 {
     unsigned short stage_size;
 
@@ -47,14 +47,14 @@ typedef struct single_cascade
     char*  rectangles;
 } single_cascade_t;
 
-typedef struct cascade
+typedef struct
 {
     signed short *thresholds;    //cascades thresholds
     single_cascade_t ** stages;  //pointer to single cascade stages
     single_cascade_t* buffers_l1[2];
 } cascade_t;
 
-typedef struct cascade_answers
+typedef struct
 {
     int x;
     int y;
@@ -62,22 +62,20 @@ typedef struct cascade_answers
     int h;
     int score;
     char layer_idx;
-} cascade_reponse_t;
+} cascade_response_t;
 
-typedef struct ArgCluster
+typedef struct
 {
     struct pi_device *cl;
     unsigned char* ImageIn;
     unsigned int Win;
     unsigned int Hin;
     unsigned char* ImageOut;
-    unsigned int Wout;
-    unsigned int Hout;
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     unsigned char * ImageRender;
-    cascade_reponse_t* reponses;
-    unsigned char num_reponse;
+    cascade_response_t *responses;
+    unsigned char num_response;
     int* output_map;
     cascade_t* model;
     unsigned int cycles;

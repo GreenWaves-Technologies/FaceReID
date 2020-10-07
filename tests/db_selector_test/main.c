@@ -90,7 +90,8 @@ void body(void * parameters)
     PRINTF("FS mounted\n");
 
     PRINTF("Loading static ReID database\n");
-    if (!load_static_db(&fs))
+    char buffer[1024];
+    if (!load_static_db(&fs, buffer))
     {
         PRINTF("Static DB load failed!\n");
         pmsis_exit(-4);

@@ -107,7 +107,7 @@ void reid_inference_cluster(ArgClusterDnn_T* ArgC)
     gap_cl_starttimer();
     gap_cl_resethwtimer();
     unsigned int Ti = gap_cl_readhwtimer();
-    ArgC->output = network_process(&ArgC->activation_size);
+    ArgC->output = network_process(ArgC->buffer, &ArgC->activation_size);
     Ti = gap_cl_readhwtimer() - Ti;
     ArgC->cycles = Ti;
     PRINTF("Network Cycles: %d\n",Ti);

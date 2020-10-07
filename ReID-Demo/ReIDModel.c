@@ -21,7 +21,7 @@
 #include "AutoTilerLib.h"
 #include "FireGenerator.h"
 #include "CNN_Generators.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "setup.h"
 
 void CnnModel(unsigned int L1Memory, unsigned int L2Memory, unsigned int L3Memory, unsigned int L3Flash)
@@ -115,12 +115,10 @@ void CnnModel(unsigned int L1Memory, unsigned int L2Memory, unsigned int L3Memor
     CNN_PoolReLU(
         "GPool10", // Name
         &Ctrl,
-        2, // In_DataSize
-        2, // Out_DataSize
+        2, 2, // All short ints
         convLayers[NB_CONV-1].q.out,
         convLayers[NB_CONV-1].q.out,
-        0, // In_InL3
-        0, // Out_InL3
+        0, 0, // In, Out in L2
 
         512, // InFeat
         512, // OutFeat
@@ -373,7 +371,7 @@ int main(int argc, char **argv)
 
     CnnModel(
         64*1024 - (CL_STACK_SIZE + 7 * CL_SLAVE_STACK_SIZE + 7 * 1024), // 7 KB for local cluster data (5 KB is minimum)
-        135*1024,     // Gives best performance for L2 < 150 KB according to tests
+        INFERENCE_MEMORY_SIZE, // All available L2
         1*1024*1024,  // 1 MB is enough
         16*1024*1024  // Give all HyperFlash as it's not used anywhere else
     );

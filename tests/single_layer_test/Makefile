@@ -17,11 +17,6 @@ USE_PMSIS_BSP=1
 TEST_LAYER_INDEX ?= 0
 
 REID_PATH := ../../ReID-Demo
-TILER_PATH := $(GAP_SDK_HOME)/tools/autotiler_v3
-TILER_LIB := $(TILER_PATH)/lib/libtile.a
-TILER_GENERATOR_PATH := $(TILER_PATH)/generators
-CNN_GEN_PATH := $(TILER_GENERATOR_PATH)/CNN
-CNN_KER_PATH := $(TILER_GENERATOR_PATH)/CNN
 CNN_LAYERS_PATH := $(REID_PATH)/quantized_model
 CNN_LAYERS_SRC := $(wildcard $(CNN_LAYERS_PATH)/*.json)
 CNN_LAYERS_BIN := $(CNN_LAYERS_SRC:.json=.weights.bin) $(CNN_LAYERS_SRC:.json=.bias.bin)
@@ -36,10 +31,10 @@ REID_MODEL_GEN_CH := $(REID_MODEL_GEN_C) $(addsuffix .h, $(REID_MODEL_GEN))
 REID_GEN_SRCS := \
   $(REID_PATH)/ReIDModel.c \
   $(REID_PATH)/FireGenerator.c \
-  $(REID_PATH)/param_layer_manual.c \
-  $(CNN_GEN_PATH)/CNN_Generators.c \
-  $(CNN_GEN_PATH)/CNN_Generator_Util.c
-REID_GEN_CFLAGS += -fcommon -I"$(TILER_PATH)/include" -I"$(CNN_GEN_PATH)"
+  $(REID_PATH)/layer_params.c \
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generators.c \
+  $(TILER_CNN_GENERATOR_PATH)/CNN_Generator_Util.c
+REID_GEN_CFLAGS += -fcommon -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)"
 
 GenReidNet: $(REID_GEN_SRCS)
 	gcc -o $@ $(REID_GEN_CFLAGS) $(REID_GEN_SRCS) $(TILER_LIB)
@@ -51,13 +46,13 @@ reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
 
 APP_SRCS := \
   main.c \
-  $(REID_PATH)/param_layer_manual.c \
+  $(REID_PATH)/layer_params.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_MODEL_GEN_C) \
-  $(CNN_KER_PATH)/CNN_Conv_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_BiasReLULinear_BasicKernels.c \
-  $(CNN_KER_PATH)/CNN_Pooling_BasicKernels.c
-APP_INC += $(PWD) $(REID_PATH) "$(TILER_PATH)/include" "$(CNN_KER_PATH)"
+  $(TILER_CNN_KERNEL_PATH)/CNN_Conv_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_BiasReLULinear_BasicKernels.c \
+  $(TILER_CNN_KERNEL_PATH)/CNN_Pooling_BasicKernels.c
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
 APP_CFLAGS += -Os -DNORM_ROUND -DTEST_LAYER_INDEX=$(TEST_LAYER_INDEX)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1

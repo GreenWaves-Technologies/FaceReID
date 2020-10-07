@@ -42,12 +42,13 @@
 #include "setup.h"
 
 #include "ImgIO.h"
-#include "param_layer_struct.h"
+#include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
 
 short* infer_result;
 short * l2_x;
+short *l2_buffer;
 
 #ifdef PGM_INPUT
 L2_MEM unsigned char tmp_buffer[IMAGE_WIDTH*IMAGE_HEIGHT];
@@ -57,7 +58,7 @@ int activation_size = 0;
 
 static void cluster_main()
 {
-    infer_result = network_process(&activation_size);
+    infer_result = network_process(l2_buffer, &activation_size);
 }
 
 void body(void* parameters)
@@ -111,7 +112,6 @@ void body(void* parameters)
 
     PRINTF("FS mounted\n");
 
-    PRINTF("Loading layers to HyperRAM\n");
     network_load(&fs);
 
     PRINTF("Unmount FS as it's not needed any more\n");
@@ -146,7 +146,18 @@ void body(void* parameters)
     // and using FC clocks over 150Mhz is dangerous
     pi_freq_set(PI_FREQ_DOMAIN_CL, 175000000);
 
-    l2_x = network_init(&cluster_dev);
+    l2_buffer = pi_l2_malloc(INFERENCE_MEMORY_SIZE);
+    if (l2_buffer == NULL)
+    {
+        PRINTF("Error: Failed to allocate L2 memory\n");
+        pmsis_exit(-4);
+    }
+
+    l2_x = network_init(&cluster_dev, l2_buffer);
+    if (l2_x == NULL)
+    {
+        pmsis_exit(-1);
+    }
     PRINTF("Network init done\n");
 
     PRINTF("Reading input from host...\n");
@@ -217,7 +228,7 @@ void body(void* parameters)
 #ifdef PERF_COUNT
     unsigned int tm = rt_time_get_us();
 #endif
-    pi_cluster_task(&cluster_task, (void (*)(void *))cluster_main, NULL);
+    pi_cluster_task(&cluster_task, (void *)cluster_main, NULL);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
     cluster_task.stack_size = CL_STACK_SIZE;
     pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
@@ -242,6 +253,8 @@ void body(void* parameters)
     pi_fs_close(host_file);
 
     pi_fs_unmount(&host_fs);
+
+    pi_l2_free(l2_buffer, INFERENCE_MEMORY_SIZE);
 
     network_free();
 }
