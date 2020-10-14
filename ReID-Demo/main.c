@@ -96,16 +96,6 @@ static int open_camera_mt9v034(struct pi_device *device)
     struct pi_mt9v034_conf cam_conf;
 
     pi_mt9v034_conf_init(&cam_conf);
-
-    //cam_conf.column_flip = 1;
-    //cam_conf.row_flip    = 0;
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-    #ifdef QQVGA
-    cam_conf.format = CAMERA_QQVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
@@ -129,7 +119,7 @@ static int open_camera_mt9v034(struct pi_device *device)
     pi_camera_reg_set(device, 0xAB, (uint8_t *) &val);
 
     //AGC/AEC Pixel Count
-    val =0xABE0; //0-65535, def 44000 0xABE0
+    val = 0xABE0; //0-65535, def 44000 0xABE0
     pi_camera_reg_set(device, 0xB0, (uint8_t *) &val);
 
     //Desired luminance of the image by setting a desired bin
@@ -144,11 +134,6 @@ static int open_camera_himax(struct pi_device *device)
     struct pi_himax_conf cam_conf;
 
     pi_himax_conf_init(&cam_conf);
-
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
