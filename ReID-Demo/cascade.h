@@ -18,10 +18,7 @@
 #define CASCADE_H
 
 #include "setup.h"
-
-#if !defined(__FREERTOS__)
 #include "Gap.h"
-#endif
 
 #define CASCADE_STAGES_L1 15
 #define CASCADE_TOTAL_STAGES 25

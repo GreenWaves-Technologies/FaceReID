@@ -17,7 +17,6 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-//Cascade stride
 #define MAX_NUM_OUT_WINS 20
 
 #if !defined(__FREERTOS__)
@@ -71,8 +70,8 @@
 #endif
 #define BLE_TIMEOUT 30000000 // 30 s
 
+#define STRANGERS_DB_SIZE 10
 #if defined(USE_BLE_USER_MANAGEMENT)
-# define STRANGERS_DB_SIZE 10
 # ifndef STATIC_FACE_DB
 #  define FACE_DB_SIZE 10
 # endif

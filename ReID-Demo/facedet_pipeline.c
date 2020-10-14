@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-#if defined(__FREERTOS__)
-# include "pmsis.h"
-# include "pmsis_os.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
+#include "pmsis.h"
+#include "Gap.h"
 
 #include "facedet_pipeline.h"
 #include "FaceDetKernels.h"

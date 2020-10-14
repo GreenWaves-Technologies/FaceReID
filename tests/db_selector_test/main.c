@@ -23,15 +23,9 @@
 #include "bsp/fs.h"
 #include "bsp/fs/readfs.h"
 #include "bsp/fs/hostfs.h"
-#include "bsp/flash/hyperflash.h"
-
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-#endif
+#include <bsp/ram.h>
+#include <bsp/ram/hyperram.h>
+#include <bsp/flash/hyperflash.h>
 
 #include "dnn_utils.h"
 #include "face_db.h"

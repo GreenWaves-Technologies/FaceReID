@@ -22,18 +22,6 @@
 
 #include "pmsis.h"
 #include "bsp/flash/hyperflash.h"
-
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "bsp/fs.h"
 #include "bsp/fs/hostfs.h"
 #include "bsp/fs/readfs.h"
@@ -58,6 +46,7 @@
 #    include "StaticUserManager.h"
 #  endif
 #elif defined(USE_BLE_USER_MANAGEMENT)
+#include "bsp/gapoc_a.h"
 #include "BleUserManager.h"
 #endif
 

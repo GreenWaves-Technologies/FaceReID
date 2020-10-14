@@ -22,17 +22,6 @@
 
 #include "pmsis.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "setup.h"
 #include "cascade.h"
 

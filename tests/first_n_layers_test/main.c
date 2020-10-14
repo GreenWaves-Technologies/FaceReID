@@ -25,26 +25,14 @@
 #include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
-#define IMAGE_WIDTH 128
-#define IMAGE_HEIGHT 128
-
 #include "setup.h"
-
 #include "ImgIO.h"
 #include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
+
+#define IMAGE_WIDTH 128
+#define IMAGE_HEIGHT 128
 
 short* infer_result;
 short * l2_x;

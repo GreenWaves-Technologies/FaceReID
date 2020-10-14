@@ -17,7 +17,6 @@
 #ifdef __FREERTOS__
 # include "GAPOC_BSP_General.h"
 # include "FreeRTOS_util.h"
-# include "pmsis_os.h"
 # include "pmsis_task.h"
 #else
 # include "bsp/gapoc_a.h"

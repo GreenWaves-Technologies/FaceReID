@@ -26,20 +26,7 @@
 #include "bsp/flash/hyperflash.h"
 #include "bsp/ram/hyperram.h"
 
-#if defined(__FREERTOS__)
-# include "GAPOC_BSP_Board_Init.h"
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "layer_params.h"
-
 #include "CNN_BasicKernels.h"
 #include "CnnKernels.h"
 
