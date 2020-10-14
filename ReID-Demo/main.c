@@ -600,6 +600,8 @@ end_loop:
 #ifdef PERF_COUNT
         tm = rt_time_get_us() - tm;
         PRINTF("Cycle time %d us\n", tm);
+#else
+        continue;
 #endif
     }
 
