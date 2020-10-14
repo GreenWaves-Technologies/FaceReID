@@ -52,6 +52,9 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: reid_model extra_model
 
+$(REID_PATH)/reid_pipeline.c: $(EXTRA_MODEL_GEN_C)
+$(REID_PATH)/network_process_manual.c: $(EXTRA_MODEL_GEN_C) $(REID_MODEL_GEN_C)
+
 APP_SRCS := \
   main.c \
   $(REID_PATH)/reid_pipeline.c \
