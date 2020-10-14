@@ -62,13 +62,13 @@ APP_SRCS := \
   $(REID_PATH)/layer_params.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/ExtraBasicKernels.c \
-  $(REID_PATH)/ImgIO.c \
+  $(GAP_LIB_PATH)/img_io/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(EXTRA_MODEL_GEN_C) \
   $(TILER_CNN_KERNEL_PATH)/CNN_Conv_BasicKernels.c \
   $(TILER_CNN_KERNEL_PATH)/CNN_BiasReLULinear_BasicKernels.c \
   $(TILER_CNN_KERNEL_PATH)/CNN_Pooling_BasicKernels.c
-APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)" "$(GAP_LIB_PATH)/include"
 APP_CFLAGS += -O3 -DNORM_ROUND -DCONFIG_GAPOC_A -DTEST_RESPONSE=test_response_l$(TEST_LEVEL)
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1

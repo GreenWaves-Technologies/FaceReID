@@ -32,8 +32,9 @@
 #include "bsp/camera/mt9v034.h"
 #include "bsp/ram/hyperram.h"
 
+#include "gaplib/ImgIO.h"
+
 #include "setup.h"
-#include "ImgIO.h"
 #include "cascade.h"
 #include "display.h"
 
@@ -495,7 +496,7 @@ void body(void* parameters)
         draw_text(&display, "Writing photo", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
         sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
-        WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
+        WriteImageToFile(string_buffer, 128, 128, 1, ClusterDnnCall.face, IMGIO_OUTPUT_CHAR);
 #endif
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined (USE_BLE_USER_MANAGEMENT)
@@ -532,7 +533,7 @@ void body(void* parameters)
         pi_fs_close(host_file);
 
         //sprintf(string_buffer, "frame_%d.pgm", saved_index);
-        //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
+        //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, 1, ImageIn, IMGIO_OUTPUT_CHAR);
 
         saved_index++;
 #endif

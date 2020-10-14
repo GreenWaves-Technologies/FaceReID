@@ -23,9 +23,9 @@ APP_SRCS := \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/strangers_db.c \
   $(REID_PATH)/face_db.c \
-  $(REID_PATH)/ImgIO.c \
+  $(GAP_LIB_PATH)/img_io/ImgIO.c \
   $(REID_PATH)/display.c
-APP_INC += $(PWD) $(REID_PATH)
+APP_INC += $(PWD) $(REID_PATH) "$(GAP_LIB_PATH)/include"
 APP_CFLAGS += -DUSE_BLE_USER_MANAGEMENT=1
 ifeq ($(SILENT),1)
   APP_CFLAGS += -DSILENT=1

@@ -26,7 +26,7 @@
 #include "bsp/flash/hyperflash.h"
 
 #include "setup.h"
-#include "ImgIO.h"
+#include "gaplib/ImgIO.h"
 #include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
@@ -164,13 +164,11 @@ void body(void* parameters)
     pi_fs_file_t* host_file = NULL;
 #ifdef PGM_INPUT
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT;
-    unsigned int Wi = IMAGE_WIDTH;
-    unsigned int Hi = IMAGE_HEIGHT;
     PRINTF("Reading PGM\n");
-    char* tmp_buffer2 = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_buffer, input_size);
-    if(tmp_buffer != tmp_buffer2)
+    int res = ReadImageFromFile(inputBlob, IMAGE_WIDTH, IMAGE_HEIGHT, 1, tmp_buffer, input_size, IMGIO_OUTPUT_CHAR, 0);
+    if (res != 0)
     {
-        PRINTF("Failed to read PGM image %dx%d\n", Wi, Hi);
+        PRINTF("Failed to read PGM image %s\n", inputBlob);
         pmsis_exit(-5);
     }
 
