@@ -261,11 +261,12 @@ void body(void * parameters)
 #endif
 
     pi_l2_free(l2_buffer, memory_size);
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start full ReID pipeline Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

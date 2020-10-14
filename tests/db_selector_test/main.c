@@ -136,11 +136,12 @@ void body(void * parameters)
     PRINTF(out_perf_string);
     sprintf(out_perf_string, "ReID L2: %d\n", id_l2);
     PRINTF(out_perf_string);
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start Single Layer Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

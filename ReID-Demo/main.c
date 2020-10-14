@@ -615,6 +615,5 @@ end_loop:
 
 int main()
 {
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

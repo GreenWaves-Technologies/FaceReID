@@ -318,11 +318,12 @@ void body(void *parameters)
     pi_l2_free(infer_result, output_size);
 
     layer_free();
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start Single Layer Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

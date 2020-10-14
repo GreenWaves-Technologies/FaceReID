@@ -245,11 +245,12 @@ void body(void* parameters)
     pi_l2_free(l2_buffer, INFERENCE_MEMORY_SIZE);
 
     network_free();
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start First-n-Layers Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

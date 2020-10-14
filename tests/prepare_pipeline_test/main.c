@@ -200,6 +200,5 @@ void body(void* parameters)
 int main()
 {
     PRINTF("Start Prepare Pipeline Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }
