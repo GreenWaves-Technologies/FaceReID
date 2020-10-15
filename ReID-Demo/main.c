@@ -60,8 +60,6 @@
 
 #define MAX(a, b) (((a)>(b))?(a):(b))
 
-cascade_response_t responses[MAX_NUM_OUT_WINS];
-
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 {
     for(int i = 0; i < Hout; i++)
@@ -363,6 +361,7 @@ void body(void* parameters)
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     int* output_map;
+    cascade_response_t cascade_response;
     // put camera frame to memory pool tail, it does not intersect with the first DNN layer data
     ImageIn = ((unsigned char*)memory_pool) + memory_size - IMAGE_SIZE;
     ImageOut = ImageIn - WOUT_INIT*HOUT_INIT;
@@ -386,7 +385,7 @@ void body(void* parameters)
     ClusterDetectionCall.SquaredImageIntegral = SquaredImageIntegral;
     ClusterDetectionCall.ImageRender          = ImageRender;
     ClusterDetectionCall.output_map           = output_map;
-    ClusterDetectionCall.responses            = responses;
+    ClusterDetectionCall.response             = &cascade_response;
 
     pi_cluster_task(&cluster_task, (void *)detection_cluster_init, &ClusterDetectionCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
@@ -427,7 +426,7 @@ void body(void* parameters)
         pi_display_write(&display, &RenderBuffer, LCD_OFF_X, LCD_OFF_Y, CAMERA_WIDTH/2,CAMERA_HEIGHT/2);
 #endif
 
-        if (ClusterDetectionCall.num_response == 0)
+        if (cascade_response.score <= 0)
         {
             cascade_history_size = 0;
             goto end_loop; // No face => continue
@@ -435,18 +434,7 @@ void body(void* parameters)
 
         PRINTF("Face detected\n");
 
-        int optimal_detection_id = -1;
-        int optimal_score = -1;
-        for (int i = 0; i < ClusterDetectionCall.num_response; i++)
-        {
-            if(responses[i].score > optimal_score)
-            {
-                optimal_detection_id = i;
-                optimal_score = responses[i].score;
-            }
-        }
-
-        cascade_history[cascade_history_size] = responses[optimal_detection_id];
+        cascade_history[cascade_history_size] = cascade_response;
         cascade_history_size++;
 
         // Collect several consecutive frames with a face
@@ -472,7 +460,7 @@ void body(void* parameters)
         pi_cluster_open(&cluster_dev);
 
         ArgClusterDnn_T ClusterDnnCall;
-        ClusterDnnCall.roi         = &responses[optimal_detection_id];
+        ClusterDnnCall.roi         = &cascade_response;
         ClusterDnnCall.frame       = ImageIn;
         ClusterDnnCall.buffer      = memory_pool;
         ClusterDnnCall.face        = ImageIn - 194 * 194; // Largest possible face after Cascade

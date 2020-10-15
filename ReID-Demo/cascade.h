@@ -29,8 +29,6 @@
 
 #define DETECT_STRIDE 1
 
-#define NON_MAX_THRES 250
-
 typedef struct
 {
     unsigned short stage_size;
@@ -71,8 +69,7 @@ typedef struct
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     unsigned char * ImageRender;
-    cascade_response_t *responses;
-    unsigned char num_response;
+    cascade_response_t *response;
     int* output_map;
     cascade_t* model;
     unsigned int cycles;

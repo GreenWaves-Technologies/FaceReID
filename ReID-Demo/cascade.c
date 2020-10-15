@@ -211,75 +211,14 @@ static unsigned biggest_cascade_stage(const cascade_t *cascade)
     return max_stage_size;
 }
 
-static int rect_intersect_area(
-        unsigned short a_x, unsigned short a_y, unsigned short a_w, unsigned short a_h,
-        unsigned short b_x, unsigned short b_y, unsigned short b_w, unsigned short b_h)
-{
-    #define MIN(a,b) ((a) < (b) ? (a) : (b))
-    #define MAX(a,b) ((a) > (b) ? (a) : (b))
-
-    int x = MAX(a_x,b_x);
-    int y = MAX(a_y,b_y);
-
-    int size_x = MIN(a_x+a_w,b_x+b_w) - x;
-    int size_y = MIN(a_y+a_h,b_y+b_h) - y;
-
-    if(size_x <= 0 || size_y <= 0)
-        return 0;
-    else
-        return size_x*size_y;
-
-    #undef MAX
-    #undef MIN
-}
-
-static void non_max_suppress(cascade_response_t *responses, unsigned cnt)
-{
-    //Non-max supression
-    for (unsigned i = 0; i < cnt; i++)
-    {
-        //check if rect has been removed (-1)
-        if (responses[i].x == -1)
-            continue;
-
-        for (unsigned j = i + 1; j < cnt; j++)
-        {
-            if (responses[j].x == -1)
-                continue;
-
-            //check the intersection between rects
-            int intersection = rect_intersect_area(responses[i].x, responses[i].y, responses[i].w, responses[i].h,
-                                                   responses[j].x, responses[j].y, responses[j].w, responses[j].h);
-
-            if(intersection >= NON_MAX_THRES)
-            {
-                //suppress the one that has lower score
-                if (responses[j].score > responses[i].score)
-                {
-                    responses[i].x = -1;
-                    responses[i].y = -1;
-                }
-                else
-                {
-                    responses[j].x = -1;
-                    responses[j].y = -1;
-                }
-            }
-        }
-    }
-}
-
 void cascade_detect(ArgCluster_T *ArgC)
 {
     unsigned int Wout = WOUT_INIT, Hout = HOUT_INIT;
     unsigned int Win = ArgC->Win, Hin = ArgC->Hin;
-    unsigned int response_idx = 0;
     int result;
 
-    //create structure for output
-    cascade_response_t *responses = ArgC->responses;
-    for(int i = 0; i < MAX_NUM_OUT_WINS; i++)
-        responses[i].x = -1;
+    cascade_response_t *response = ArgC->response;
+    response->score = -1;
 
 #ifdef ENABLE_LAYER_1
     ResizeImage_1(ArgC->ImageIn,ArgC->ImageOut);
@@ -288,20 +227,19 @@ void cascade_detect(ArgCluster_T *ArgC)
     ProcessCascade_1(ArgC->ImageIntegral, ArgC->SquaredImageIntegral, ArgC->model, ArgC->output_map);
 
     for(unsigned int i=0;i<Hout-24+1;i+=DETECT_STRIDE)
-        for(unsigned int j=0;j<Wout-24+1;j+=DETECT_STRIDE){
+        for (unsigned int j=0; j < Wout-24+1; j+=DETECT_STRIDE)
+        {
             result = ArgC->output_map[i*(Wout-24+1)+j];
 
-            if(result!=0){
-                responses[response_idx].x = (j*Win)/Wout;
-                responses[response_idx].y = (i*Hin)/Hout;
-                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
-                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
-                responses[response_idx].score  = result;
-                responses[response_idx].layer_idx = 0;
-                response_idx++;
+            if (result > response->score)
+            {
+                response->x = (j*Win)/Wout;
+                response->y = (i*Hin)/Hout;
+                response->w = ((j+24)*Win+Wout-1)/Wout - response->x + 1;
+                response->h = ((i+24)*Hin+Hout-1)/Hout - response->y + 1;
+                response->score  = result;
+                response->layer_idx = 0;
                 // PRINTF("Face Found on layer 1 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
-                if (response_idx >= MAX_NUM_OUT_WINS)
-                    goto end;
             }
         }
 #endif
@@ -315,20 +253,18 @@ void cascade_detect(ArgCluster_T *ArgC)
     ProcessCascade_2(ArgC->ImageIntegral,ArgC->SquaredImageIntegral,ArgC->model, ArgC->output_map);
 
     for(unsigned int i=0;i<Hout-24+1;i+=DETECT_STRIDE)
-        for(unsigned int j=0;j<Wout-24+1;j+=DETECT_STRIDE){
-
+        for (unsigned int j=0; j < Wout-24+1; j+=DETECT_STRIDE)
+        {
             result = ArgC->output_map[i*(Wout-24+1)+j];
-            if(result!=0){
-                responses[response_idx].x = (j*Win)/Wout;
-                responses[response_idx].y = (i*Hin)/Hout;
-                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
-                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
-                responses[response_idx].score = result;
-                responses[response_idx].layer_idx = 1;
-                response_idx++;
+            if (result > response->score)
+            {
+                response->x = (j*Win)/Wout;
+                response->y = (i*Hin)/Hout;
+                response->w = ((j+24)*Win+Wout-1)/Wout - response->x + 1;
+                response->h = ((i+24)*Hin+Hout-1)/Hout - response->y + 1;
+                response->score = result;
+                response->layer_idx = 1;
                 // PRINTF("Face Found on layer 2 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
-                if (response_idx >= MAX_NUM_OUT_WINS)
-                    goto end;
             }
         }
 #endif
@@ -342,27 +278,19 @@ void cascade_detect(ArgCluster_T *ArgC)
     ProcessCascade_3(ArgC->ImageIntegral,ArgC->SquaredImageIntegral,ArgC->model, ArgC->output_map);
 
     for(unsigned int i=0;i<Hout-24+1;i+=DETECT_STRIDE)
-        for(unsigned int j=0;j<Wout-24+1;j+=DETECT_STRIDE){
-
+        for (unsigned int j=0; j < Wout-24+1; j+=DETECT_STRIDE)
+        {
             result = ArgC->output_map[i*(Wout-24+1)+j];
-            if(result!=0){
-                responses[response_idx].x = (j*Win)/Wout;
-                responses[response_idx].y = (i*Hin)/Hout;
-                responses[response_idx].w = ((j+24)*Win+Wout-1)/Wout - responses[response_idx].x + 1;
-                responses[response_idx].h = ((i+24)*Hin+Hout-1)/Hout - responses[response_idx].y + 1;
-                responses[response_idx].score = result;
-                responses[response_idx].layer_idx = 2;
-                response_idx++;
+            if (result > response->score)
+            {
+                response->x = (j*Win)/Wout;
+                response->y = (i*Hin)/Hout;
+                response->w = ((j+24)*Win+Wout-1)/Wout - response->x + 1;
+                response->h = ((i+24)*Hin+Hout-1)/Hout - response->y + 1;
+                response->score = result;
+                response->layer_idx = 2;
                 // PRINTF("Face Found on layer 3 in %dx%d at X: %d, Y: %d - value: %d\n",Wout,Hout,j,i,result);
-                if (response_idx >= MAX_NUM_OUT_WINS)
-                    goto end;
             }
         }
 #endif
-
-end:
-
-    non_max_suppress(responses, response_idx);
-
-    ArgC->num_response = response_idx;
 }

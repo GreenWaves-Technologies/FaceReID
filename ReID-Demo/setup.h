@@ -17,8 +17,6 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-#define MAX_NUM_OUT_WINS 20
-
 #if !defined(__FREERTOS__)
 # define PERF_COUNT
 #endif
