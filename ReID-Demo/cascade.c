@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-#include "pmsis.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-#if defined(__FREERTOS__)
-# include "dma/cl_dma.h"
-# include "pmsis_os.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
+#include "pmsis.h"
 
 #include "cascade.h"
 #include "setup.h"
 #include "face_cascade.h"
 #include "FaceDetKernels.h"
-
-#include <stdlib.h>
-#include <stdio.h>
 
 static unsigned biggest_cascade_stage(const cascade_t *cascade);
 

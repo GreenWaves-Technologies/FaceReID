@@ -22,15 +22,6 @@
 
 # include "pmsis.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#endif
-
 #include "bsp/bsp.h"
 #include "bsp/fs.h"
 #include "bsp/fs/readfs.h"
@@ -270,11 +261,12 @@ void body(void * parameters)
 #endif
 
     pi_l2_free(l2_buffer, memory_size);
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start full ReID pipeline Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

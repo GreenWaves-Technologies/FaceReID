@@ -17,10 +17,6 @@
 #ifndef NETWORK_PROCESS_H
 #define NETWORK_PROCESS_H
 
-#if !defined(__FREERTOS__)
-# include "Gap.h"
-#endif
-
 #include "pmsis.h"
 
 // The function return L2 memory address where input image should be loader

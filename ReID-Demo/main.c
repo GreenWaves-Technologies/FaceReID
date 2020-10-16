@@ -22,18 +22,6 @@
 
 #include "pmsis.h"
 #include "bsp/flash/hyperflash.h"
-
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "bsp/fs.h"
 #include "bsp/fs/hostfs.h"
 #include "bsp/fs/readfs.h"
@@ -58,6 +46,7 @@
 #    include "StaticUserManager.h"
 #  endif
 #elif defined(USE_BLE_USER_MANAGEMENT)
+#include "bsp/gapoc_a.h"
 #include "BleUserManager.h"
 #endif
 
@@ -96,16 +85,6 @@ static int open_camera_mt9v034(struct pi_device *device)
     struct pi_mt9v034_conf cam_conf;
 
     pi_mt9v034_conf_init(&cam_conf);
-
-    //cam_conf.column_flip = 1;
-    //cam_conf.row_flip    = 0;
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-    #ifdef QQVGA
-    cam_conf.format = CAMERA_QQVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
@@ -129,7 +108,7 @@ static int open_camera_mt9v034(struct pi_device *device)
     pi_camera_reg_set(device, 0xAB, (uint8_t *) &val);
 
     //AGC/AEC Pixel Count
-    val =0xABE0; //0-65535, def 44000 0xABE0
+    val = 0xABE0; //0-65535, def 44000 0xABE0
     pi_camera_reg_set(device, 0xB0, (uint8_t *) &val);
 
     //Desired luminance of the image by setting a desired bin
@@ -144,11 +123,6 @@ static int open_camera_himax(struct pi_device *device)
     struct pi_himax_conf cam_conf;
 
     pi_himax_conf_init(&cam_conf);
-
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
@@ -615,6 +589,8 @@ end_loop:
 #ifdef PERF_COUNT
         tm = rt_time_get_us() - tm;
         PRINTF("Cycle time %d us\n", tm);
+#else
+        continue;
 #endif
     }
 
@@ -639,6 +615,5 @@ end_loop:
 
 int main()
 {
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

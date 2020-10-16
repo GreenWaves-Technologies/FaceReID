@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-#if defined(__FREERTOS__)
-#include "pmsis.h"
-#include "drivers/hyperbus.h"
-#include "hyperbus_cl_internal.h"
-#endif
-
 #include "pmsis.h"
 #include "layer_params.h"
 #include "dnn_utils.h"
