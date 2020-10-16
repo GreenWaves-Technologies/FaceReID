@@ -13,7 +13,7 @@ Face Detection step is inherited from Face Detection demo and uses Haar Cascade 
 
 # Face Preparation for Inference
 
-The detector has 3 layers in pyramid and is capable to return face ROI of 3 typical sizes: 122x122, 154x154, 194x194. For the first case face ROI is augmented with border to adjust neural network input to expected 128x128. For the second and third case re-size kernel is used. The face detector returns square regions and face re-size preserves aspect ratio. The network input is 128x128 gray-scale image converted from 8-bit to 16-bit per-pixel depth. Input data normalization is not required.
+The detector has 3 layers in pyramid and is capable to return face ROI of 3 typical sizes: 122x122, 154x154, 194x194. For the first case face ROI is augmented with border to adjust neural network input to expected 128x128. For the second and third case re-size kernel is used. The face detector returns square regions and face re-size preserves aspect ratio. The network input is 128x128 grayscale image converted from 8-bit to 16-bit per-pixel depth. Input data normalization is not required.
 
 # Face Re-Identification
 

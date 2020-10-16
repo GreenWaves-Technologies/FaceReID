@@ -263,9 +263,9 @@ void body(void* parameters)
         INFERENCE_MEMORY_SIZE;
 
     unsigned memory_size = MAX(MAX(
-        memory_size_face, // Face detection
-        memory_size_ble),
-        memory_size_inference
+        memory_size_face,     // Face detection
+        memory_size_ble),     // BLE user manager
+        memory_size_inference // SqueezeNet inference
     );
 
     void *memory_pool = pi_l2_malloc(memory_size);

@@ -10,7 +10,7 @@
     $ cd gap_quantization
 ```
 
-2. Install the development enviroment:
+2. Install the development environment:
 
 ```
     # create virtual environment using virtualenv (in this example)/pyvenv/conda/etc.
