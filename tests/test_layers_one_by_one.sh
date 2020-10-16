@@ -89,8 +89,7 @@ cd single_layer_test
 status=0
 
 make $make_options clean > /dev/null 2>&1
-make $make_options -j4 tiler_models > ../single_logs/build.log 2>&1
-make $make_options -j4 build >> ../single_logs/build.log 2>&1
+make $make_options -j4 build > ../single_logs/build.log 2>&1
 
 for (( i=0; i < ${#layer_inputs[@]}; i++ )); do
     echo "Layer $i: ${layer_inputs[i]} => ${layer_outputs[i]}"

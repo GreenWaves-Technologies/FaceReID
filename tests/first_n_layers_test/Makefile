@@ -62,6 +62,8 @@ $(EXTRA_MODEL_GEN_C): GenExtraTile
 
 extra_model: $(EXTRA_MODEL_GEN_C)
 
+$(REID_PATH)/network_process_manual.c $(REID_PATH)/network_process_graph.c: $(EXTRA_MODEL_GEN_C) $(REID_MODEL_GEN_C)
+
 APP_SRCS := \
   main.c \
   $(REID_PATH)/dnn_utils.c \

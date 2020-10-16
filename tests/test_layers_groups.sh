@@ -63,8 +63,7 @@ status=0
 for (( i=0; i < ${#stop_macros[@]}; i++ )); do
     echo "Stop word $i: ${stop_macros[i]} => ${layer_outputs[i]}"
     make $make_options clean > /dev/null 2>&1
-    make $make_options CONTROL_MACRO="${stop_macros[i]}" -j4 tiler_models > ../groups_logs/$i.stdout.log 2>&1
-    make $make_options CONTROL_MACRO="${stop_macros[i]}" -j4 build >> ../groups_logs/$i.stdout.log 2>&1
+    make $make_options CONTROL_MACRO="${stop_macros[i]}" -j4 build > ../groups_logs/$i.stdout.log 2>&1
     make $make_options CONTROL_MACRO="${stop_macros[i]}" all run >> ../groups_logs/$i.stdout.log 2>&1
     echo -n "${stop_macros[i]}; ${layer_outputs[i]}; " >> ../group_layer_test_summary.csv
     ../../scripts/compareWithBin.py ../activations_dump/${layer_outputs[i]} output.bin $tolerance >> ../group_layer_test_summary.csv

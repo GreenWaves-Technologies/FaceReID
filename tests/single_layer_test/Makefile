@@ -44,6 +44,8 @@ $(REID_MODEL_GEN_C): GenReidNet
 
 reid_model: $(REID_MODEL_GEN_C) $(CNN_LAYERS_BIN)
 
+main.c: $(REID_MODEL_GEN_C)
+
 APP_SRCS := \
   main.c \
   $(REID_PATH)/layer_params.c \

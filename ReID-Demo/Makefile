@@ -85,6 +85,10 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model
 
+cascade.c facedet_pipeline.c: $(DETECTION_MODEL_GEN_C)
+reid_pipeline.c: $(EXTRA_MODEL_GEN_C)
+network_process_manual.c network_process_graph.c: $(EXTRA_MODEL_GEN_C) $(REID_MODEL_GEN_C)
+
 APP_SRCS := \
   main.c \
   cascade.c \
