@@ -53,7 +53,7 @@ The users database can be compiled manually using the demo itself.
 The demo supports several configurations that are handled by macros in `setup.h` and `Makefile` variables that can be set in make command line or by editing file.
 
 Makefile:
-- `GRAPH`. Build ReID network inference code from a Autotiler graph model. The Demo should work the same way with either handcrafted or auto-generated inference code, but performance may slightly differ. The implementations have the same conract and selected on Makefile level, see `network_process_graph.c` and `network_process_manual.c`.
+- `GRAPH`. Build ReID network inference code from an Autotiler graph model. The Demo should work the same way with either handcrafted or auto-generated inference code, but performance may slightly differ. The implementations have the same contract and selected on Makefile level, see `network_process_graph.c` and `network_process_manual.c`.
 - `STATIC_FACE_DB`. The flag bakes in pre-generated descriptors for known users and disabled user management on-the-go. The descriptors should be generated before the build. See "Generate Known Faces Database" chapter for details.
 - `BLE_NOTIFIER`. The option is applicable for GAPoc A board and can be used together with `STATIC_FACE_DB=1` option only. When the feature is turned on GAPoc A board waits for a BLE connection from the Android application on start and sends information about all identified people over Bluetooth.
 - `SILENT`. The flag disables `printf` calls in the demo code to run demo without USB bridge connection.

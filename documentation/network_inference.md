@@ -40,3 +40,20 @@ The scheme (2) illustrates how to use the left part of the buffer as squeeze inp
 It's important to mention that Fire module is compact in terms of memory, and therefore two sequential Fire modules use base memory pool address as input and don't affect layout of each other.
 
 By using two memory management approaches, we can estimate minimal L2 buffer size needed for per-layer network inference without memory movements and intermediate data swapping with external memory. The maximum amount of memory is consumed by the first two convolutions in the architecture and all Fire modules. Memory consumption statistics can be found in `layers_stat.ods` spreadsheet.
+
+Memory Map for Generated Version
+==================================
+
+There is no need to bother about memory management with the auto-generated inference code. All you need to do is to give as much spare memory to the inference code generator as you can and the generator will produce the best code it can. The generated code will utilize L1 memory first, as it is the fastest memory, then L2 if L1 wasn't enough, then L3 (HyperRAM). The generator strives to minimize slow memory utilization and it also exploits lazy data loading to avoid unnecessary stalls.
+
+- Amount of free L1 is 64 KB minus 2 KB for cluster master's core stack, minus 1 KB per each slave core's stack, and minus 7 KB for local cluster data.
+- There are a lot of data stored in L2 memory — known users database, strangers database, face detector coefficients, video frame from the camera, face image for identification and so on. Thus, the amount of L2 memory available for the inference depends heavily on lots of parameters like camera and LCD screen resolution, strangers and known visitors DB size, and even compiler optimization flags, because code for execution is also stored in L2. Generally, up to 225 KB of L2 memory is available for the auto-generated inference code. The size of the L2 memory buffer used for the inference code is defined by `INFERENCE_MEMORY_SIZE` in `setup.h`.
+- GAP8 SoCs have 8 MB of HyperRAM memory and the whole SqueezeNet weights and bias data take ~1.5 MB, so it's safe to say that 2 MB is more than enough for the task.
+
+The actual amount of memory used by the generated code can be seen in the output of `GenReidNet`:
+
+```
+Shared L1 Memory size (Bytes)             : Given:      49152, Used:      48960
+L2 Memory size (Bytes)                    : Given:     204800, Used:     204784
+L3 Memory size (Bytes)                    : Given:    1048576, Used:     246016
+```

@@ -1,17 +1,17 @@
 # Train
 
-## Installation and enviroment setup
+## Installation and environment setup
 
 Download and install CUDA following the official instructions on the website:
 
 `https://docs.nvidia.com/cuda/cuda-installation-guide-linux/`
 
-Then you need to install Python. We recommend to use virtual enviroment to avoid possible problems with incompatibility of different versions:
+Then you need to install Python. We recommend to use virtual environment to avoid possible problems with incompatibility of different versions:
 
 ```
     $ sudo apt install virtualenv
-    $ virtualenv -p /usr/bin/python3 <name of your virtual enviroment>
-    $ source <name of your virtual enviroment>/bin/activate
+    $ virtualenv -p /usr/bin/python3 <name of your virtual environment>
+    $ source <name of your virtual environment>/bin/activate
 ```
 
 Install dependencies by command:
@@ -36,6 +36,7 @@ Also it's required to install `gap_quantization` package:
 ```
     $ pip install git+https://github.com/xperience-ai/gap_quantization.git
 ```
+
 ## Datasets
 
 You can use the following datasets to train and test the model:
@@ -44,7 +45,7 @@ You can use the following datasets to train and test the model:
 
 `lfw` : `http://vis-www.cs.umass.edu/lfw/lfw.tgz`
 
-When datasets is downloaded, unarchive it.
+When datasets are downloaded, unarchive it.
 
 It is better to use cropped images for model training. First, you'll need to download and unarchive directory with crop boxes:
 `www.robots.ox.ac.uk/~vgg/data/vgg_face2/meta/bb_landmark.tar.gz`
@@ -86,7 +87,7 @@ Input arguments for training script are unified in [args.py](args.py).
 
 To train an image-reid model, go to `Train` directory.
 
-Create folder, in which checkpoints wil be added. They will be saved every 200 iterations and the size of each folder is 62 Mb. So, plese, be prepared, that in the end of 60 epoch checkpoints folder size will be about 75 Gb.
+Create folder, in which checkpoints will be added. They will be saved every 200 iterations and the size of each folder is 62 Mb. So, please, be prepared, that in the end of 60 epoch checkpoints folder size will be about 75 Gb.
 
 Now you can run the script:
 
@@ -132,5 +133,4 @@ Validation accuracy: 0.7257, 0.7227
 Validation accuracy mean: 0.7242
 Validation AUC: 0.0000
 Estimated threshold: 3.3444
-
 ```
