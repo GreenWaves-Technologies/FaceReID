@@ -67,19 +67,16 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *responses, int num_response)
+static void draw_response(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *response)
 {
-    for (int i = 0; i < num_response; i++)
+    if (response->score > 0)
     {
-        if (responses[i].x != -1)
-        {
-            DrawRectangle(ImageIn, Win, Hin, responses[i].x, responses[i].y, responses[i].w, responses[i].h, 0);
-            DrawRectangle(ImageIn, Win, Hin, responses[i].x-1, responses[i].y-1, responses[i].w+2, responses[i].h+2, 255);
-            DrawRectangle(ImageIn, Win, Hin, responses[i].x-2, responses[i].y-2, responses[i].w+4, responses[i].h+4, 255);
-            DrawRectangle(ImageIn, Win, Hin, responses[i].x-3, responses[i].y-3, responses[i].w+6, responses[i].h+6, 0);
+        DrawRectangle(ImageIn, Win, Hin, response->x, response->y, response->w, response->h, 0);
+        DrawRectangle(ImageIn, Win, Hin, response->x-1, response->y-1, response->w+2, response->h+2, 255);
+        DrawRectangle(ImageIn, Win, Hin, response->x-2, response->y-2, response->w+4, response->h+4, 255);
+        DrawRectangle(ImageIn, Win, Hin, response->x-3, response->y-3, response->w+6, response->h+6, 0);
 
-            PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", responses[i].x, responses[i].y, responses[i].w, responses[i].h, responses[i].layer_idx);
-        }
+        PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", response->x, response->y, response->w, response->h, response->layer_idx);
     }
 }
 
@@ -97,10 +94,10 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     ArgC->cycles = gap_cl_readhwtimer() - Ta;
     #endif
 
-    draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->responses, ArgC->num_response);
+    draw_response(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->response);
 
     //Converting image to RGB 565 for LCD screen and binning image to half the size
-    pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, (void *) ArgC);
+    pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, ArgC);
 }
 
 static int check_intersection(const cascade_response_t *a, const cascade_response_t *b)
