@@ -33,9 +33,9 @@
 #include "strangers_db.h"
 #include "face_db.h"
 #include "dnn_utils.h"
-#include "ImgIO.h"
+#include "gaplib/ImgIO.h"
 
-char string_buffer[127];
+char filename[127];
 char initial_name[2][16] = {"Lena", "Francesco"};
 char preview[128*128];
 short descriptor[512];
@@ -129,9 +129,9 @@ static void body(void* parameters)
     for(int i = 0; i < 2; i++)
     {
         PRINTF("Reading input image...\n");
-        sprintf(string_buffer, "../../../%s.pgm", initial_name[i]);
-        void* tmp = ReadImageFromFile(string_buffer, &width, &height, preview, width*height*sizeof(char));
-        if(tmp != preview)
+        sprintf(filename, "../../../%s.pgm", initial_name[i]);
+        int res = ReadImageFromFile(filename, width, height, sizeof(char), preview, width*height*sizeof(char), IMGIO_OUTPUT_CHAR, 0);
+        if (res != 0)
         {
             PRINTF("Face image load failed\n");
             pmsis_exit(-3);
@@ -139,8 +139,8 @@ static void body(void* parameters)
 
         PRINTF("Reading input image...done\n");
 
-        sprintf(string_buffer, "../../../%s.bin", initial_name[i]);
-        pi_fs_file_t* descriptor_file = pi_fs_open(&host_fs, string_buffer, PI_FS_FLAGS_READ);
+        sprintf(filename, "../../../%s.bin", initial_name[i]);
+        pi_fs_file_t *descriptor_file = pi_fs_open(&host_fs, filename, PI_FS_FLAGS_READ);
         if(!descriptor_file)
         {
             PRINTF("Face descriptor open failed\n");

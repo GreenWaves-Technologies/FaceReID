@@ -98,7 +98,7 @@ APP_SRCS := \
   reid_pipeline.c \
   FaceDetBasicKernels.c \
   ImageDraw.c \
-  ImgIO.c \
+  $(GAP_LIB_PATH)/img_io/ImgIO.c \
   dnn_utils.c \
   ExtraBasicKernels.c \
   $(DETECTION_MODEL_GEN_C) \
@@ -116,7 +116,7 @@ else
     layer_params.c
 endif
 
-APP_INC += "$(PWD)" "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
+APP_INC += "$(PWD)" "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)" "$(GAP_LIB_PATH)/include"
 
 APP_CFLAGS += -Os -flto -DNORM_ROUND
 APP_LDFLAGS += -flto
