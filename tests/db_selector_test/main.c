@@ -23,15 +23,9 @@
 #include "bsp/fs.h"
 #include "bsp/fs/readfs.h"
 #include "bsp/fs/hostfs.h"
-#include "bsp/flash/hyperflash.h"
-
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-#endif
+#include <bsp/ram.h>
+#include <bsp/ram/hyperram.h>
+#include <bsp/flash/hyperflash.h>
 
 #include "dnn_utils.h"
 #include "face_db.h"
@@ -142,11 +136,12 @@ void body(void * parameters)
     PRINTF(out_perf_string);
     sprintf(out_perf_string, "ReID L2: %d\n", id_l2);
     PRINTF(out_perf_string);
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start Single Layer Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

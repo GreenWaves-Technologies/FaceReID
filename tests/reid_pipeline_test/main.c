@@ -22,15 +22,6 @@
 
 # include "pmsis.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#endif
-
 #include "bsp/bsp.h"
 #include "bsp/fs.h"
 #include "bsp/fs/readfs.h"
@@ -39,7 +30,7 @@
 
 #include "bsp/gapoc_a.h"
 
-#include "ImgIO.h"
+#include "gaplib/ImgIO.h"
 
 #include "cascade.h"
 #include "setup.h"
@@ -187,15 +178,12 @@ void body(void * parameters)
         pmsis_exit(-4);
     }
 
-    unsigned int Wi = CAMERA_WIDTH;
-    unsigned int Hi = CAMERA_HEIGHT;
-
     PRINTF("Before ReadImageFromFile\n");
-    unsigned char *read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, Wi * Hi);
-    PRINTF("After ReadImageFromFile with status: %x\n", read);
-    if(read != tmp_frame_buffer)
+    int res = ReadImageFromFile(inputBlob, CAMERA_WIDTH, CAMERA_HEIGHT, 1, tmp_frame_buffer, CAMERA_WIDTH * CAMERA_HEIGHT, IMGIO_OUTPUT_CHAR, 0);
+    PRINTF("After ReadImageFromFile with status: %d\n", res);
+    if (res != 0)
     {
-        PRINTF("Failed\n");
+        PRINTF("Failed to read image %s\n", inputBlob);
         pmsis_exit(-4);
     }
     PRINTF("Host file read\n");
@@ -235,7 +223,7 @@ void body(void * parameters)
 
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
 
-    WriteImageToFile(outputImage, 128, 128, tmp_img_face_buffer);
+    WriteImageToFile(outputImage, 128, 128, 1, tmp_img_face_buffer, IMGIO_OUTPUT_CHAR);
 
     PRINTF("Before pi_cluster_send_task_to_cl 2\n");
     pi_cluster_task(&cluster_task, (void *)reid_inference_cluster, &ClusterDnnCall);
@@ -270,11 +258,12 @@ void body(void * parameters)
 #endif
 
     pi_l2_free(l2_buffer, memory_size);
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start full ReID pipeline Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

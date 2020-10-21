@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-#if defined(__FREERTOS__)
-# include "pmsis.h"
-# include "pmsis_os.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
+#include "pmsis.h"
+#include "Gap.h"
 
 #include "facedet_pipeline.h"
 #include "FaceDetKernels.h"
@@ -72,19 +67,16 @@ static void prepare_to_render(ArgCluster_T *ArgC)
     }
 }
 
-static void draw_responses(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *reponses, int num_reponse)
+static void draw_response(unsigned char *ImageIn, int Win, int Hin, const cascade_response_t *response)
 {
-    for(int i = 0; i < num_reponse; i++)
+    if (response->score > 0)
     {
-        if(reponses[i].x != -1)
-        {
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x, reponses[i].y, reponses[i].w, reponses[i].h, 0);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-1, reponses[i].y-1, reponses[i].w+2, reponses[i].h+2, 255);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-2, reponses[i].y-2, reponses[i].w+4, reponses[i].h+4, 255);
-            DrawRectangle(ImageIn, Hin, Win, reponses[i].x-3, reponses[i].y-3, reponses[i].w+6, reponses[i].h+6, 0);
+        DrawRectangle(ImageIn, Win, Hin, response->x, response->y, response->w, response->h, 0);
+        DrawRectangle(ImageIn, Win, Hin, response->x-1, response->y-1, response->w+2, response->h+2, 255);
+        DrawRectangle(ImageIn, Win, Hin, response->x-2, response->y-2, response->w+4, response->h+4, 255);
+        DrawRectangle(ImageIn, Win, Hin, response->x-3, response->y-3, response->w+6, response->h+6, 0);
 
-            PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", reponses[i].x, reponses[i].y, reponses[i].w, reponses[i].h, reponses[i].layer_idx);
-        }
+        PRINTF("Found face at (%d,%d) with size (%d,%d) at scale %d\n", response->x, response->y, response->w, response->h, response->layer_idx);
     }
 }
 
@@ -102,10 +94,10 @@ void detection_cluster_main(ArgCluster_T *ArgC)
     ArgC->cycles = gap_cl_readhwtimer() - Ta;
     #endif
 
-    draw_responses(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->responses, ArgC->num_response);
+    draw_response(ArgC->ImageIn, ArgC->Win, ArgC->Hin, ArgC->response);
 
     //Converting image to RGB 565 for LCD screen and binning image to half the size
-    pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, (void *) ArgC);
+    pi_cl_team_fork(gap_ncore(), (void *)prepare_to_render, ArgC);
 }
 
 static int check_intersection(const cascade_response_t *a, const cascade_response_t *b)

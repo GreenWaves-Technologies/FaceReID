@@ -22,24 +22,13 @@
 
 #include "pmsis.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "setup.h"
 #include "cascade.h"
 
 #include "network_process.h"
 #include "dnn_utils.h"
 #include "reid_pipeline.h"
-#include "ImgIO.h"
+#include "gaplib/ImgIO.h"
 
 #if defined(CONFIG_GAPOC_A)
 char *inputBlob = "../../../input_320x240.pgm";
@@ -153,12 +142,10 @@ void body(void* parameters)
     PRINTF("Reading image from host...\n");
 
     int input_size = CAMERA_WIDTH*CAMERA_HEIGHT;
-    unsigned int Wi = CAMERA_WIDTH;
-    unsigned int Hi = CAMERA_HEIGHT;
     PRINTF("Before ReadImageFromFile\n");
-    unsigned char* read = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_frame_buffer, input_size);
-    PRINTF("After ReadImageFromFile with status: 0x%p\n", read);
-    if(read != tmp_frame_buffer)
+    int res = ReadImageFromFile(inputBlob, CAMERA_WIDTH, CAMERA_HEIGHT, 1, tmp_frame_buffer, input_size, IMGIO_OUTPUT_CHAR, 0);
+    PRINTF("After ReadImageFromFile with status: %d\n", res);
+    if (res != 0)
     {
         PRINTF("Image read failed\n");
         pmsis_exit(-3);
@@ -199,8 +186,8 @@ void body(void* parameters)
     my_copy(ClusterDnnCall.scaled_face, tmp_img_face_buffer, 128, 128);
 
     PRINTF("Writing output to file\n");
-    WriteImageToFile(outputBlob, 128, 128, tmp_img_face_buffer);
-    WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, ClusterDnnCall.face);
+    WriteImageToFile(outputBlob, 128, 128, 1, tmp_img_face_buffer, IMGIO_OUTPUT_CHAR);
+    WriteImageToFile("../../../tmp.pgm", ClusterDnnCall.roi->w, ClusterDnnCall.roi->h, 1, ClusterDnnCall.face, IMGIO_OUTPUT_CHAR);
     PRINTF("Writing output to file..done\n");
 
     pi_l2_free(l2_buffer, memory_size);
@@ -211,6 +198,5 @@ void body(void* parameters)
 int main()
 {
     PRINTF("Start Prepare Pipeline Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

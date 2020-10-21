@@ -17,9 +17,6 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-//Cascade stride
-#define MAX_NUM_OUT_WINS 20
-
 #if !defined(__FREERTOS__)
 # define PERF_COUNT
 #endif
@@ -28,17 +25,17 @@
 #define HAVE_CAMERA
 
 #ifdef SILENT
-#define PRINTF(...) ((void) 0)
+# define PRINTF(...) ((void) 0)
 #else
-#define PRINTF printf
+# define PRINTF printf
 #endif  /* DEBUG */
 
 #if defined(CONFIG_GAPOC_A)
-#define CAMERA_WIDTH  320
-#define CAMERA_HEIGHT 240
+# define CAMERA_WIDTH  320
+# define CAMERA_HEIGHT 240
 #else
-#define CAMERA_WIDTH 324
-#define CAMERA_HEIGHT 244
+# define CAMERA_WIDTH  324
+# define CAMERA_HEIGHT 244
 #endif
 
 #define CL_SLAVE_STACK_SIZE 1024
@@ -59,9 +56,9 @@
 #define STRANGER_L2_THRESHOLD 150000000 // L2 metric threshold for strangers de-duplication.
 
 #if defined (GRAPH)
-#define INFERENCE_MEMORY_SIZE (135*1024)
+# define INFERENCE_MEMORY_SIZE (175*1024)
 #else
-#define INFERENCE_MEMORY_SIZE 280000
+# define INFERENCE_MEMORY_SIZE 280000
 #endif
 
 #define FACE_DETECTOR_STABILIZATION_PERIOD 3
@@ -71,8 +68,8 @@
 #endif
 #define BLE_TIMEOUT 30000000 // 30 s
 
+#define STRANGERS_DB_SIZE 10
 #if defined(USE_BLE_USER_MANAGEMENT)
-# define STRANGERS_DB_SIZE 10
 # ifndef STATIC_FACE_DB
 #  define FACE_DB_SIZE 10
 # endif

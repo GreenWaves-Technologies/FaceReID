@@ -42,7 +42,7 @@ The demo repository includes simple administration mode test in `tests/ble_test`
 
 # Known Issues and Hardware Limitations
 
-1. Due to hardware bug in GAP8 chip Hyperram and UART cannot be used in the same time. Demo downloads stranger's photos to L2 memory and switch `HYPERBUS_DATA6_PAD` mode to UART mode before Bluetooth module enabling and back after the disconnect.
+1. Due to a hardware bug in GAP8 chip HyperRAM and UART cannot be used in the same time. Demo downloads stranger's photos to L2 memory and switch `HYPERBUS_DATA6_PAD` mode to UART mode before Bluetooth module enabling and back after the disconnect.
 
 2. GAP8 chip does not support hardware flow control and interacts with U-blox's NINA BLE module using DMA ignoring it's state. Maximum DMA transfer size is 1 KiB. In case if sent or received buffer is larger than the maximum transfer size several DMA calls are done without BLE module await that leads to data corruption. The demo splits face photo buffer in 1Kib chunks to work around the issue.
 

@@ -1,6 +1,6 @@
 # Intro
 
-The document covers Gapoc A and Gapuino board and peripherals setup. Other GAP8 based boards are not supported yet.
+The document covers Gapoc A and Gapuino boards and peripherals setup. Other GAP8-based boards are not supported yet.
 
 # Gapoc A
 

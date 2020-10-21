@@ -16,6 +16,7 @@
 
 #include "setup.h"
 
+#include "bsp/gapoc_a.h"
 #include "bsp/bsp.h"
 #include "bsp/buffer.h"
 

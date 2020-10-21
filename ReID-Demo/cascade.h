@@ -18,10 +18,7 @@
 #define CASCADE_H
 
 #include "setup.h"
-
-#if !defined(__FREERTOS__)
 #include "Gap.h"
-#endif
 
 #define CASCADE_STAGES_L1 15
 #define CASCADE_TOTAL_STAGES 25
@@ -31,8 +28,6 @@
 #define ENABLE_LAYER_3
 
 #define DETECT_STRIDE 1
-
-#define NON_MAX_THRES 250
 
 typedef struct
 {
@@ -74,8 +69,7 @@ typedef struct
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     unsigned char * ImageRender;
-    cascade_response_t *responses;
-    unsigned char num_response;
+    cascade_response_t *response;
     int* output_map;
     cascade_t* model;
     unsigned int cycles;

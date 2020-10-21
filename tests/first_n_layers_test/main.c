@@ -25,26 +25,14 @@
 #include "bsp/fs/hostfs.h"
 #include "bsp/flash/hyperflash.h"
 
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
-#define IMAGE_WIDTH 128
-#define IMAGE_HEIGHT 128
-
 #include "setup.h"
-
-#include "ImgIO.h"
+#include "gaplib/ImgIO.h"
 #include "layer_params.h"
 #include "network_process.h"
 #include "dnn_utils.h"
+
+#define IMAGE_WIDTH 128
+#define IMAGE_HEIGHT 128
 
 short* infer_result;
 short * l2_x;
@@ -176,13 +164,11 @@ void body(void* parameters)
     pi_fs_file_t* host_file = NULL;
 #ifdef PGM_INPUT
     int input_size = IMAGE_WIDTH*IMAGE_HEIGHT;
-    unsigned int Wi = IMAGE_WIDTH;
-    unsigned int Hi = IMAGE_HEIGHT;
     PRINTF("Reading PGM\n");
-    char* tmp_buffer2 = ReadImageFromFile(inputBlob, &Wi, &Hi, tmp_buffer, input_size);
-    if(tmp_buffer != tmp_buffer2)
+    int res = ReadImageFromFile(inputBlob, IMAGE_WIDTH, IMAGE_HEIGHT, 1, tmp_buffer, input_size, IMGIO_OUTPUT_CHAR, 0);
+    if (res != 0)
     {
-        PRINTF("Failed to read PGM image %dx%d\n", Wi, Hi);
+        PRINTF("Failed to read PGM image %s\n", inputBlob);
         pmsis_exit(-5);
     }
 
@@ -257,11 +243,12 @@ void body(void* parameters)
     pi_l2_free(l2_buffer, INFERENCE_MEMORY_SIZE);
 
     network_free();
+
+    pmsis_exit(0);
 }
 
 int main()
 {
     PRINTF("Start First-n-Layers Test\n");
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

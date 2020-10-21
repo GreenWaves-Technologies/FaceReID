@@ -22,18 +22,6 @@
 
 #include "pmsis.h"
 #include "bsp/flash/hyperflash.h"
-
-#if defined(__FREERTOS__)
-# include "pmsis_driver_core_api.h"
-# include "pmsis_task.h"
-# include "pmsis_os.h"
-# include "drivers/hyperbus.h"
-# include "hyperbus_cl_internal.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
-
 #include "bsp/fs.h"
 #include "bsp/fs/hostfs.h"
 #include "bsp/fs/readfs.h"
@@ -44,8 +32,9 @@
 #include "bsp/camera/mt9v034.h"
 #include "bsp/ram/hyperram.h"
 
+#include "gaplib/ImgIO.h"
+
 #include "setup.h"
-#include "ImgIO.h"
 #include "cascade.h"
 #include "display.h"
 
@@ -58,6 +47,7 @@
 #    include "StaticUserManager.h"
 #  endif
 #elif defined(USE_BLE_USER_MANAGEMENT)
+#include "bsp/gapoc_a.h"
 #include "BleUserManager.h"
 #endif
 
@@ -69,8 +59,6 @@
 #include "facedet_pipeline.h"
 
 #define MAX(a, b) (((a)>(b))?(a):(b))
-
-cascade_response_t responses[MAX_NUM_OUT_WINS];
 
 static void my_copy(short* in, unsigned char* out, int Wout, int Hout)
 {
@@ -96,16 +84,6 @@ static int open_camera_mt9v034(struct pi_device *device)
     struct pi_mt9v034_conf cam_conf;
 
     pi_mt9v034_conf_init(&cam_conf);
-
-    //cam_conf.column_flip = 1;
-    //cam_conf.row_flip    = 0;
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-    #ifdef QQVGA
-    cam_conf.format = CAMERA_QQVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
@@ -129,7 +107,7 @@ static int open_camera_mt9v034(struct pi_device *device)
     pi_camera_reg_set(device, 0xAB, (uint8_t *) &val);
 
     //AGC/AEC Pixel Count
-    val =0xABE0; //0-65535, def 44000 0xABE0
+    val = 0xABE0; //0-65535, def 44000 0xABE0
     pi_camera_reg_set(device, 0xB0, (uint8_t *) &val);
 
     //Desired luminance of the image by setting a desired bin
@@ -144,11 +122,6 @@ static int open_camera_himax(struct pi_device *device)
     struct pi_himax_conf cam_conf;
 
     pi_himax_conf_init(&cam_conf);
-
-    #ifdef QVGA
-    cam_conf.format = CAMERA_QVGA;
-    #endif
-
     pi_open_from_conf(device, &cam_conf);
     if (pi_camera_open(device))
         return -1;
@@ -289,9 +262,9 @@ void body(void* parameters)
         INFERENCE_MEMORY_SIZE;
 
     unsigned memory_size = MAX(MAX(
-        memory_size_face, // Face detection
-        memory_size_ble),
-        memory_size_inference
+        memory_size_face,     // Face detection
+        memory_size_ble),     // BLE user manager
+        memory_size_inference // SqueezeNet inference
     );
 
     void *memory_pool = pi_l2_malloc(memory_size);
@@ -388,6 +361,7 @@ void body(void* parameters)
     unsigned int* ImageIntegral;
     unsigned int* SquaredImageIntegral;
     int* output_map;
+    cascade_response_t cascade_response;
     // put camera frame to memory pool tail, it does not intersect with the first DNN layer data
     ImageIn = ((unsigned char*)memory_pool) + memory_size - IMAGE_SIZE;
     ImageOut = ImageIn - WOUT_INIT*HOUT_INIT;
@@ -411,7 +385,7 @@ void body(void* parameters)
     ClusterDetectionCall.SquaredImageIntegral = SquaredImageIntegral;
     ClusterDetectionCall.ImageRender          = ImageRender;
     ClusterDetectionCall.output_map           = output_map;
-    ClusterDetectionCall.responses            = responses;
+    ClusterDetectionCall.response             = &cascade_response;
 
     pi_cluster_task(&cluster_task, (void *)detection_cluster_init, &ClusterDetectionCall);
     cluster_task.slave_stack_size = CL_SLAVE_STACK_SIZE;
@@ -452,7 +426,7 @@ void body(void* parameters)
         pi_display_write(&display, &RenderBuffer, LCD_OFF_X, LCD_OFF_Y, CAMERA_WIDTH/2,CAMERA_HEIGHT/2);
 #endif
 
-        if (ClusterDetectionCall.num_response == 0)
+        if (cascade_response.score <= 0)
         {
             cascade_history_size = 0;
             goto end_loop; // No face => continue
@@ -460,18 +434,7 @@ void body(void* parameters)
 
         PRINTF("Face detected\n");
 
-        int optimal_detection_id = -1;
-        int optimal_score = -1;
-        for (int i = 0; i < ClusterDetectionCall.num_response; i++)
-        {
-            if(responses[i].score > optimal_score)
-            {
-                optimal_detection_id = i;
-                optimal_score = responses[i].score;
-            }
-        }
-
-        cascade_history[cascade_history_size] = responses[optimal_detection_id];
+        cascade_history[cascade_history_size] = cascade_response;
         cascade_history_size++;
 
         // Collect several consecutive frames with a face
@@ -497,7 +460,7 @@ void body(void* parameters)
         pi_cluster_open(&cluster_dev);
 
         ArgClusterDnn_T ClusterDnnCall;
-        ClusterDnnCall.roi         = &responses[optimal_detection_id];
+        ClusterDnnCall.roi         = &cascade_response;
         ClusterDnnCall.frame       = ImageIn;
         ClusterDnnCall.buffer      = memory_pool;
         ClusterDnnCall.face        = ImageIn - 194 * 194; // Largest possible face after Cascade
@@ -521,7 +484,7 @@ void body(void* parameters)
         draw_text(&display, "Writing photo", LCD_TXT_POS_X, LCD_TXT_POS_Y, 2);
 
         sprintf(string_buffer, "../../../dumps/face_%d.pgm", saved_index);
-        WriteImageToFile(string_buffer, 128, 128, ClusterDnnCall.face);
+        WriteImageToFile(string_buffer, 128, 128, 1, ClusterDnnCall.face, IMGIO_OUTPUT_CHAR);
 #endif
 
 #if defined(DUMP_SUCCESSFUL_FRAME) || defined (USE_BLE_USER_MANAGEMENT)
@@ -558,7 +521,7 @@ void body(void* parameters)
         pi_fs_close(host_file);
 
         //sprintf(string_buffer, "frame_%d.pgm", saved_index);
-        //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, ImageIn);
+        //WriteImageToFile(string_buffer, CAMERA_WIDTH, CAMERA_HEIGHT, 1, ImageIn, IMGIO_OUTPUT_CHAR);
 
         saved_index++;
 #endif
@@ -615,6 +578,8 @@ end_loop:
 #ifdef PERF_COUNT
         tm = rt_time_get_us() - tm;
         PRINTF("Cycle time %d us\n", tm);
+#else
+        continue;
 #endif
     }
 
@@ -639,6 +604,5 @@ end_loop:
 
 int main()
 {
-    pmsis_kickoff(body);
-    return 0;
+    return pmsis_kickoff(body);
 }

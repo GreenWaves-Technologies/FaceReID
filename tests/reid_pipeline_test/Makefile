@@ -65,13 +65,16 @@ extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: reid_model extra_model
 
+$(REID_PATH)/reid_pipeline.c: $(EXTRA_MODEL_GEN_C)
+$(REID_PATH)/network_process_manual.c $(REID_PATH)/network_process_graph.c: $(EXTRA_MODEL_GEN_C) $(REID_MODEL_GEN_C)
+
 APP_SRCS := \
   main.c \
   $(REID_PATH)/reid_pipeline.c \
   $(REID_PATH)/dnn_utils.c \
   $(REID_PATH)/face_db.c \
   $(REID_PATH)/ExtraBasicKernels.c \
-  $(REID_PATH)/ImgIO.c \
+  $(GAP_LIB_PATH)/img_io/ImgIO.c \
   $(REID_MODEL_GEN_C) \
   $(EXTRA_MODEL_GEN_C) \
   $(TILER_CNN_KERNEL_PATH)/CNN_Conv_BasicKernels.c \
@@ -86,7 +89,7 @@ else
     $(REID_PATH)/layer_params.c
 endif
 
-APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
+APP_INC += $(PWD) $(REID_PATH) "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)" "$(GAP_LIB_PATH)/include"
 APP_CFLAGS += -O3 -DNORM_ROUND -DCONFIG_GAPOC_A
 ifeq ($(GRAPH),1)
   APP_CFLAGS += -DGRAPH

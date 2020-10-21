@@ -16,17 +16,11 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "FaceDetBasicKernels.h"
-#include "setup.h"
 
 #include "pmsis.h"
 
-#if defined(__FREERTOS__)
-# include "dma/cl_dma.h"
-# include "pmsis_tiling.h"
-#else
-# include "Gap.h"
-#endif
+#include "FaceDetBasicKernels.h"
+#include "setup.h"
 
 #define Min(a, b)               (((a)<(b))?(a):(b))
 

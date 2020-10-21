@@ -42,4 +42,4 @@ year = {2019}
 }
 ```
 
-- GreenWaves press release and demostration video: [link](https://greenwaves-technologies.com/face_reid_on_gap8/)
+- GreenWaves press release and demonstration video: [link](https://greenwaves-technologies.com/face_reid_on_gap8/)

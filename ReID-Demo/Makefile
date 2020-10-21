@@ -75,8 +75,10 @@ EXTRA_MODEL_GEN := ExtraKernels
 EXTRA_MODEL_GEN_C := $(addsuffix .c, $(EXTRA_MODEL_GEN))
 EXTRA_MODEL_GEN_CH := $(EXTRA_MODEL_GEN_C) $(addsuffix .h, $(EXTRA_MODEL_GEN))
 
+EXTRA_GEN_CFLAGS += -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)"
+
 GenExtraTile: ExtraModels.c
-	gcc -o $@ -I"$(TILER_INC)" -I"$(TILER_CNN_GENERATOR_PATH)" ExtraModels.c $(TILER_LIB)
+	gcc -o $@ $(EXTRA_GEN_CFLAGS) ExtraModels.c $(TILER_LIB)
 
 $(EXTRA_MODEL_GEN_C): GenExtraTile
 	./GenExtraTile
@@ -84,6 +86,10 @@ $(EXTRA_MODEL_GEN_C): GenExtraTile
 extra_model: $(EXTRA_MODEL_GEN_C)
 
 tiler_models: detection_model reid_model extra_model
+
+cascade.c facedet_pipeline.c: $(DETECTION_MODEL_GEN_C)
+reid_pipeline.c: $(EXTRA_MODEL_GEN_C)
+network_process_manual.c network_process_graph.c: $(EXTRA_MODEL_GEN_C) $(REID_MODEL_GEN_C)
 
 APP_SRCS := \
   main.c \
@@ -94,7 +100,7 @@ APP_SRCS := \
   reid_pipeline.c \
   FaceDetBasicKernels.c \
   ImageDraw.c \
-  ImgIO.c \
+  $(GAP_LIB_PATH)/img_io/ImgIO.c \
   dnn_utils.c \
   ExtraBasicKernels.c \
   $(DETECTION_MODEL_GEN_C) \
@@ -112,10 +118,10 @@ else
     layer_params.c
 endif
 
-APP_INC += "$(PWD)" "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)"
+APP_INC += "$(PWD)" "$(TILER_INC)" "$(TILER_CNN_KERNEL_PATH)" "$(GAP_LIB_PATH)/include"
 
-APP_CFLAGS += -Os -flto -DNORM_ROUND
-APP_LDFLAGS += -flto
+APP_CFLAGS += -O3 -flto -DNORM_ROUND
+APP_LDFLAGS += -flto -Wl,--gc-sections
 
 ifeq ($(GRAPH),1)
   APP_CFLAGS += -DGRAPH
